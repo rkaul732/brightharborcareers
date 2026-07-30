@@ -369,7 +369,7 @@ main {
   gap: 14px;
   align-items: center;
   flex-wrap: nowrap;
-  overflow-x: auto;
+  overflow: visible;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.96);
@@ -439,6 +439,7 @@ main {
   position: absolute;
   right: 0;
   top: calc(100% + 8px);
+  z-index: 50;
   display: grid;
   min-width: 190px;
   border: 1px solid var(--line);
