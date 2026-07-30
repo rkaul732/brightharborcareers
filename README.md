@@ -7,7 +7,7 @@ Bright Harbor Careers is a dual-sided applicant tracking system for applicants a
 - Hiring managers can review candidates and advance interview-stage applicants.
 - Admins can see role controls and are intended to manage users, permissions, and governance.
 - Supabase stores jobs, applications, notes, scorecards, activity, and role profiles.
-- Netlify hosts the site, and GitHub stores the source plus validation workflow.
+- Netlify hosts the site, and GitHub stores the source.
 
 ## What You Need
 
@@ -244,7 +244,7 @@ git remote add origin https://github.com/YOUR-USER/bright-harbor-careers.git
 git push -u origin main
 ```
 
-The included GitHub workflow runs validation and the Netlify build on pushes and pull requests to `main`.
+Run `npm run validate` and `npm run build` locally before pushing changes.
 
 ## 9. Deploy With Netlify
 
