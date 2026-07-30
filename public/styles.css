@@ -290,18 +290,20 @@ main {
 }
 
 .login-layout {
-  grid-template-columns: minmax(300px, 0.9fr) minmax(340px, 1.1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
+  max-width: 480px;
 }
 
 .login-panel {
   display: grid;
-  gap: 18px;
-  padding: 20px;
+  gap: 20px;
+  padding: 24px;
 }
 
 .login-panel .auth-panel,
-.login-panel .session-panel {
+.login-panel .session-panel,
+.login-panel .request-panel {
   border: 0;
   background: transparent;
   padding: 0;
@@ -769,6 +771,35 @@ button:disabled:hover {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.auth-actions .primary-action {
+  width: 100%;
+  margin-top: 0;
+}
+
+.request-panel {
+  display: grid;
+  gap: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+}
+
+.text-link {
+  justify-self: start;
+  border: 0;
+  background: transparent;
+  color: var(--blue);
+  padding: 2px 0;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.text-link:hover,
+.text-link:focus-visible {
+  color: var(--harbor-dark);
+  text-decoration: underline;
 }
 
 [hidden] {

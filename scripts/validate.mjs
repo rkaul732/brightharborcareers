@@ -25,11 +25,12 @@ const checks = [
   [html.includes("Welcome to Bright Harbor Careers."), "Landing chooser"],
   [html.includes("Applicant"), "Applicant entry"],
   [html.includes("Hiring Team"), "Hiring Team entry"],
-  [html.includes("Request account"), "Account request form"],
+  [html.includes("Request a Hiring Team Account"), "Account request link"],
+  [html.includes('name="username"') && html.includes('name="password"'), "Hiring-team credentials form"],
   [html.includes("role-button"), "Role switcher"],
   [app.includes("handleAccountRequestSubmit"), "Account request handler"],
   [app.includes("supabaseInsert"), "Supabase insert wiring"],
-  [app.includes("/auth/v1/otp"), "Supabase Auth magic link"],
+  [app.includes("/auth/v1/token?grant_type=password"), "Supabase password auth"],
   [app.includes("recruiter") && app.includes("hiring_manager") && app.includes("admin"), "HR roles"]
 ];
 

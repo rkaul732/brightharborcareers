@@ -221,70 +221,77 @@
             <section class="login-panel">
               <div>
                 <p class="eyebrow">Hiring team</p>
-                <h1 id="loginHeading">Hiring team sign-in.</h1>
+                <h1 id="loginHeading">Hiring team login</h1>
                 <p class="landing-copy">
-                  Approved recruiters, hiring managers, and admins can access the hiring workspace with a secure email link.
+                  Enter your approved account credentials to access hiring operations.
                 </p>
               </div>
 
               <div class="session-panel" id="loginSessionPanel" hidden></div>
 
               <form class="auth-panel" id="authForm">
-                <label class="field" id="authEmailField">
-                  <span>Email</span>
-                  <input name="email" type="email" autocomplete="email" placeholder="you@brightharbor.org">
+                <label class="field" id="authUsernameField">
+                  <span>Username</span>
+                  <input name="username" type="email" required autocomplete="username" placeholder="you@brightharbor.org">
+                </label>
+                <label class="field" id="authPasswordField">
+                  <span>Password</span>
+                  <input name="password" type="password" required autocomplete="current-password">
                 </label>
                 <div class="auth-actions">
                   <button class="primary-action" type="submit">
                     <svg><use href="#icon-database"></use></svg>
-                    Send sign-in link
+                    Submit
                   </button>
                   <button class="secondary-action" type="button" id="continueToWorkspace" hidden>
                     Continue to workspace
                   </button>
                 </div>
+                <button class="text-link" type="button" id="showRequestAccount">
+                  Request a Hiring Team Account
+                </button>
                 <p class="form-message" id="authMessage" role="status"></p>
               </form>
-            </section>
 
-            <section class="login-panel">
-              <div>
-                <p class="eyebrow">Need access?</p>
-                <h2>Request a hiring-team account</h2>
-              </div>
-              <form class="request-form" id="requestAccountForm">
-                <div class="form-grid">
-                  <label class="field">
-                    <span>Full name</span>
-                    <input name="full_name" required autocomplete="name">
-                  </label>
-                  <label class="field">
-                    <span>Work email</span>
-                    <input name="email" type="email" required autocomplete="email">
-                  </label>
-                  <label class="field">
-                    <span>Requested role</span>
-                    <select name="requested_role" required>
-                      <option value="recruiter">Recruiter</option>
-                      <option value="hiring_manager">Hiring manager</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </label>
-                  <label class="field">
-                    <span>Department</span>
-                    <input name="department" placeholder="People Operations">
-                  </label>
-                  <label class="field wide">
-                    <span>Access reason</span>
-                    <textarea name="message" rows="4" placeholder="Share why this account is needed."></textarea>
-                  </label>
+              <section class="request-panel" id="requestAccountPanel" hidden>
+                <div>
+                  <p class="eyebrow">Account request</p>
+                  <h2>Request access</h2>
                 </div>
-                <button class="secondary-action" type="submit">
-                  <svg><use href="#icon-send"></use></svg>
-                  Request account
-                </button>
-                <p class="form-message" id="requestAccountMessage" role="status"></p>
-              </form>
+                <form class="request-form" id="requestAccountForm">
+                  <div class="form-grid">
+                    <label class="field">
+                      <span>Full name</span>
+                      <input name="full_name" required autocomplete="name">
+                    </label>
+                    <label class="field">
+                      <span>Work email</span>
+                      <input name="email" type="email" required autocomplete="email">
+                    </label>
+                    <label class="field">
+                      <span>Requested role</span>
+                      <select name="requested_role" required>
+                        <option value="recruiter">Recruiter</option>
+                        <option value="hiring_manager">Hiring manager</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </label>
+                    <label class="field">
+                      <span>Department</span>
+                      <input name="department" placeholder="People Operations">
+                    </label>
+                    <label class="field wide">
+                      <span>Access reason</span>
+                      <textarea name="message" rows="4" placeholder="Share why this account is needed."></textarea>
+                    </label>
+                  </div>
+                  <button class="secondary-action" type="submit">
+                    <svg><use href="#icon-send"></use></svg>
+                    Request account
+                  </button>
+                  <p class="form-message" id="requestAccountMessage" role="status"></p>
+                </form>
+              </section>
             </section>
           </div>
         </section>

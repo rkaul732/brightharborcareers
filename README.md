@@ -167,13 +167,14 @@ npm run dev
 
 ## 5. Enable HR Sign-In And Account Requests
 
-Bright Harbor Careers uses Supabase email magic links for HR sessions.
+Bright Harbor Careers uses Supabase username-and-password sign-in for HR sessions. The username is the approved user's work email address.
 
 In Supabase:
 
 1. Go to Authentication.
-2. Make sure email sign-in is enabled.
-3. Add your local and production URLs to the allowed redirect URLs.
+2. Make sure the Email provider is enabled.
+3. Make sure email-and-password sign-in is allowed.
+4. Add your local and production URLs to the allowed redirect URLs so Supabase invites and password recovery links return to the correct site.
 
 For local development, add:
 
@@ -198,14 +199,14 @@ The email contains two links:
 - Approve request
 - Deny request
 
-Approving a request marks it approved in Supabase and attempts to send the requester a Supabase invite.
+Approving a request marks it approved in Supabase and attempts to send the requester a Supabase invite so they can set a password.
 
 ## 6. Create Your First HR User
 
-1. Open the HR workspace in the app.
-2. Enter your HR email in the Supabase sign-in box.
-3. Click the magic link in your email.
-4. In Supabase, find that user in Authentication.
+1. In Supabase, go to Authentication, then Users.
+2. Add your first HR user with their work email.
+3. Set a password, or send an invite so the user can set one.
+4. Open that user in Supabase Authentication.
 5. Copy the user ID.
 6. Run this SQL with your real user ID and email:
 
@@ -228,7 +229,7 @@ hiring_manager
 admin
 ```
 
-After that, sign in again from the HR workspace. Admin and recruiter users can create jobs and publish roles. Hiring managers can review candidates.
+After that, sign in from the Hiring Team login screen with the work email as the username and the password for that Supabase user. Admin and recruiter users can create jobs and publish roles. Hiring managers can review candidates.
 
 ## 7. Run Locally With Supabase
 
@@ -319,8 +320,7 @@ Once your HR user is an `admin` or `recruiter`:
 
 1. Open the Netlify site.
 2. Go to HR workspace.
-3. Send yourself a Supabase sign-in link.
-4. Sign in.
+3. Sign in with your username and password.
 5. Create a job.
 6. Set the job status to `Published`, or select a draft job and publish it.
 7. Return to Applicant portal and confirm the job appears.
@@ -359,20 +359,21 @@ If HR job creation does not save:
 - Confirm `public.profiles.role` is `recruiter` or `admin`.
 - Confirm the Supabase migration ran successfully.
 
-If the magic link opens but HR actions still fail:
+If HR sign-in works but HR actions still fail:
 
 - Confirm your Netlify URL is listed in Supabase Auth redirect URLs.
 - Confirm you used the Supabase anon key, not the service role key.
-- Sign out, request a fresh magic link, and sign in again.
+- Sign out, then sign in again with the approved user's username and password.
 
-If no Supabase magic-link email arrives:
+If a Supabase invite or account-request email does not arrive:
 
 - Confirm the email address was typed correctly.
 - Check spam, junk, promotions, and quarantine folders.
 - In Supabase, go to Authentication, then Logs, and look for the email attempt.
 - In Supabase, go to Authentication, then URL Configuration, and add `http://localhost:5173` and your Netlify URL to the redirect URLs.
 - In Supabase, go to Authentication, then Providers, and confirm Email is enabled.
-- Wait a few minutes before retrying if you clicked Send link several times; Supabase email sending can be rate-limited.
+- Confirm `RESEND_API_KEY`, `EMAIL_FROM`, and `HR_APPROVAL_EMAIL` are set if the missing email is an account request to HR.
+- Wait a few minutes before retrying; email sending can be rate-limited.
 
 ## Useful Commands
 

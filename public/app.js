@@ -498,8 +498,14 @@ function renderAuthPanel() {
     `
     : "";
 
-  $("#authEmailField").hidden = signedIn;
+  $("#authUsernameField").hidden = signedIn;
+  $("#authPasswordField").hidden = signedIn;
   $("#authForm button[type='submit']").hidden = signedIn;
+  $("#showRequestAccount").hidden = signedIn;
+  if (signedIn) {
+    $("#requestAccountPanel").hidden = true;
+    $("#showRequestAccount").textContent = "Request a Hiring Team Account";
+  }
   $("#continueToWorkspace").hidden = !signedIn;
   $("#loginSessionPanel").hidden = !signedIn;
   $("#loginSessionPanel").innerHTML = sessionMarkup;
@@ -742,6 +748,17 @@ function bindEvents() {
   $("#jobForm").addEventListener("submit", handleJobSubmit);
   $("#authForm").addEventListener("submit", handleAuthSubmit);
   $("#requestAccountForm").addEventListener("submit", handleAccountRequestSubmit);
+  $("#showRequestAccount").addEventListener("click", () => {
+    const requestPanel = $("#requestAccountPanel");
+    const isOpening = requestPanel.hidden;
+    requestPanel.hidden = !isOpening;
+    $("#showRequestAccount").textContent = isOpening
+      ? "Hide account request"
+      : "Request a Hiring Team Account";
+    if (isOpening) {
+      $("#requestAccountForm input[name='full_name']").focus();
+    }
+  });
   $("#continueToWorkspace").addEventListener("click", () => showView("hr"));
   $("#signOutButton").addEventListener("click", () => {
     saveSession(null);
@@ -799,21 +816,22 @@ async function handleAuthSubmit(event) {
     return;
   }
 
-  const email = new FormData(event.currentTarget).get("email")?.trim();
-  if (!email) return;
+  const formData = new FormData(event.currentTarget);
+  const username = String(formData.get("username") || "").trim().toLowerCase();
+  const password = String(formData.get("password") || "");
+  if (!username || !password) return;
 
-  const response = await fetch(`${env.supabaseUrl}/auth/v1/otp`, {
+  showMessage("#authMessage", "Signing in...");
+
+  const response = await fetch(`${env.supabaseUrl}/auth/v1/token?grant_type=password`, {
     method: "POST",
     headers: {
       apikey: env.supabaseAnonKey,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      email,
-      create_user: false,
-      options: {
-        email_redirect_to: `${location.origin}${location.pathname}`
-      }
+      email: username,
+      password
     })
   });
 
@@ -824,12 +842,26 @@ async function handleAuthSubmit(event) {
     responseBody = {};
   }
 
-  showMessage(
-    "#authMessage",
-    response.ok
-      ? "Sign-in link sent. Check inbox and spam."
-      : `Supabase error: ${responseBody.msg || responseBody.message || "account not approved yet"}`
-  );
+  if (!response.ok) {
+    showMessage(
+      "#authMessage",
+      `Supabase error: ${responseBody.error_description || responseBody.msg || responseBody.message || "invalid username or password"}`
+    );
+    return;
+  }
+
+  saveSession({
+    accessToken: responseBody.access_token,
+    refreshToken: responseBody.refresh_token,
+    email: responseBody.user?.email || username,
+    expiresAt: responseBody.expires_at || ""
+  });
+  event.currentTarget.reset();
+  renderAuthPanel();
+  await loadSupabaseData();
+  renderApplicantPortal();
+  renderHrWorkspace();
+  showView("hr");
 }
 
 async function handleAccountRequestSubmit(event) {
