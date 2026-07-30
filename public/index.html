@@ -352,67 +352,84 @@
 
             <section class="hr-main">
               <section class="hr-section" id="hrJobsSection">
-                <section class="panel jobs-admin-panel">
-                  <div class="section-header">
+                <section class="panel jobs-list-panel">
+                  <div class="section-header jobs-toolbar">
                     <div>
-                      <p class="eyebrow">Job management</p>
-                      <h2>Jobs and pipelines</h2>
+                      <p class="eyebrow">Jobs</p>
+                      <h2>All jobs</h2>
                     </div>
-                    <button class="primary-action small" type="button" id="publishSelected">
-                      <svg><use href="#icon-plus"></use></svg>
-                      Publish selected
-                    </button>
+                    <div class="jobs-toolbar-actions">
+                      <label class="field compact-field job-search-field">
+                        <span>Search jobs</span>
+                        <input id="hrJobSearch" type="search" placeholder="Search jobs">
+                      </label>
+                      <button class="primary-action small" type="button" id="showJobCreate" aria-expanded="false" aria-controls="jobCreatePanel">
+                        <svg><use href="#icon-plus"></use></svg>
+                        Create new job
+                      </button>
+                    </div>
                   </div>
 
-                  <form class="job-form" id="jobForm">
-                    <div class="form-grid">
-                      <label class="field">
-                        <span>Job title</span>
-                        <input name="title" required placeholder="Senior Case Manager">
-                      </label>
-                      <label class="field">
-                        <span>Department</span>
-                        <select name="department_id" id="jobDepartmentSelect" required></select>
-                      </label>
-                      <label class="field">
-                        <span>Subdepartment</span>
-                        <select name="subdepartment_id" id="jobSubdepartmentSelect"></select>
-                      </label>
-                      <label class="field">
-                        <span>Location</span>
-                        <input name="location" required placeholder="Boston, MA">
-                      </label>
-                      <label class="field">
-                        <span>Work type</span>
-                        <select name="work_type">
-                          <option>Full Time</option>
-                          <option>Part Time</option>
-                          <option>Per Diem</option>
-                        </select>
-                      </label>
-                      <label class="field">
-                        <span>Hiring manager</span>
-                        <input name="hiring_manager" required placeholder="Maya Rivera">
-                      </label>
-                      <label class="field">
-                        <span>Status</span>
-                        <select name="status">
-                          <option value="draft">Draft</option>
-                          <option value="published">Published</option>
-                          <option value="paused">Paused</option>
-                        </select>
-                      </label>
-                      <label class="field wide">
-                        <span>Role summary</span>
-                        <textarea name="summary" required rows="3" placeholder="Describe the job and the team."></textarea>
-                      </label>
+                  <section class="job-create-panel" id="jobCreatePanel" hidden>
+                    <div class="section-header compact">
+                      <div>
+                        <p class="eyebrow">New job</p>
+                        <h2>Create a job</h2>
+                      </div>
+                      <button class="secondary-action small" type="button" id="cancelJobCreate">
+                        Cancel
+                      </button>
                     </div>
-                    <button class="secondary-action" type="submit">
-                      <svg><use href="#icon-plus"></use></svg>
-                      Create job
-                    </button>
-                    <p class="form-message" id="jobFormMessage" role="status"></p>
-                  </form>
+                    <form class="job-form" id="jobForm">
+                      <div class="form-grid">
+                        <label class="field">
+                          <span>Job title</span>
+                          <input name="title" required placeholder="Senior Case Manager">
+                        </label>
+                        <label class="field">
+                          <span>Department</span>
+                          <select name="department_id" id="jobDepartmentSelect" required></select>
+                        </label>
+                        <label class="field">
+                          <span>Subdepartment</span>
+                          <select name="subdepartment_id" id="jobSubdepartmentSelect"></select>
+                        </label>
+                        <label class="field">
+                          <span>Location</span>
+                          <input name="location" required placeholder="Boston, MA">
+                        </label>
+                        <label class="field">
+                          <span>Work type</span>
+                          <select name="work_type">
+                            <option>Full Time</option>
+                            <option>Part Time</option>
+                            <option>Per Diem</option>
+                          </select>
+                        </label>
+                        <label class="field">
+                          <span>Hiring manager</span>
+                          <input name="hiring_manager" required placeholder="Maya Rivera">
+                        </label>
+                        <label class="field">
+                          <span>Status</span>
+                          <select name="status">
+                            <option value="draft">Draft</option>
+                            <option value="published">Published</option>
+                            <option value="paused">Paused</option>
+                          </select>
+                        </label>
+                        <label class="field wide">
+                          <span>Role summary</span>
+                          <textarea name="summary" required rows="3" placeholder="Describe the job and the team."></textarea>
+                        </label>
+                      </div>
+                      <button class="secondary-action" type="submit">
+                        <svg><use href="#icon-plus"></use></svg>
+                        Create job
+                      </button>
+                      <p class="form-message" id="jobFormMessage" role="status"></p>
+                    </form>
+                  </section>
 
                   <div class="table-wrap">
                     <table>
@@ -422,7 +439,6 @@
                           <th scope="col">Owner</th>
                           <th scope="col">Status</th>
                           <th scope="col">Pipeline</th>
-                          <th scope="col">Action</th>
                         </tr>
                       </thead>
                       <tbody id="jobsTable"></tbody>
@@ -479,16 +495,23 @@
                   </div>
 
                   <div class="settings-grid">
-                    <button class="settings-tile is-active" type="button" id="departmentsSettingsButton">
+                    <button class="settings-tile is-active" type="button" id="departmentsSettingsButton" data-settings-section="departments">
                       <svg><use href="#icon-settings"></use></svg>
                       <span>
                         <strong>Departments</strong>
                         <small>Create agency departments and subdepartments.</small>
                       </span>
                     </button>
+                    <button class="settings-tile" type="button" id="pipelineSettingsButton" data-settings-section="pipeline">
+                      <svg><use href="#icon-chart"></use></svg>
+                      <span>
+                        <strong>Pipeline configuration</strong>
+                        <small>Manage the visible hiring stages.</small>
+                      </span>
+                    </button>
                   </div>
 
-                  <section class="settings-detail" id="departmentsSettingsPanel">
+                  <section class="settings-detail" id="departmentsSettingsPanel" data-settings-panel="departments">
                     <div class="section-header compact">
                       <div>
                         <p class="eyebrow">Departments</p>
@@ -513,6 +536,41 @@
                       <p class="form-message" id="departmentMessage" role="status"></p>
                     </form>
                     <div class="department-tree" id="departmentTree"></div>
+                  </section>
+
+                  <section class="settings-detail" id="pipelineSettingsPanel" data-settings-panel="pipeline" hidden>
+                    <div class="section-header compact">
+                      <div>
+                        <p class="eyebrow">Pipeline configuration</p>
+                        <h2>Hiring stages</h2>
+                      </div>
+                    </div>
+                    <form class="pipeline-settings-form" id="pipelineSettingsForm">
+                      <div class="form-grid">
+                        <label class="field">
+                          <span>New stage label</span>
+                          <input name="new" required>
+                        </label>
+                        <label class="field">
+                          <span>Screening stage label</span>
+                          <input name="screening" required>
+                        </label>
+                        <label class="field">
+                          <span>Interview stage label</span>
+                          <input name="interview" required>
+                        </label>
+                        <label class="field">
+                          <span>Offer stage label</span>
+                          <input name="offer" required>
+                        </label>
+                      </div>
+                      <button class="secondary-action" type="submit">
+                        <svg><use href="#icon-database"></use></svg>
+                        Save pipeline
+                      </button>
+                      <p class="form-message" id="pipelineSettingsMessage" role="status"></p>
+                    </form>
+                    <div class="pipeline-settings-preview" id="pipelineSettingsPreview"></div>
                   </section>
                 </section>
 

@@ -365,10 +365,11 @@ main {
   position: sticky;
   top: 92px;
   z-index: 10;
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr) auto minmax(64px, 1fr);
-  gap: 18px;
+  display: flex;
+  gap: 14px;
   align-items: center;
+  flex-wrap: nowrap;
+  overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.96);
@@ -376,13 +377,20 @@ main {
   padding: 14px 16px;
 }
 
+.hr-title {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .hr-title h1 {
   max-width: none;
   font-size: 24px;
+  white-space: nowrap;
 }
 
 .hr-top-menu {
   display: flex;
+  flex: 0 0 auto;
   gap: 6px;
   padding: 3px;
   border: 1px solid var(--line);
@@ -392,7 +400,8 @@ main {
 
 .profile-menu {
   position: relative;
-  justify-self: end;
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 
 .profile-button {
@@ -453,6 +462,32 @@ main {
 
 .profile-dropdown button:hover {
   background: var(--subtle);
+}
+
+.jobs-toolbar {
+  align-items: end;
+}
+
+.jobs-toolbar-actions {
+  display: flex;
+  align-items: end;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.compact-field {
+  gap: 5px;
+}
+
+.job-search-field {
+  width: min(240px, 34vw);
+}
+
+.job-create-panel {
+  margin-bottom: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
 }
 
 .search-panel,
@@ -937,7 +972,8 @@ button:disabled:hover {
   color: inherit;
 }
 
-.primary-action.small {
+.primary-action.small,
+.secondary-action.small {
   min-height: 36px;
   margin-top: 0;
   font-size: 13px;
@@ -1127,7 +1163,8 @@ button:disabled:hover {
 
 .job-form,
 .department-form,
-.profile-form {
+.profile-form,
+.pipeline-settings-form {
   display: grid;
   gap: 12px;
   margin-bottom: 16px;
@@ -1223,6 +1260,37 @@ button:disabled:hover {
 
 .pipeline-chip b {
   color: var(--ink);
+}
+
+.pipeline-settings-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pipeline-settings-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--harbor-dark);
+  padding: 0 12px 0 6px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pipeline-settings-chip b {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--harbor-dark);
+  color: #fff;
+  font-size: 11px;
 }
 
 .department-group {
@@ -1427,20 +1495,11 @@ td strong {
 
   .hr-top-header {
     position: static;
-    grid-template-columns: 1fr;
-  }
-
-  .hr-top-menu,
-  .profile-menu {
-    justify-self: stretch;
+    gap: 10px;
   }
 
   .hr-top-menu {
-    overflow-x: auto;
-  }
-
-  .profile-button {
-    justify-self: end;
+    overflow-x: visible;
   }
 }
 
@@ -1493,8 +1552,43 @@ td strong {
     flex-direction: column;
   }
 
+  .hr-top-header,
+  .jobs-toolbar {
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .hr-top-header {
+    padding: 10px;
+  }
+
+  .hr-title h1 {
+    font-size: 18px;
+  }
+
+  .hr-title .eyebrow {
+    display: none;
+  }
+
+  .hr-menu-button {
+    min-height: 34px;
+    padding: 0 9px;
+  }
+
+  .jobs-toolbar-actions {
+    flex-wrap: nowrap;
+  }
+
+  .job-search-field {
+    width: min(210px, 42vw);
+  }
+
   .primary-action.small {
     width: 100%;
+  }
+
+  .jobs-toolbar .primary-action.small {
+    width: auto;
   }
 
   .job-board-hero {
@@ -1534,6 +1628,32 @@ td strong {
 
   .tab {
     width: 100%;
+  }
+
+  .hr-title {
+    display: none;
+  }
+
+  .hr-top-menu {
+    flex: 1 0 auto;
+  }
+
+  .hr-menu-button {
+    padding: 0 8px;
+  }
+
+  .jobs-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .jobs-toolbar-actions {
+    width: 100%;
+  }
+
+  .job-search-field {
+    flex: 1 1 auto;
+    width: auto;
   }
 
   .main-tabs {

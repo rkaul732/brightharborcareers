@@ -25,7 +25,9 @@ const roleProfiles = {
   }
 };
 
-const pipelineLabels = {
+const pipelineStages = ["new", "screening", "interview", "offer"];
+
+const defaultPipelineLabels = {
   new: "New",
   screening: "Screening",
   interview: "Interview",
@@ -223,13 +225,16 @@ const state = {
   jobs: [...demoJobs],
   applications: [...demoApplications],
   selectedJobId: "job-101",
-  selectedJobIds: new Set(),
   role: initialProfile.role,
   hrSection: "jobs",
+  settingsSection: "departments",
+  hrJobQuery: "",
+  jobCreateOpen: false,
   session: readInitialSession(),
   profile: initialProfile,
   boardSettings: readLocalBoardSettings(),
   departments: readLocalDepartments(),
+  pipelineSettings: readLocalPipelineSettings(),
   jobDetailOpen: false,
   applicationOpen: false,
   filters: {
@@ -320,6 +325,52 @@ function saveLocalBoardSettings(settings) {
   } catch (error) {
     return;
   }
+}
+
+function normalizePipelineSettings(settings = {}) {
+  const sourceStages = settings.stages || settings;
+  const stages = pipelineStages.reduce((labels, stage) => {
+    const value = String(sourceStages?.[stage] || "").trim();
+    return {
+      ...labels,
+      [stage]: value || defaultPipelineLabels[stage]
+    };
+  }, {});
+
+  return {
+    id: "default",
+    stages
+  };
+}
+
+function readLocalPipelineSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("bhc-pipeline-settings") || "null");
+    return normalizePipelineSettings(saved || { stages: defaultPipelineLabels });
+  } catch (error) {
+    return normalizePipelineSettings({ stages: defaultPipelineLabels });
+  }
+}
+
+function saveLocalPipelineSettings(settings) {
+  try {
+    localStorage.setItem("bhc-pipeline-settings", JSON.stringify(settings));
+  } catch (error) {
+    return;
+  }
+}
+
+function pipelineLabels() {
+  return state.pipelineSettings?.stages || defaultPipelineLabels;
+}
+
+function pipelineEntries() {
+  const labels = pipelineLabels();
+  return pipelineStages.map((stage) => [stage, labels[stage] || defaultPipelineLabels[stage]]);
+}
+
+function pipelineLabel(stage) {
+  return pipelineLabels()[stage] || formatStatus(stage);
 }
 
 function normalizeDepartment(department = {}) {
@@ -439,6 +490,7 @@ async function loadSupabaseData() {
   try {
     await loadJobBoardSettings();
     await loadDepartments();
+    if (state.session?.accessToken) await loadPipelineSettings();
 
     let jobs = [];
     try {
@@ -540,6 +592,22 @@ async function loadJobBoardSettings() {
     if (settings) {
       state.boardSettings = normalizeBoardSettings(settings);
       saveLocalBoardSettings(state.boardSettings);
+    }
+  } catch (error) {
+    return;
+  }
+}
+
+async function loadPipelineSettings() {
+  try {
+    const [settings] = await supabaseSelect(
+      "pipeline_settings",
+      "select=id,stages&limit=1",
+      true
+    );
+    if (settings) {
+      state.pipelineSettings = normalizePipelineSettings(settings);
+      saveLocalPipelineSettings(state.pipelineSettings);
     }
   } catch (error) {
     return;
@@ -821,6 +889,8 @@ function renderNoJobDetail() {
 function renderHrWorkspace() {
   renderHrSections();
   renderProfileMenu();
+  renderJobsToolbar();
+  renderSettingsSections();
   renderRoleCard();
   renderAuthPanel();
   syncRoleControls();
@@ -831,6 +901,7 @@ function renderHrWorkspace() {
   renderPipeline();
   renderBoardSettingsForm();
   renderDepartmentSettings();
+  renderPipelineSettingsForm();
   renderProfileForm();
   renderPermissions();
 }
@@ -885,7 +956,7 @@ function renderAuthPanel() {
 function syncRoleControls() {
   const canManageJobs = state.role === "recruiter" || state.role === "admin";
   const canManageBoard = state.role === "admin";
-  $("#publishSelected").disabled = !canManageJobs;
+  $("#showJobCreate").disabled = !canManageJobs;
   $$("#jobForm input, #jobForm select, #jobForm textarea, #jobForm button").forEach((control) => {
     control.disabled = !canManageJobs;
   });
@@ -895,7 +966,27 @@ function syncRoleControls() {
   $$("#departmentForm input, #departmentForm select, #departmentForm button").forEach((control) => {
     control.disabled = !canManageBoard;
   });
+  $$("#pipelineSettingsForm input, #pipelineSettingsForm button").forEach((control) => {
+    control.disabled = !canManageBoard;
+  });
   $("#adminPanel").hidden = state.role !== "admin";
+}
+
+function renderJobsToolbar() {
+  const search = $("#hrJobSearch");
+  const createPanel = $("#jobCreatePanel");
+  if (search && document.activeElement !== search) search.value = state.hrJobQuery;
+  createPanel.hidden = !state.jobCreateOpen;
+  $("#showJobCreate").setAttribute("aria-expanded", String(state.jobCreateOpen));
+}
+
+function renderSettingsSections() {
+  $$("[data-settings-section]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.settingsSection === state.settingsSection);
+  });
+  $$("[data-settings-panel]").forEach((panel) => {
+    panel.hidden = panel.dataset.settingsPanel !== state.settingsSection;
+  });
 }
 
 function renderRoleCard() {
@@ -912,6 +1003,7 @@ function renderRoleCard() {
 }
 
 function renderMetrics() {
+  const labels = pipelineLabels();
   const openJobs = state.jobs.filter((job) => job.status === "published").length;
   const draftJobs = state.jobs.filter((job) => job.status === "draft").length;
   const activeApplicants = state.applications.filter((application) => application.status !== "archived").length;
@@ -920,7 +1012,7 @@ function renderMetrics() {
     ["Open jobs", openJobs, `${draftJobs} drafts waiting`],
     ["Applicants", activeApplicants, "Across active pipelines"],
     ["Interviews", interviews, "Ready for manager review"],
-    ["Offer stage", state.applications.filter((application) => application.status === "offer").length, "Final decisions"]
+    [`${labels.offer} stage`, state.applications.filter((application) => application.status === "offer").length, "Final decisions"]
   ];
 
   $("#metricGrid").innerHTML = metrics
@@ -937,13 +1029,40 @@ function renderMetrics() {
 }
 
 function renderJobsTable() {
-  $("#jobsTable").innerHTML = state.jobs
+  const query = state.hrJobQuery.trim().toLowerCase();
+  const jobs = state.jobs
     .slice()
-    .sort((a, b) => a.title.localeCompare(b.title))
+    .filter((job) => {
+      if (!query) return true;
+      return [
+        job.title,
+        job.department,
+        job.subdepartment,
+        job.location,
+        job.work_type,
+        job.status,
+        job.hiring_manager
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query));
+    })
+    .sort((a, b) => a.title.localeCompare(b.title));
+
+  if (!jobs.length) {
+    $("#jobsTable").innerHTML = `
+      <tr>
+        <td colspan="4">
+          <div class="empty-state compact">No jobs match this search.</div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  $("#jobsTable").innerHTML = jobs
     .map((job) => {
       const applications = state.applications.filter((application) => application.job_id === job.id);
-      const checked = state.selectedJobIds.has(job.id) ? "checked" : "";
-      const pipelineMarkup = Object.entries(pipelineLabels)
+      const pipelineMarkup = pipelineEntries()
         .map(([stage, label]) => {
           const count = applications.filter((application) => application.status === stage).length;
           return `<span class="pipeline-chip">${escapeHtml(label)} <b>${count}</b></span>`;
@@ -962,12 +1081,6 @@ function renderJobsTable() {
           <td>${escapeHtml(job.hiring_manager || "Unassigned")}</td>
           <td><span class="status-pill ${escapeHtml(job.status)}">${escapeHtml(formatStatus(job.status))}</span></td>
           <td><div class="pipeline-chip-row">${pipelineMarkup}</div></td>
-          <td>
-            <label class="table-action">
-              <input type="checkbox" data-select-job="${escapeHtml(job.id)}" ${checked}>
-              Select
-            </label>
-          </td>
         </tr>
       `;
     })
@@ -989,7 +1102,7 @@ function renderCandidatesTable() {
             </div>
           </td>
           <td>${escapeHtml(job?.title || "General application")}</td>
-          <td><span class="stage-pill">${escapeHtml(formatStatus(application.status))}</span></td>
+          <td><span class="stage-pill">${escapeHtml(pipelineLabel(application.status))}</span></td>
           <td>${escapeHtml(application.source || "Career site")}</td>
           <td>${escapeHtml(application.applied_at || "Not recorded")}</td>
         </tr>
@@ -999,7 +1112,7 @@ function renderCandidatesTable() {
 }
 
 function renderPipeline() {
-  $("#pipelineBoard").innerHTML = Object.entries(pipelineLabels)
+  $("#pipelineBoard").innerHTML = pipelineEntries()
     .map(([stage, label]) => {
       const applications = state.applications.filter((application) => application.status === stage);
       return `
@@ -1021,7 +1134,7 @@ function renderCandidateCard(application) {
         ? "Submit scorecard"
         : "View profile"
       : nextStage
-        ? `Move to ${pipelineLabels[nextStage]}`
+        ? `Move to ${pipelineLabel(nextStage)}`
         : "Keep warm";
   return `
     <article class="candidate-card">
@@ -1033,7 +1146,7 @@ function renderCandidateCard(application) {
         </div>
       </div>
       <div class="tag-row">
-        <span class="stage-pill">${escapeHtml(formatStatus(application.status))}</span>
+        <span class="stage-pill">${escapeHtml(pipelineLabel(application.status))}</span>
         <span class="tag">${escapeHtml(String(application.score || 72))} match</span>
       </div>
       <div class="candidate-actions">
@@ -1074,6 +1187,26 @@ function renderBoardSettingsForm() {
   form.elements.hero_title.value = settings.hero_title;
   form.elements.hero_subtitle.value = settings.hero_subtitle;
   form.elements.overlay_opacity.value = settings.overlay_opacity;
+}
+
+function renderPipelineSettingsForm() {
+  const form = $("#pipelineSettingsForm");
+  if (!form) return;
+
+  const labels = pipelineLabels();
+  pipelineStages.forEach((stage) => {
+    form.elements[stage].value = labels[stage] || defaultPipelineLabels[stage];
+  });
+  $("#pipelineSettingsPreview").innerHTML = pipelineEntries()
+    .map(
+      ([stage, label], index) => `
+        <span class="pipeline-settings-chip">
+          <b>${index + 1}</b>
+          ${escapeHtml(label)}
+        </span>
+      `
+    )
+    .join("");
 }
 
 function renderProfileForm() {
@@ -1157,9 +1290,8 @@ function renderDepartmentSettings() {
 }
 
 function getNextStage(status) {
-  const order = ["new", "screening", "interview", "offer"];
-  const index = order.indexOf(status);
-  return index >= 0 && index < order.length - 1 ? order[index + 1] : null;
+  const index = pipelineStages.indexOf(status);
+  return index >= 0 && index < pipelineStages.length - 1 ? pipelineStages[index + 1] : null;
 }
 
 function getManagerStage(status) {
@@ -1206,6 +1338,7 @@ function bindEvents() {
   $$(".hr-menu-button").forEach((button) => {
     button.addEventListener("click", () => {
       state.hrSection = button.dataset.hrSection;
+      if (state.hrSection === "jobs") state.jobCreateOpen = false;
       $("#profileDropdown").hidden = true;
       $("#profileMenuButton").setAttribute("aria-expanded", "false");
       renderHrWorkspace();
@@ -1226,6 +1359,30 @@ function bindEvents() {
     $("#profileDropdown").hidden = true;
     $("#profileMenuButton").setAttribute("aria-expanded", "false");
     renderHrWorkspace();
+  });
+
+  $("#hrJobSearch").addEventListener("input", (event) => {
+    state.hrJobQuery = event.target.value;
+    renderJobsTable();
+  });
+
+  $("#showJobCreate").addEventListener("click", () => {
+    state.jobCreateOpen = true;
+    renderJobsToolbar();
+    populateJobDepartmentControls();
+    $("#jobForm input[name='title']").focus();
+  });
+
+  $("#cancelJobCreate").addEventListener("click", () => {
+    state.jobCreateOpen = false;
+    renderJobsToolbar();
+  });
+
+  $$("[data-settings-section]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.settingsSection = button.dataset.settingsSection;
+      renderHrWorkspace();
+    });
   });
 
   $("#jobSearch").addEventListener("input", (event) => {
@@ -1293,6 +1450,7 @@ function bindEvents() {
   });
   $("#departmentForm").addEventListener("submit", handleDepartmentSubmit);
   $("#boardSettingsForm").addEventListener("submit", handleBoardSettingsSubmit);
+  $("#pipelineSettingsForm").addEventListener("submit", handlePipelineSettingsSubmit);
   $("#profileForm").addEventListener("submit", handleProfileSubmit);
   $("#showApplicationButton").addEventListener("click", () => {
     state.applicationOpen = true;
@@ -1319,24 +1477,6 @@ function bindEvents() {
     renderAuthPanel();
     renderHrWorkspace();
     showView("login");
-  });
-
-  $("#jobsTable").addEventListener("change", (event) => {
-    const checkbox = event.target.closest("[data-select-job]");
-    if (!checkbox) return;
-    if (checkbox.checked) state.selectedJobIds.add(checkbox.dataset.selectJob);
-    else state.selectedJobIds.delete(checkbox.dataset.selectJob);
-  });
-
-  $("#publishSelected").addEventListener("click", () => {
-    if (state.role === "hiring_manager") return;
-    state.jobs = state.jobs.map((job) =>
-      state.selectedJobIds.has(job.id) ? { ...job, status: "published" } : job
-    );
-    state.selectedJobIds.clear();
-    populateFilters();
-    renderApplicantPortal();
-    renderHrWorkspace();
   });
 
   $("#pipelineBoard").addEventListener("click", async (event) => {
@@ -1503,6 +1643,49 @@ async function handleBoardSettingsSubmit(event) {
     showMessage("#boardSettingsMessage", "Preview updated. Supabase sign-in is needed to save live.");
   } catch (error) {
     showMessage("#boardSettingsMessage", "Preview updated. Supabase save requires an admin account.");
+  }
+}
+
+async function handlePipelineSettingsSubmit(event) {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(event.currentTarget));
+  const settings = normalizePipelineSettings({
+    id: "default",
+    stages: pipelineStages.reduce(
+      (labels, stage) => ({
+        ...labels,
+        [stage]: data[stage]
+      }),
+      {}
+    )
+  });
+
+  state.pipelineSettings = settings;
+  saveLocalPipelineSettings(settings);
+  renderHrWorkspace();
+
+  try {
+    if (hasSupabase && state.session?.accessToken) {
+      const [saved] = await supabaseUpsert(
+        "pipeline_settings",
+        {
+          id: "default",
+          stages: settings.stages
+        },
+        true
+      );
+      if (saved) {
+        state.pipelineSettings = normalizePipelineSettings(saved);
+        saveLocalPipelineSettings(state.pipelineSettings);
+        renderHrWorkspace();
+      }
+      showMessage("#pipelineSettingsMessage", "Pipeline saved.");
+      return;
+    }
+
+    showMessage("#pipelineSettingsMessage", "Preview updated. Supabase sign-in is needed to save live.");
+  } catch (error) {
+    showMessage("#pipelineSettingsMessage", "Preview updated. Supabase save requires an admin account.");
   }
 }
 
@@ -1708,6 +1891,7 @@ async function handleJobSubmit(event) {
     }
     state.jobs.unshift(job);
     if (job.status === "published") state.selectedJobId = job.id;
+    state.jobCreateOpen = false;
     event.currentTarget.reset();
     populateJobDepartmentControls();
     showMessage("#jobFormMessage", "Job created.");
@@ -1716,6 +1900,7 @@ async function handleJobSubmit(event) {
     renderHrWorkspace();
   } catch (error) {
     state.jobs.unshift(job);
+    state.jobCreateOpen = false;
     showMessage("#jobFormMessage", "Created locally. HR writes need Supabase auth.");
     populateFilters();
     renderApplicantPortal();

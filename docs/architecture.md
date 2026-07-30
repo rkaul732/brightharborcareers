@@ -16,13 +16,14 @@ Applicant portal:
 HR workspace:
 
 - Uses a top header menu for Jobs, Candidates, and Reports.
-- Creates jobs and publishes selected roles in the Jobs view.
+- Shows a searchable Jobs list by default with job creation behind a Create new job action.
 - Shows each job with pipeline-stage counts.
 - Lists all candidates alphabetically in the Candidates view.
 - Displays application pipeline stages in Reports.
 - Moves candidates through `new`, `screening`, `interview`, and `offer`.
 - Lets admins edit the public job board header image and overlay text.
 - Lets admins create agency departments and subdepartments from Settings.
+- Lets admins configure pipeline labels from Settings.
 - Opens Settings and Edit my profile from the profile dropdown.
 
 ## Production Path
@@ -46,5 +47,6 @@ Core tables:
 - `activity_events`: audit-ready activity log.
 - `job_board_settings`: public applicant-board header image and overlay content.
 - `departments`: agency department and subdepartment hierarchy.
+- `pipeline_settings`: admin-managed labels for hiring pipeline stages.
 
 The schema keeps applicant-facing reads public only for `published` jobs. Application insertion is allowed for published jobs. HR reads and writes rely on Supabase Auth plus the role in `profiles`.
