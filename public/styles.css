@@ -11,7 +11,7 @@
   --gold: #f7f5ac;
   --coral: #346990;
   --blue: #346990;
-  --shadow: 0 16px 44px rgba(28, 47, 67, 0.1);
+  --shadow: 0 8px 22px rgba(28, 47, 67, 0.06);
   --radius: 8px;
 }
 
@@ -25,11 +25,7 @@ html {
 
 body {
   margin: 0;
-  background:
-    linear-gradient(90deg, rgba(75, 160, 216, 0.12) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(52, 105, 144, 0.08) 1px, transparent 1px),
-    var(--surface);
-  background-size: 42px 42px;
+  background: var(--surface);
   color: var(--ink);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
@@ -72,9 +68,9 @@ svg {
   gap: 18px;
   align-items: center;
   min-height: 72px;
-  padding: 14px 26px;
+  padding: 12px 26px;
   border-bottom: 1px solid var(--line);
-  background: rgba(238, 245, 251, 0.94);
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(14px);
 }
 
@@ -91,7 +87,7 @@ svg {
   width: 38px;
   height: 38px;
   border-radius: var(--radius);
-  box-shadow: 0 8px 18px rgba(28, 47, 67, 0.18);
+  box-shadow: 0 6px 14px rgba(28, 47, 67, 0.12);
 }
 
 .brand strong,
@@ -114,7 +110,7 @@ svg {
 .role-switcher {
   display: flex;
   gap: 6px;
-  padding: 4px;
+  padding: 3px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: #fff;
@@ -131,7 +127,7 @@ svg {
   border-radius: 6px;
   background: transparent;
   color: var(--muted);
-  padding: 0 13px;
+  padding: 0 12px;
   font-size: 14px;
   font-weight: 700;
   white-space: nowrap;
@@ -176,7 +172,7 @@ svg {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--gold);
+  background: var(--harbor);
 }
 
 .connection.is-live .status-dot {
@@ -184,7 +180,7 @@ svg {
 }
 
 main {
-  padding: 24px;
+  padding: 22px;
 }
 
 .view {
@@ -206,10 +202,9 @@ main {
 .landing-layout {
   grid-template-columns: minmax(280px, 0.85fr) minmax(340px, 1.15fr);
   align-items: stretch;
-  min-height: calc(100vh - 120px);
+  min-height: calc(100vh - 116px);
 }
 
-.landing-hero,
 .login-panel {
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -220,12 +215,12 @@ main {
 .landing-hero {
   display: grid;
   align-content: center;
-  padding: clamp(24px, 5vw, 54px);
+  padding: 44px 0;
 }
 
 .landing-hero h1 {
-  max-width: 11ch;
-  font-size: clamp(38px, 7vw, 74px);
+  max-width: 13ch;
+  font-size: 52px;
 }
 
 .landing-copy {
@@ -248,7 +243,7 @@ main {
   gap: 16px;
   align-items: center;
   width: 100%;
-  min-height: 170px;
+  min-height: 142px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: #fff;
@@ -260,14 +255,13 @@ main {
 
 .choice-card:hover {
   border-color: var(--harbor);
-  transform: translateY(-1px);
 }
 
 .choice-card svg {
   width: 56px;
   height: 56px;
   border-radius: var(--radius);
-  background: var(--mint);
+  background: #eef5fb;
   color: var(--harbor-dark);
   fill: none;
   stroke: currentColor;
@@ -283,7 +277,7 @@ main {
 }
 
 .choice-card strong {
-  font-size: 24px;
+  font-size: 21px;
   line-height: 1.1;
 }
 
@@ -303,7 +297,7 @@ main {
 .login-panel {
   display: grid;
   gap: 18px;
-  padding: 22px;
+  padding: 20px;
 }
 
 .login-panel .auth-panel,
@@ -316,14 +310,14 @@ main {
 .applicant-layout {
   display: grid;
   grid-template-columns: minmax(250px, 310px) minmax(300px, 1fr) minmax(320px, 420px);
-  gap: 18px;
+  gap: 16px;
   align-items: start;
 }
 
 .workspace-layout {
   display: grid;
   grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
-  gap: 18px;
+  gap: 16px;
   align-items: start;
 }
 
@@ -344,23 +338,23 @@ main {
   position: sticky;
   top: 96px;
   display: grid;
-  gap: 18px;
-  padding: 18px;
+  gap: 16px;
+  padding: 16px;
 }
 
 .jobs-column,
 .panel {
-  padding: 18px;
+  padding: 16px;
 }
 
 .detail-column {
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
 .eyebrow {
   margin: 0 0 6px;
-  color: var(--harbor);
+  color: var(--blue);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -376,9 +370,9 @@ p {
 
 h1 {
   margin-bottom: 0;
-  font-size: 32px;
+  font-size: 30px;
   line-height: 1.05;
-  max-width: 12ch;
+  max-width: 14ch;
 }
 
 h2 {
@@ -398,7 +392,7 @@ h3 {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .section-header.compact {
@@ -500,15 +494,15 @@ textarea:focus {
 }
 
 .portal-metrics div {
-  padding: 11px;
-  min-height: 76px;
+  padding: 10px;
+  min-height: 70px;
 }
 
 .portal-metrics strong,
 .metric-card strong {
   display: block;
   color: var(--ink);
-  font-size: 23px;
+  font-size: 22px;
   line-height: 1;
 }
 
@@ -529,14 +523,14 @@ textarea:focus {
 
 .job-card {
   display: grid;
-  gap: 10px;
+  gap: 9px;
   width: 100%;
-  min-height: 148px;
+  min-height: 136px;
   border: 1px solid var(--line);
   border-left: 4px solid transparent;
   border-radius: var(--radius);
   background: #fff;
-  padding: 14px;
+  padding: 13px;
   color: inherit;
   text-align: left;
 }
@@ -544,7 +538,7 @@ textarea:focus {
 .job-card:hover,
 .job-card.is-selected {
   border-left-color: var(--harbor);
-  box-shadow: 0 10px 24px rgba(28, 47, 67, 0.1);
+  box-shadow: 0 8px 18px rgba(28, 47, 67, 0.08);
 }
 
 .job-card h3,
@@ -614,7 +608,7 @@ textarea:focus {
 }
 
 .job-detail {
-  padding: 18px;
+  padding: 16px;
 }
 
 .job-detail header {
@@ -644,7 +638,7 @@ textarea:focus {
 }
 
 .apply-form {
-  padding: 18px;
+  padding: 16px;
 }
 
 .primary-action,
@@ -671,7 +665,7 @@ textarea:focus {
 }
 
 .primary-action:hover {
-  background: var(--harbor);
+  background: var(--blue);
 }
 
 button:disabled,
@@ -720,7 +714,7 @@ button:disabled:hover {
 .form-message {
   min-height: 18px;
   margin: 10px 0 0;
-  color: var(--harbor);
+  color: var(--blue);
   font-size: 13px;
   font-weight: 800;
 }
@@ -808,7 +802,7 @@ button:disabled:hover {
 
 .hr-main {
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
 .metric-grid {
@@ -816,8 +810,8 @@ button:disabled:hover {
 }
 
 .metric-card {
-  min-height: 104px;
-  padding: 16px;
+  min-height: 96px;
+  padding: 14px;
 }
 
 .metric-card b {
@@ -830,7 +824,7 @@ button:disabled:hover {
 .hr-grid {
   display: grid;
   grid-template-columns: minmax(420px, 1.1fr) minmax(340px, 0.9fr);
-  gap: 18px;
+  gap: 16px;
   align-items: start;
 }
 
@@ -845,9 +839,9 @@ button:disabled:hover {
 .job-form {
   display: grid;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   border-bottom: 1px solid var(--line);
-  padding-bottom: 18px;
+  padding-bottom: 16px;
 }
 
 .request-form {
@@ -868,7 +862,7 @@ table {
 th,
 td {
   border-bottom: 1px solid var(--line);
-  padding: 12px 10px;
+  padding: 10px;
   text-align: left;
   vertical-align: top;
 }
@@ -901,11 +895,11 @@ td strong {
   display: grid;
   align-content: start;
   gap: 10px;
-  min-height: 220px;
+  min-height: 208px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
-  padding: 12px;
+  padding: 10px;
 }
 
 .pipeline-column h3 {
@@ -920,8 +914,8 @@ td strong {
 
 .candidate-card {
   display: grid;
-  gap: 10px;
-  padding: 12px;
+  gap: 9px;
+  padding: 10px;
   background: #fff;
 }
 
@@ -1033,6 +1027,14 @@ td strong {
     padding: 14px;
   }
 
+  .landing-hero {
+    padding: 24px 0 8px;
+  }
+
+  .landing-hero h1 {
+    font-size: 40px;
+  }
+
   .filter-grid,
   .form-grid,
   .choice-grid,
@@ -1072,5 +1074,21 @@ td strong {
   .portal-metrics strong,
   .metric-card strong {
     font-size: 20px;
+  }
+
+  .landing-hero h1 {
+    font-size: 34px;
+  }
+
+  .choice-card {
+    grid-template-columns: 44px minmax(0, 1fr);
+    min-height: 124px;
+    padding: 18px;
+  }
+
+  .choice-card svg {
+    width: 44px;
+    height: 44px;
+    padding: 11px;
   }
 }

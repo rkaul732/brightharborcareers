@@ -22,7 +22,7 @@ const html = await readFile(path.join(root, "public/index.html"), "utf8");
 const app = await readFile(path.join(root, "public/app.js"), "utf8");
 
 const checks = [
-  [html.includes("Choose how you want to continue."), "Landing chooser"],
+  [html.includes("Welcome to Bright Harbor Careers."), "Landing chooser"],
   [html.includes("Applicant"), "Applicant entry"],
   [html.includes("Hiring Team"), "Hiring Team entry"],
   [html.includes("Request account"), "Account request form"],
