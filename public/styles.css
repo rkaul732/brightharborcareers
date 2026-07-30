@@ -1,17 +1,17 @@
 :root {
-  --ink: #16211f;
-  --muted: #61706c;
-  --subtle: #eef2ef;
-  --line: #d8e0dc;
+  --ink: #1c2f43;
+  --muted: #346990;
+  --subtle: #eef5fb;
+  --line: #c8ddeb;
   --panel: #ffffff;
-  --surface: #f6f8f6;
-  --harbor: #0f5c55;
-  --harbor-dark: #0f2f2e;
-  --mint: #dff4ed;
-  --gold: #b46c1d;
-  --coral: #bd4b3f;
-  --blue: #355f8c;
-  --shadow: 0 16px 44px rgba(22, 33, 31, 0.09);
+  --surface: #eef5fb;
+  --harbor: #4ba0d8;
+  --harbor-dark: #1c2f43;
+  --mint: #eef5fb;
+  --gold: #f7f5ac;
+  --coral: #346990;
+  --blue: #346990;
+  --shadow: 0 16px 44px rgba(28, 47, 67, 0.1);
   --radius: 8px;
 }
 
@@ -26,8 +26,8 @@ html {
 body {
   margin: 0;
   background:
-    linear-gradient(90deg, rgba(15, 92, 85, 0.05) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(15, 92, 85, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(75, 160, 216, 0.12) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(52, 105, 144, 0.08) 1px, transparent 1px),
     var(--surface);
   background-size: 42px 42px;
   color: var(--ink);
@@ -74,7 +74,7 @@ svg {
   min-height: 72px;
   padding: 14px 26px;
   border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(238, 245, 251, 0.94);
   backdrop-filter: blur(14px);
 }
 
@@ -91,7 +91,7 @@ svg {
   width: 38px;
   height: 38px;
   border-radius: var(--radius);
-  box-shadow: 0 8px 18px rgba(15, 47, 46, 0.16);
+  box-shadow: 0 8px 18px rgba(28, 47, 67, 0.18);
 }
 
 .brand strong,
@@ -456,7 +456,7 @@ input:focus,
 select:focus,
 textarea:focus {
   border-color: var(--harbor);
-  box-shadow: 0 0 0 3px rgba(15, 92, 85, 0.12);
+  box-shadow: 0 0 0 3px rgba(75, 160, 216, 0.22);
 }
 
 .filter-grid,
@@ -544,7 +544,7 @@ textarea:focus {
 .job-card:hover,
 .job-card.is-selected {
   border-left-color: var(--harbor);
-  box-shadow: 0 10px 24px rgba(22, 33, 31, 0.08);
+  box-shadow: 0 10px 24px rgba(28, 47, 67, 0.1);
 }
 
 .job-card h3,
@@ -588,22 +588,22 @@ textarea:focus {
 }
 
 .status-pill {
-  background: #edf7f4;
-  color: var(--harbor);
+  background: var(--subtle);
+  color: var(--blue);
 }
 
 .status-pill.draft {
-  background: #f5efe5;
-  color: var(--gold);
+  background: var(--gold);
+  color: var(--ink);
 }
 
 .status-pill.paused {
-  background: #f8e9e6;
+  background: #eef5fb;
   color: var(--coral);
 }
 
 .stage-pill {
-  background: #edf1f7;
+  background: #eef5fb;
   color: var(--blue);
 }
 
