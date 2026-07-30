@@ -1,0 +1,15 @@
+{
+  "name": "bright-harbor-careers",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dual-sided applicant tracking system for Bright Harbor Careers.",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev-server.mjs",
+    "build": "node scripts/build.mjs",
+    "validate": "node scripts/validate.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
