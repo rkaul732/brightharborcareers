@@ -1322,6 +1322,19 @@ function showMessage(selector, message) {
   }, 5000);
 }
 
+function accountRequestErrorMessage(message = "") {
+  if (message.includes("SUPABASE_SERVICE_ROLE_KEY")) {
+    return "Account requests need one more setup step: add SUPABASE_SERVICE_ROLE_KEY to Netlify environment variables.";
+  }
+  if (message.includes("RESEND_API_KEY")) {
+    return "Account request emails need one more setup step: add RESEND_API_KEY to Netlify environment variables.";
+  }
+  if (message.includes("Missing server environment variables")) {
+    return "Account requests are not fully set up yet. Check the server environment variables in Netlify.";
+  }
+  return message || "Request could not be sent.";
+}
+
 function bindEvents() {
   $$(".tab").forEach((button) => {
     button.addEventListener("click", () => {
@@ -1776,7 +1789,7 @@ async function handleAccountRequestSubmit(event) {
     form.reset();
     showMessage("#requestAccountMessage", result.message || "Request sent to HR.");
   } catch (error) {
-    showMessage("#requestAccountMessage", error.message || "Request could not be sent.");
+    showMessage("#requestAccountMessage", accountRequestErrorMessage(error.message));
   } finally {
     submitButton.disabled = false;
   }

@@ -379,10 +379,12 @@ If a Supabase invite or account-request email does not arrive:
 
 - Confirm the email address was typed correctly.
 - Check spam, junk, promotions, and quarantine folders.
+- If the message says `Missing server environment variables: SUPABASE_SERVICE_ROLE_KEY`, add `SUPABASE_SERVICE_ROLE_KEY` in Netlify under Site configuration, then Environment variables. For local preview, add it to `/Users/rebeccakaul/Documents/Bright Harbor Careers/.env`.
+- Find `SUPABASE_SERVICE_ROLE_KEY` in Supabase under Project Settings, then API. Use the private service role key only for Netlify functions or local `.env`; never put it in `public/env.js` or browser code.
 - In Supabase, go to Authentication, then Logs, and look for the email attempt.
 - In Supabase, go to Authentication, then URL Configuration, and add `http://localhost:5173` and your Netlify URL to the redirect URLs.
 - In Supabase, go to Authentication, then Providers, and confirm Email is enabled.
-- Confirm `RESEND_API_KEY`, `EMAIL_FROM`, and `HR_APPROVAL_EMAIL` are set if the missing email is an account request to HR.
+- Confirm `RESEND_API_KEY`, `EMAIL_FROM`, and `HR_APPROVAL_EMAIL` are also set if the missing email is an account request to HR.
 - Wait a few minutes before retrying; email sending can be rate-limited.
 
 ## Useful Commands
