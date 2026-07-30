@@ -216,15 +216,18 @@ const demoApplications = [
   }
 ];
 
+const initialProfile = readLocalProfile();
+
 const state = {
   currentView: "landing",
   jobs: [...demoJobs],
   applications: [...demoApplications],
   selectedJobId: "job-101",
   selectedJobIds: new Set(),
-  role: "recruiter",
-  hrSection: "workspace",
+  role: initialProfile.role,
+  hrSection: "jobs",
   session: readInitialSession(),
+  profile: initialProfile,
   boardSettings: readLocalBoardSettings(),
   departments: readLocalDepartments(),
   jobDetailOpen: false,
@@ -352,6 +355,48 @@ function saveLocalDepartments(departments) {
   }
 }
 
+function normalizeProfile(profile = {}) {
+  const role = roleProfiles[profile.role] ? profile.role : "recruiter";
+  return {
+    full_name: String(profile.full_name || "").trim(),
+    email: String(profile.email || "").trim(),
+    title: String(profile.title || "").trim(),
+    department: String(profile.department || "").trim(),
+    avatar_url: String(profile.avatar_url || "").trim(),
+    role
+  };
+}
+
+function readLocalProfile() {
+  try {
+    return normalizeProfile(JSON.parse(localStorage.getItem("bhc-profile") || "null") || {});
+  } catch (error) {
+    return normalizeProfile({});
+  }
+}
+
+function saveLocalProfile(profile) {
+  try {
+    localStorage.setItem("bhc-profile", JSON.stringify(profile));
+  } catch (error) {
+    return;
+  }
+}
+
+function profileDisplayName() {
+  return state.profile.full_name || state.session?.email || state.profile.email || "Hiring Team";
+}
+
+function profileInitials() {
+  const source = profileDisplayName();
+  const parts = source.includes("@") ? source.split("@")[0].split(/[._-]+/) : source.split(/\s+/);
+  return parts
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("") || "BH";
+}
+
 function activeDepartments() {
   return state.departments.filter((department) => department.status === "active");
 }
@@ -435,9 +480,39 @@ async function loadSupabaseData() {
         }));
         setConnection(true, "Supabase HR connected");
       }
+      await loadCurrentProfile();
     }
   } catch (error) {
     setConnection(Boolean(state.session?.accessToken), state.session?.accessToken ? "HR session limited" : "Demo data");
+  }
+}
+
+async function loadCurrentProfile() {
+  if (!state.session?.userId) return;
+
+  try {
+    let profiles = [];
+    try {
+      profiles = await supabaseSelect(
+        "profiles",
+        `select=full_name,email,role,title,department,avatar_url&id=eq.${encodeURIComponent(state.session.userId)}&limit=1`,
+        true
+      );
+    } catch (error) {
+      profiles = await supabaseSelect(
+        "profiles",
+        `select=full_name,email,role,title,department&id=eq.${encodeURIComponent(state.session.userId)}&limit=1`,
+        true
+      );
+    }
+
+    if (profiles[0]) {
+      state.profile = normalizeProfile({ ...state.profile, ...profiles[0] });
+      state.role = state.profile.role;
+      saveLocalProfile(state.profile);
+    }
+  } catch (error) {
+    return;
   }
 }
 
@@ -517,7 +592,13 @@ async function refreshCurrentUser() {
   }
 
   const user = await response.json();
-  saveSession({ ...state.session, email: user.email || state.session.email || "" });
+  saveSession({ ...state.session, userId: user.id || state.session.userId || "", email: user.email || state.session.email || "" });
+  state.profile = normalizeProfile({
+    ...state.profile,
+    email: user.email || state.profile.email,
+    full_name: state.profile.full_name || user.user_metadata?.full_name || ""
+  });
+  saveLocalProfile(state.profile);
 }
 
 function setConnection(isLive, label) {
@@ -739,15 +820,18 @@ function renderNoJobDetail() {
 
 function renderHrWorkspace() {
   renderHrSections();
+  renderProfileMenu();
   renderRoleCard();
   renderAuthPanel();
   syncRoleControls();
   populateJobDepartmentControls();
   renderMetrics();
   renderJobsTable();
+  renderCandidatesTable();
   renderPipeline();
   renderBoardSettingsForm();
   renderDepartmentSettings();
+  renderProfileForm();
   renderPermissions();
 }
 
@@ -755,8 +839,21 @@ function renderHrSections() {
   $$(".hr-menu-button").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.hrSection === state.hrSection);
   });
-  $("#hrWorkspaceSection").hidden = state.hrSection !== "workspace";
+  $("#hrJobsSection").hidden = state.hrSection !== "jobs";
+  $("#hrCandidatesSection").hidden = state.hrSection !== "candidates";
+  $("#hrReportsSection").hidden = state.hrSection !== "reports";
   $("#hrSettingsSection").hidden = state.hrSection !== "settings";
+  $("#hrProfileSection").hidden = state.hrSection !== "profile";
+}
+
+function renderProfileMenu() {
+  const avatar = $("#profileAvatar");
+  const photoUrl = state.profile.avatar_url;
+  if (photoUrl) {
+    avatar.innerHTML = `<img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(profileDisplayName())}">`;
+  } else {
+    avatar.textContent = profileInitials();
+  }
 }
 
 function renderAuthPanel() {
@@ -803,8 +900,10 @@ function syncRoleControls() {
 
 function renderRoleCard() {
   const profile = roleProfiles[state.role];
+  const card = $("#roleCard");
+  if (!card || !profile) return;
   $("#roleCard").innerHTML = `
-    <h3>${escapeHtml(profile.label)} workspace</h3>
+    <h3>${escapeHtml(profile.label)} access</h3>
     <p>${escapeHtml(profile.summary)}</p>
     <ul class="role-list">
       ${profile.capabilities.map((capability) => `<li>${escapeHtml(capability)}</li>`).join("")}
@@ -839,9 +938,17 @@ function renderMetrics() {
 
 function renderJobsTable() {
   $("#jobsTable").innerHTML = state.jobs
+    .slice()
+    .sort((a, b) => a.title.localeCompare(b.title))
     .map((job) => {
       const applications = state.applications.filter((application) => application.job_id === job.id);
       const checked = state.selectedJobIds.has(job.id) ? "checked" : "";
+      const pipelineMarkup = Object.entries(pipelineLabels)
+        .map(([stage, label]) => {
+          const count = applications.filter((application) => application.status === stage).length;
+          return `<span class="pipeline-chip">${escapeHtml(label)} <b>${count}</b></span>`;
+        })
+        .join("");
       return `
         <tr>
           <td>
@@ -854,13 +961,37 @@ function renderJobsTable() {
           </td>
           <td>${escapeHtml(job.hiring_manager || "Unassigned")}</td>
           <td><span class="status-pill ${escapeHtml(job.status)}">${escapeHtml(formatStatus(job.status))}</span></td>
-          <td>${applications.length} applicants, ${applications.filter((item) => item.status === "interview").length} interviews</td>
+          <td><div class="pipeline-chip-row">${pipelineMarkup}</div></td>
           <td>
             <label class="table-action">
               <input type="checkbox" data-select-job="${escapeHtml(job.id)}" ${checked}>
               Select
             </label>
           </td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+function renderCandidatesTable() {
+  $("#candidatesTable").innerHTML = state.applications
+    .slice()
+    .sort((a, b) => a.full_name.localeCompare(b.full_name))
+    .map((application) => {
+      const job = state.jobs.find((item) => item.id === application.job_id);
+      return `
+        <tr>
+          <td>
+            <strong>${escapeHtml(application.full_name)}</strong>
+            <div class="table-meta">
+              <span>${escapeHtml(application.email)}</span>
+            </div>
+          </td>
+          <td>${escapeHtml(job?.title || "General application")}</td>
+          <td><span class="stage-pill">${escapeHtml(formatStatus(application.status))}</span></td>
+          <td>${escapeHtml(application.source || "Career site")}</td>
+          <td>${escapeHtml(application.applied_at || "Not recorded")}</td>
         </tr>
       `;
     })
@@ -943,6 +1074,17 @@ function renderBoardSettingsForm() {
   form.elements.hero_title.value = settings.hero_title;
   form.elements.hero_subtitle.value = settings.hero_subtitle;
   form.elements.overlay_opacity.value = settings.overlay_opacity;
+}
+
+function renderProfileForm() {
+  const form = $("#profileForm");
+  if (!form) return;
+
+  form.elements.avatar_url.value = state.profile.avatar_url;
+  form.elements.full_name.value = state.profile.full_name || profileDisplayName();
+  form.elements.email.value = state.profile.email || state.session?.email || "";
+  form.elements.title.value = state.profile.title;
+  form.elements.department.value = state.profile.department;
 }
 
 function populateJobDepartmentControls() {
@@ -1061,19 +1203,29 @@ function bindEvents() {
     });
   });
 
-  $$(".role-button").forEach((button) => {
+  $$(".hr-menu-button").forEach((button) => {
     button.addEventListener("click", () => {
-      state.role = button.dataset.role;
-      $$(".role-button").forEach((item) => item.classList.toggle("is-active", item === button));
+      state.hrSection = button.dataset.hrSection;
+      $("#profileDropdown").hidden = true;
+      $("#profileMenuButton").setAttribute("aria-expanded", "false");
       renderHrWorkspace();
     });
   });
 
-  $$(".hr-menu-button").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.hrSection = button.dataset.hrSection;
-      renderHrWorkspace();
-    });
+  $("#profileMenuButton").addEventListener("click", () => {
+    const dropdown = $("#profileDropdown");
+    const isOpening = dropdown.hidden;
+    dropdown.hidden = !isOpening;
+    $("#profileMenuButton").setAttribute("aria-expanded", String(isOpening));
+  });
+
+  $("#profileDropdown").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-profile-destination]");
+    if (!button) return;
+    state.hrSection = button.dataset.profileDestination;
+    $("#profileDropdown").hidden = true;
+    $("#profileMenuButton").setAttribute("aria-expanded", "false");
+    renderHrWorkspace();
   });
 
   $("#jobSearch").addEventListener("input", (event) => {
@@ -1141,6 +1293,7 @@ function bindEvents() {
   });
   $("#departmentForm").addEventListener("submit", handleDepartmentSubmit);
   $("#boardSettingsForm").addEventListener("submit", handleBoardSettingsSubmit);
+  $("#profileForm").addEventListener("submit", handleProfileSubmit);
   $("#showApplicationButton").addEventListener("click", () => {
     state.applicationOpen = true;
     renderApplicantPortal();
@@ -1207,6 +1360,49 @@ function bindEvents() {
       );
     }
   });
+}
+
+async function handleProfileSubmit(event) {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(event.currentTarget));
+  const profile = normalizeProfile({
+    ...state.profile,
+    avatar_url: data.avatar_url,
+    full_name: data.full_name,
+    email: data.email,
+    title: data.title,
+    department: data.department
+  });
+
+  state.profile = profile;
+  saveLocalProfile(profile);
+  renderProfileMenu();
+  renderProfileForm();
+
+  try {
+    if (hasSupabase && state.session?.accessToken && state.session?.userId) {
+      const query = `id=eq.${encodeURIComponent(state.session.userId)}`;
+      const payload = {
+        full_name: profile.full_name,
+        email: profile.email || null,
+        title: profile.title || null,
+        department: profile.department || null,
+        avatar_url: profile.avatar_url || null
+      };
+      try {
+        await supabasePatch("profiles", query, payload, true);
+      } catch (error) {
+        const { avatar_url: _avatarUrl, ...fallbackPayload } = payload;
+        await supabasePatch("profiles", query, fallbackPayload, true);
+      }
+      showMessage("#profileMessage", "Profile saved.");
+      return;
+    }
+
+    showMessage("#profileMessage", "Profile saved for this preview.");
+  } catch (error) {
+    showMessage("#profileMessage", "Profile saved locally. Supabase profile save needs your signed-in account.");
+  }
 }
 
 async function handleDepartmentSubmit(event) {
@@ -1354,6 +1550,7 @@ async function handleAuthSubmit(event) {
   saveSession({
     accessToken: responseBody.access_token,
     refreshToken: responseBody.refresh_token,
+    userId: responseBody.user?.id || "",
     email: responseBody.user?.email || username,
     expiresAt: responseBody.expires_at || ""
   });

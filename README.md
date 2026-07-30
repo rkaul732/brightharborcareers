@@ -7,6 +7,7 @@ Bright Harbor Careers is a dual-sided applicant tracking system for applicants a
 - Recruiters can create jobs, publish roles, and move candidates through the pipeline.
 - Hiring managers can review candidates and advance interview-stage applicants.
 - Admins can edit the public job board header and manage agency departments and subdepartments.
+- HR users navigate Jobs, Candidates, and Reports from the top header, with Settings and profile editing in the profile menu.
 - Hiring-team users without accounts can request access for HR approval.
 - Supabase stores jobs, applications, notes, scorecards, activity, and role profiles.
 - Netlify hosts the site, and GitHub stores the source.
@@ -72,7 +73,7 @@ Open the printed URL, usually:
 http://localhost:5173
 ```
 
-Without Supabase credentials, the app runs in demo mode. You can still browse jobs, submit a local demo application, switch HR roles, create local demo jobs, and move candidates through the pipeline.
+Without Supabase credentials, the app runs in demo mode. You can still browse jobs, submit a local demo application, create local demo jobs, view candidates, review reports, and move candidates through the pipeline.
 
 ## 2. Validate And Build Locally
 
@@ -101,6 +102,7 @@ Netlify publishes that `dist/` folder.
 supabase/migrations/20260729160000_bright_harbor_careers.sql
 supabase/migrations/20260730170000_job_board_settings.sql
 supabase/migrations/20260730183000_departments.sql
+supabase/migrations/20260730190000_profile_avatar.sql
 ```
 
 4. Paste and run each file in Supabase before moving to the next one.
@@ -116,6 +118,7 @@ This creates:
 - `account_requests`
 - `job_board_settings`
 - `departments`
+- profile avatar URLs
 - HR role types for `recruiter`, `hiring_manager`, and `admin`
 - row-level security policies
 
@@ -326,9 +329,9 @@ Once your HR user is an `admin` or `recruiter`:
 1. Open the Netlify site.
 2. Go to HR workspace.
 3. Sign in with your username and password.
-5. Create a job.
-6. Set the job status to `Published`, or select a draft job and publish it.
-7. Return to Applicant portal and confirm the job appears.
+4. Create a job.
+5. Set the job status to `Published`, or select a draft job and publish it.
+6. Return to Applicant portal and confirm the job appears.
 
 ## Troubleshooting
 

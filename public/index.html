@@ -58,6 +58,12 @@
         <path d="M12 15.5a3.5 3.5 0 1 0 0-7a3.5 3.5 0 0 0 0 7Z"/>
         <path d="M19 13.4a7.8 7.8 0 0 0 0-2.8l2-1.5l-2-3.5l-2.4 1a8.7 8.7 0 0 0-2.4-1.4L14 2.7h-4l-.3 2.5a8.7 8.7 0 0 0-2.4 1.4l-2.4-1l-2 3.5l2 1.5a7.8 7.8 0 0 0 0 2.8l-2 1.5l2 3.5l2.4-1a8.7 8.7 0 0 0 2.4 1.4l.3 2.5h4l.3-2.5a8.7 8.7 0 0 0 2.4-1.4l2.4 1l2-3.5l-2.1-1.5Z"/>
       </symbol>
+      <symbol id="icon-chart" viewBox="0 0 24 24">
+        <path d="M4 19h16"/>
+        <path d="M7 16V9"/>
+        <path d="M12 16V5"/>
+        <path d="M17 16v-4"/>
+      </symbol>
     </svg>
 
     <div class="app-shell">
@@ -311,63 +317,46 @@
         </section>
 
         <section class="view" id="hrView" aria-labelledby="hrHeading">
-          <div class="workspace-layout">
-            <aside class="hr-sidebar">
-              <div class="sidebar-title">
+          <div class="hr-shell">
+            <header class="hr-top-header">
+              <div class="hr-title">
                 <p class="eyebrow">HR backend</p>
                 <h1 id="hrHeading">Talent operations</h1>
               </div>
 
-              <div class="role-switcher" aria-label="HR role">
-                <button class="role-button is-active" type="button" data-role="recruiter">
+              <nav class="hr-top-menu" aria-label="HR main menu">
+                <button class="hr-menu-button is-active" type="button" data-hr-section="jobs">
+                  <svg><use href="#icon-briefcase"></use></svg>
+                  Jobs
+                </button>
+                <button class="hr-menu-button" type="button" data-hr-section="candidates">
                   <svg><use href="#icon-users"></use></svg>
-                  Recruiter
+                  Candidates
                 </button>
-                <button class="role-button" type="button" data-role="hiring_manager">
-                  <svg><use href="#icon-briefcase"></use></svg>
-                  Hiring manager
-                </button>
-                <button class="role-button" type="button" data-role="admin">
-                  <svg><use href="#icon-shield"></use></svg>
-                  Admin
-                </button>
-              </div>
-
-              <div class="role-card" id="roleCard"></div>
-
-              <nav class="hr-menu" aria-label="HR main menu">
-                <button class="hr-menu-button is-active" type="button" data-hr-section="workspace">
-                  <svg><use href="#icon-briefcase"></use></svg>
-                  Workspace
-                </button>
-                <button class="hr-menu-button" type="button" data-hr-section="settings">
-                  <svg><use href="#icon-settings"></use></svg>
-                  Settings
+                <button class="hr-menu-button" type="button" data-hr-section="reports">
+                  <svg><use href="#icon-chart"></use></svg>
+                  Reports
                 </button>
               </nav>
 
-              <div class="auth-panel">
-                <div>
-                  <p class="eyebrow">Session</p>
-                  <h2>Hiring team</h2>
-                </div>
-                <div class="session-panel" id="hrSessionPanel"></div>
-                <button class="secondary-action" type="button" id="signOutButton">
-                  Sign out
+              <div class="profile-menu">
+                <button class="profile-button" type="button" id="profileMenuButton" aria-expanded="false" aria-controls="profileDropdown">
+                  <span class="profile-avatar" id="profileAvatar">BH</span>
                 </button>
+                <div class="profile-dropdown" id="profileDropdown" hidden>
+                  <button type="button" data-profile-destination="settings">Settings</button>
+                  <button type="button" data-profile-destination="profile">Edit my profile</button>
+                </div>
               </div>
-            </aside>
+            </header>
 
             <section class="hr-main">
-              <section class="hr-section" id="hrWorkspaceSection">
-                <div class="metric-grid" id="metricGrid"></div>
-
-                <div class="hr-grid">
+              <section class="hr-section" id="hrJobsSection">
                 <section class="panel jobs-admin-panel">
                   <div class="section-header">
                     <div>
                       <p class="eyebrow">Job management</p>
-                      <h2>Create and publish roles</h2>
+                      <h2>Jobs and pipelines</h2>
                     </div>
                     <button class="primary-action small" type="button" id="publishSelected">
                       <svg><use href="#icon-plus"></use></svg>
@@ -440,17 +429,44 @@
                     </table>
                   </div>
                 </section>
+              </section>
 
+              <section class="hr-section" id="hrCandidatesSection" hidden>
+                <section class="panel candidates-panel">
+                  <div class="section-header">
+                    <div>
+                      <p class="eyebrow">Candidates</p>
+                      <h2>All applicants</h2>
+                    </div>
+                  </div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th scope="col">Candidate</th>
+                          <th scope="col">Applied role</th>
+                          <th scope="col">Stage</th>
+                          <th scope="col">Source</th>
+                          <th scope="col">Applied</th>
+                        </tr>
+                      </thead>
+                      <tbody id="candidatesTable"></tbody>
+                    </table>
+                  </div>
+                </section>
+              </section>
+
+              <section class="hr-section" id="hrReportsSection" hidden>
+                <div class="metric-grid" id="metricGrid"></div>
                 <section class="panel pipeline-panel">
                   <div class="section-header">
                     <div>
-                      <p class="eyebrow">Candidate pipeline</p>
-                      <h2>Applications</h2>
+                      <p class="eyebrow">Reports</p>
+                      <h2>Pipeline overview</h2>
                     </div>
                   </div>
                   <div class="pipeline-board" id="pipelineBoard"></div>
                 </section>
-                </div>
               </section>
 
               <section class="hr-section" id="hrSettingsSection" hidden>
@@ -545,6 +561,51 @@
                   </form>
 
                   <div class="permissions-grid" id="permissionsGrid"></div>
+                </section>
+              </section>
+
+              <section class="hr-section" id="hrProfileSection" hidden>
+                <section class="panel profile-panel">
+                  <div class="section-header">
+                    <div>
+                      <p class="eyebrow">Profile</p>
+                      <h2>Edit my profile</h2>
+                    </div>
+                  </div>
+                  <div class="role-card compact" id="roleCard"></div>
+                  <form class="profile-form" id="profileForm">
+                    <div class="form-grid">
+                      <label class="field wide">
+                        <span>Profile photo URL</span>
+                        <input name="avatar_url" type="url" placeholder="https://">
+                      </label>
+                      <label class="field">
+                        <span>Full name</span>
+                        <input name="full_name" required autocomplete="name">
+                      </label>
+                      <label class="field">
+                        <span>Email</span>
+                        <input name="email" type="email" autocomplete="email">
+                      </label>
+                      <label class="field">
+                        <span>Title</span>
+                        <input name="title" placeholder="Talent Partner">
+                      </label>
+                      <label class="field">
+                        <span>Department</span>
+                        <input name="department" placeholder="People Operations">
+                      </label>
+                    </div>
+                    <button class="secondary-action" type="submit">
+                      <svg><use href="#icon-database"></use></svg>
+                      Save profile
+                    </button>
+                    <p class="form-message" id="profileMessage" role="status"></p>
+                  </form>
+                  <div class="session-panel" id="hrSessionPanel"></div>
+                  <button class="secondary-action" type="button" id="signOutButton">
+                    Sign out
+                  </button>
                 </section>
               </section>
             </section>

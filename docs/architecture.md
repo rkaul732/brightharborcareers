@@ -15,13 +15,15 @@ Applicant portal:
 
 HR workspace:
 
-- Shows recruiter, hiring manager, and admin role views.
-- Creates jobs and publishes selected roles in the local UI.
-- Displays application pipeline stages.
+- Uses a top header menu for Jobs, Candidates, and Reports.
+- Creates jobs and publishes selected roles in the Jobs view.
+- Shows each job with pipeline-stage counts.
+- Lists all candidates alphabetically in the Candidates view.
+- Displays application pipeline stages in Reports.
 - Moves candidates through `new`, `screening`, `interview`, and `offer`.
 - Lets admins edit the public job board header image and overlay text.
 - Lets admins create agency departments and subdepartments from Settings.
-- Shows admin-oriented role controls.
+- Opens Settings and Edit my profile from the profile dropdown.
 
 ## Production Path
 
@@ -36,6 +38,7 @@ Supabase stores the ATS records and enforces access through row-level security.
 Core tables:
 
 - `profiles`: Supabase Auth users plus role metadata.
+- `profiles.avatar_url`: optional profile photo URL for the HR header avatar.
 - `jobs`: requisitions and published career-site roles.
 - `applications`: candidate submissions and pipeline status.
 - `application_notes`: internal HR notes.
