@@ -32,13 +32,22 @@ const pipelineLabels = {
   offer: "Offer"
 };
 
+const defaultBoardSettings = {
+  id: "default",
+  hero_image_url: "/assets/job-board-hero.png",
+  hero_eyebrow: "Bright Harbor Careers",
+  hero_title: "Find your next role at Bright Harbor.",
+  hero_subtitle: "Explore current openings and apply to the role that fits your next chapter.",
+  overlay_opacity: 55
+};
+
 const demoJobs = [
   {
     id: "job-101",
     title: "Senior Talent Partner",
     department: "People Operations",
     location: "Boston, MA",
-    work_type: "Full-time",
+    work_type: "Full Time",
     status: "published",
     hiring_manager: "Maya Rivera",
     summary:
@@ -56,7 +65,7 @@ const demoJobs = [
     title: "Client Success Manager",
     department: "Client Experience",
     location: "Providence, RI",
-    work_type: "Full-time",
+    work_type: "Full Time",
     status: "published",
     hiring_manager: "Noah Chen",
     summary:
@@ -74,7 +83,7 @@ const demoJobs = [
     title: "Workforce Data Analyst",
     department: "Analytics",
     location: "Remote",
-    work_type: "Full-time",
+    work_type: "Full Time",
     status: "published",
     hiring_manager: "Priya Shah",
     summary:
@@ -92,7 +101,7 @@ const demoJobs = [
     title: "Clinical Program Coordinator",
     department: "Clinical Services",
     location: "New Haven, CT",
-    work_type: "Part-time",
+    work_type: "Part Time",
     status: "published",
     hiring_manager: "Elena Brooks",
     summary:
@@ -110,7 +119,7 @@ const demoJobs = [
     title: "HR Systems Administrator",
     department: "People Operations",
     location: "Hybrid",
-    work_type: "Full-time",
+    work_type: "Full Time",
     status: "draft",
     hiring_manager: "Avery Stone",
     summary:
@@ -191,11 +200,14 @@ const state = {
   selectedJobIds: new Set(),
   role: "recruiter",
   session: readInitialSession(),
+  boardSettings: readLocalBoardSettings(),
+  jobDetailOpen: false,
+  applicationOpen: false,
   filters: {
     query: "",
     department: "All",
     location: "All",
-    workType: "All"
+    status: "All"
   }
 };
 
@@ -240,10 +252,53 @@ async function supabasePatch(table, query, payload, useAuth = false) {
   return response.json();
 }
 
+async function supabaseUpsert(table, payload, useAuth = false, onConflict = "id") {
+  const response = await fetch(`${env.supabaseUrl}/rest/v1/${table}?on_conflict=${encodeURIComponent(onConflict)}`, {
+    method: "POST",
+    headers: supabaseHeaders("resolution=merge-duplicates,return=representation", useAuth),
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) throw new Error(await response.text());
+  return response.json();
+}
+
+function normalizeBoardSettings(settings = {}) {
+  const overlayValue = Number(settings.overlay_opacity ?? defaultBoardSettings.overlay_opacity);
+  const overlay_opacity = Math.min(80, Math.max(20, Number.isFinite(overlayValue) ? overlayValue : 55));
+  return {
+    ...defaultBoardSettings,
+    ...settings,
+    hero_image_url: String(settings.hero_image_url || defaultBoardSettings.hero_image_url).trim(),
+    hero_eyebrow: String(settings.hero_eyebrow || defaultBoardSettings.hero_eyebrow).trim(),
+    hero_title: String(settings.hero_title || defaultBoardSettings.hero_title).trim(),
+    hero_subtitle: String(settings.hero_subtitle || defaultBoardSettings.hero_subtitle).trim(),
+    overlay_opacity
+  };
+}
+
+function readLocalBoardSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("bhc-board-settings") || "null");
+    return normalizeBoardSettings(saved || defaultBoardSettings);
+  } catch (error) {
+    return normalizeBoardSettings(defaultBoardSettings);
+  }
+}
+
+function saveLocalBoardSettings(settings) {
+  try {
+    localStorage.setItem("bhc-board-settings", JSON.stringify(settings));
+  } catch (error) {
+    return;
+  }
+}
+
 async function loadSupabaseData() {
   if (!hasSupabase) return;
 
   try {
+    await loadJobBoardSettings();
+
     const jobs = await supabaseSelect(
       "jobs",
       "select=id,title,department,location,work_type,status,hiring_manager,summary,salary_range,review_days,remote,skills,posted_at&order=posted_at.desc"
@@ -279,6 +334,21 @@ async function loadSupabaseData() {
     }
   } catch (error) {
     setConnection(Boolean(state.session?.accessToken), state.session?.accessToken ? "HR session limited" : "Demo data");
+  }
+}
+
+async function loadJobBoardSettings() {
+  try {
+    const [settings] = await supabaseSelect(
+      "job_board_settings",
+      "select=id,hero_image_url,hero_eyebrow,hero_title,hero_subtitle,overlay_opacity&id=eq.default&limit=1"
+    );
+    if (settings) {
+      state.boardSettings = normalizeBoardSettings(settings);
+      saveLocalBoardSettings(state.boardSettings);
+    }
+  } catch (error) {
+    return;
   }
 }
 
@@ -365,7 +435,7 @@ function populateFilters() {
   const publishedJobs = state.jobs.filter((job) => job.status === "published");
   fillSelect($("#departmentFilter"), uniqueOptions("department", publishedJobs), state.filters.department);
   fillSelect($("#locationFilter"), uniqueOptions("location", publishedJobs), state.filters.location);
-  fillSelect($("#workTypeFilter"), uniqueOptions("work_type", publishedJobs), state.filters.workType);
+  fillSelect($("#statusFilter"), uniqueOptions("work_type", publishedJobs), state.filters.status);
 }
 
 function fillSelect(select, options, selected) {
@@ -377,35 +447,53 @@ function fillSelect(select, options, selected) {
 
 function filteredJobs() {
   const query = state.filters.query.trim().toLowerCase();
-  return state.jobs.filter((job) => {
-    if (job.status !== "published") return false;
-    const matchesQuery =
-      !query ||
-      [job.title, job.department, job.location, job.summary, ...(job.skills || [])]
-        .join(" ")
-        .toLowerCase()
-        .includes(query);
-    const matchesDepartment =
-      state.filters.department === "All" || job.department === state.filters.department;
-    const matchesLocation = state.filters.location === "All" || job.location === state.filters.location;
-    const matchesWorkType = state.filters.workType === "All" || job.work_type === state.filters.workType;
-    return matchesQuery && matchesDepartment && matchesLocation && matchesWorkType;
-  });
+  return state.jobs
+    .filter((job) => {
+      if (job.status !== "published") return false;
+      const matchesQuery =
+        !query ||
+        [job.title, job.department, job.location, job.summary, ...(job.skills || [])]
+          .join(" ")
+          .toLowerCase()
+          .includes(query);
+      const matchesDepartment =
+        state.filters.department === "All" || job.department === state.filters.department;
+      const matchesLocation = state.filters.location === "All" || job.location === state.filters.location;
+      const matchesStatus = state.filters.status === "All" || job.work_type === state.filters.status;
+      return matchesQuery && matchesDepartment && matchesLocation && matchesStatus;
+    })
+    .sort((a, b) => a.title.localeCompare(b.title));
+}
+
+function resetApplicantDrilldown() {
+  state.jobDetailOpen = false;
+  state.applicationOpen = false;
+}
+
+function sanitizeCssUrl(value) {
+  return String(value || defaultBoardSettings.hero_image_url).replaceAll("\\", "").replaceAll('"', "").trim();
+}
+
+function renderJobBoardHero() {
+  const settings = normalizeBoardSettings(state.boardSettings);
+  const hero = $("#jobBoardHero");
+  hero.style.setProperty("--job-board-hero-image", `url("${sanitizeCssUrl(settings.hero_image_url)}")`);
+  hero.style.setProperty("--job-board-overlay", (settings.overlay_opacity / 100).toFixed(2));
+  $("#jobBoardEyebrow").textContent = settings.hero_eyebrow;
+  $("#applicantHeading").textContent = settings.hero_title;
+  $("#jobBoardSubtitle").textContent = settings.hero_subtitle;
 }
 
 function renderApplicantPortal() {
   const jobs = filteredJobs();
   if (!jobs.some((job) => job.id === state.selectedJobId)) {
     state.selectedJobId = jobs[0]?.id || state.jobs.find((job) => job.status === "published")?.id;
+    state.jobDetailOpen = false;
+    state.applicationOpen = false;
   }
 
-  $("#publishedCount").textContent = state.jobs.filter((job) => job.status === "published").length;
-  $("#remoteCount").textContent = state.jobs.filter((job) => job.status === "published" && job.remote).length;
-  const published = state.jobs.filter((job) => job.status === "published");
-  const avg = published.length
-    ? Math.round(published.reduce((total, job) => total + Number(job.review_days || 0), 0) / published.length)
-    : 0;
-  $("#avgCycle").textContent = `${avg}d`;
+  renderJobBoardHero();
+  $("#jobBoardCount").textContent = `${jobs.length} ${jobs.length === 1 ? "job" : "jobs"}`;
 
   const list = $("#jobList");
   if (!jobs.length) {
@@ -416,33 +504,31 @@ function renderApplicantPortal() {
 
   const selectedJob = state.jobs.find((job) => job.id === state.selectedJobId);
   $("#jobDetail").innerHTML = selectedJob ? renderJobDetail(selectedJob) : renderNoJobDetail();
+  $("#jobDetailPage").hidden = !state.jobDetailOpen || !selectedJob;
+  $("#applicationPanel").hidden = !state.applicationOpen || !selectedJob;
 }
 
 function renderJobCard(job) {
-  const selected = job.id === state.selectedJobId ? " is-selected" : "";
-  const skills = (job.skills || []).slice(0, 3);
+  const selected = state.jobDetailOpen && job.id === state.selectedJobId ? " is-selected" : "";
   return `
-    <button class="job-card${selected}" type="button" data-job-id="${escapeHtml(job.id)}">
-      <div>
+    <article class="job-row${selected}">
+      <div class="job-row-main">
         <h3>${escapeHtml(job.title)}</h3>
-        <div class="job-meta">
-          <span>${escapeHtml(job.department)}</span>
-          <span>${escapeHtml(job.location)}</span>
-          <span>${escapeHtml(job.work_type)}</span>
-        </div>
+        <p>${escapeHtml(job.location)}</p>
       </div>
-      <p class="summary">${escapeHtml(job.summary)}</p>
-      <div class="tag-row">
-        ${skills.map((skill) => `<span class="tag">${escapeHtml(skill)}</span>`).join("")}
+      <span class="job-row-status">${escapeHtml(job.work_type || "Full Time")}</span>
+      <div class="job-row-action">
+        <button class="primary-action small" type="button" data-apply-job="${escapeHtml(job.id)}">Apply</button>
       </div>
-    </button>
+    </article>
   `;
 }
 
 function renderJobDetail(job) {
+  const skills = job.skills || [];
   return `
     <header>
-      <p class="eyebrow">Selected role</p>
+      <p class="eyebrow">Full job description</p>
       <h2>${escapeHtml(job.title)}</h2>
       <div class="job-meta">
         <span>${escapeHtml(job.department)}</span>
@@ -451,6 +537,24 @@ function renderJobDetail(job) {
       </div>
     </header>
     <p class="summary">${escapeHtml(job.summary)}</p>
+    <section class="description-block">
+      <h3>What you will do</h3>
+      <ul>
+        <li>Partner with the Bright Harbor team to deliver consistent, high-quality work for the department.</li>
+        <li>Use sound judgment, clear communication, and strong follow-through in day-to-day responsibilities.</li>
+        <li>Support a thoughtful experience for colleagues, clients, candidates, and community partners.</li>
+      </ul>
+    </section>
+    <section class="description-block">
+      <h3>What you bring</h3>
+      <ul>
+        ${
+          skills.length
+            ? skills.map((skill) => `<li>${escapeHtml(skill)}</li>`).join("")
+            : "<li>Relevant experience, attention to detail, and a collaborative working style.</li>"
+        }
+      </ul>
+    </section>
     <dl>
       <div>
         <dt>Compensation</dt>
@@ -470,7 +574,7 @@ function renderJobDetail(job) {
       </div>
     </dl>
     <div class="tag-row">
-      ${(job.skills || []).map((skill) => `<span class="tag">${escapeHtml(skill)}</span>`).join("")}
+      ${skills.map((skill) => `<span class="tag">${escapeHtml(skill)}</span>`).join("")}
     </div>
   `;
 }
@@ -486,6 +590,7 @@ function renderHrWorkspace() {
   renderMetrics();
   renderJobsTable();
   renderPipeline();
+  renderBoardSettingsForm();
   renderPermissions();
 }
 
@@ -517,9 +622,13 @@ function renderAuthPanel() {
 
 function syncRoleControls() {
   const canManageJobs = state.role === "recruiter" || state.role === "admin";
+  const canManageBoard = state.role === "admin";
   $("#publishSelected").disabled = !canManageJobs;
   $$("#jobForm input, #jobForm select, #jobForm textarea, #jobForm button").forEach((control) => {
     control.disabled = !canManageJobs;
+  });
+  $$("#boardSettingsForm input, #boardSettingsForm textarea, #boardSettingsForm button").forEach((control) => {
+    control.disabled = !canManageBoard;
   });
   $("#adminPanel").hidden = state.role !== "admin";
 }
@@ -655,6 +764,18 @@ function renderPermissions() {
     .join("");
 }
 
+function renderBoardSettingsForm() {
+  const form = $("#boardSettingsForm");
+  if (!form) return;
+
+  const settings = normalizeBoardSettings(state.boardSettings);
+  form.elements.hero_image_url.value = settings.hero_image_url;
+  form.elements.hero_eyebrow.value = settings.hero_eyebrow;
+  form.elements.hero_title.value = settings.hero_title;
+  form.elements.hero_subtitle.value = settings.hero_subtitle;
+  form.elements.overlay_opacity.value = settings.overlay_opacity;
+}
+
 function getNextStage(status) {
   const order = ["new", "screening", "interview", "offer"];
   const index = order.indexOf(status);
@@ -712,40 +833,61 @@ function bindEvents() {
 
   $("#jobSearch").addEventListener("input", (event) => {
     state.filters.query = event.target.value;
+    resetApplicantDrilldown();
     renderApplicantPortal();
   });
 
   $("#departmentFilter").addEventListener("change", (event) => {
     state.filters.department = event.target.value;
+    resetApplicantDrilldown();
     renderApplicantPortal();
   });
 
   $("#locationFilter").addEventListener("change", (event) => {
     state.filters.location = event.target.value;
+    resetApplicantDrilldown();
     renderApplicantPortal();
   });
 
-  $("#workTypeFilter").addEventListener("change", (event) => {
-    state.filters.workType = event.target.value;
+  $("#statusFilter").addEventListener("change", (event) => {
+    state.filters.status = event.target.value;
+    resetApplicantDrilldown();
     renderApplicantPortal();
+  });
+
+  $("#filtersToggle").addEventListener("click", () => {
+    const panel = $("#jobFiltersPanel");
+    const isOpening = panel.hidden;
+    panel.hidden = !isOpening;
+    $("#filtersToggle").setAttribute("aria-expanded", String(isOpening));
   });
 
   $("#resetFilters").addEventListener("click", () => {
-    state.filters = { query: "", department: "All", location: "All", workType: "All" };
+    state.filters = { query: "", department: "All", location: "All", status: "All" };
     $("#jobSearch").value = "";
     populateFilters();
+    resetApplicantDrilldown();
     renderApplicantPortal();
   });
 
   $("#jobList").addEventListener("click", (event) => {
-    const card = event.target.closest("[data-job-id]");
-    if (!card) return;
-    state.selectedJobId = card.dataset.jobId;
+    const button = event.target.closest("[data-apply-job]");
+    if (!button) return;
+    state.selectedJobId = button.dataset.applyJob;
+    state.jobDetailOpen = true;
+    state.applicationOpen = false;
     renderApplicantPortal();
+    $("#jobDetailPage").scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
   $("#applicationForm").addEventListener("submit", handleApplicationSubmit);
   $("#jobForm").addEventListener("submit", handleJobSubmit);
+  $("#boardSettingsForm").addEventListener("submit", handleBoardSettingsSubmit);
+  $("#showApplicationButton").addEventListener("click", () => {
+    state.applicationOpen = true;
+    renderApplicantPortal();
+    $("#applicationPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
   $("#authForm").addEventListener("submit", handleAuthSubmit);
   $("#requestAccountForm").addEventListener("submit", handleAccountRequestSubmit);
   $("#showRequestAccount").addEventListener("click", () => {
@@ -807,6 +949,52 @@ function bindEvents() {
       );
     }
   });
+}
+
+async function handleBoardSettingsSubmit(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const data = Object.fromEntries(new FormData(form));
+  const settings = normalizeBoardSettings({
+    id: "default",
+    hero_image_url: data.hero_image_url,
+    hero_eyebrow: data.hero_eyebrow,
+    hero_title: data.hero_title,
+    hero_subtitle: data.hero_subtitle,
+    overlay_opacity: data.overlay_opacity
+  });
+
+  state.boardSettings = settings;
+  saveLocalBoardSettings(settings);
+  renderApplicantPortal();
+  renderBoardSettingsForm();
+
+  try {
+    if (hasSupabase && state.session?.accessToken) {
+      const [saved] = await supabaseUpsert(
+        "job_board_settings",
+        {
+          id: "default",
+          hero_image_url: settings.hero_image_url,
+          hero_eyebrow: settings.hero_eyebrow,
+          hero_title: settings.hero_title,
+          hero_subtitle: settings.hero_subtitle,
+          overlay_opacity: settings.overlay_opacity
+        },
+        true
+      );
+      if (saved) {
+        state.boardSettings = normalizeBoardSettings(saved);
+        saveLocalBoardSettings(state.boardSettings);
+      }
+      showMessage("#boardSettingsMessage", "Job board layout saved.");
+      return;
+    }
+
+    showMessage("#boardSettingsMessage", "Preview updated. Supabase sign-in is needed to save live.");
+  } catch (error) {
+    showMessage("#boardSettingsMessage", "Preview updated. Supabase save requires an admin account.");
+  }
 }
 
 async function handleAuthSubmit(event) {

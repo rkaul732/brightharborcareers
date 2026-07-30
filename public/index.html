@@ -118,66 +118,72 @@
         </section>
 
         <section class="view" id="applicantView" aria-labelledby="applicantHeading">
-          <div class="applicant-layout">
-            <aside class="search-panel">
-              <div>
-                <p class="eyebrow">Open roles</p>
-                <h1 id="applicantHeading">Explore open roles.</h1>
+          <div class="job-board-layout">
+            <section class="job-board-hero" id="jobBoardHero">
+              <div class="job-board-hero-content">
+                <p class="eyebrow" id="jobBoardEyebrow">Bright Harbor Careers</p>
+                <h1 id="applicantHeading">Find your next role at Bright Harbor.</h1>
+                <p id="jobBoardSubtitle">
+                  Explore current openings and apply to the role that fits your next chapter.
+                </p>
               </div>
+            </section>
 
-              <label class="field with-icon">
-                <span>Search jobs</span>
-                <svg><use href="#icon-search"></use></svg>
-                <input id="jobSearch" type="search" placeholder="Title, team, location">
-              </label>
-
-              <div class="filter-grid">
-                <label class="field">
-                  <span>Department</span>
-                  <select id="departmentFilter"></select>
+            <section class="job-board-panel" aria-label="Available jobs">
+              <div class="job-board-controls">
+                <label class="field with-icon board-search">
+                  <span>Search jobs</span>
+                  <svg><use href="#icon-search"></use></svg>
+                  <input id="jobSearch" type="search" placeholder="Title, team, location">
                 </label>
-                <label class="field">
-                  <span>Location</span>
-                  <select id="locationFilter"></select>
-                </label>
-                <label class="field">
-                  <span>Work type</span>
-                  <select id="workTypeFilter"></select>
-                </label>
-              </div>
 
-              <div class="portal-metrics" aria-label="Hiring overview">
-                <div>
-                  <strong id="publishedCount">0</strong>
-                  <span>published roles</span>
-                </div>
-                <div>
-                  <strong id="remoteCount">0</strong>
-                  <span>remote-friendly</span>
-                </div>
-                <div>
-                  <strong id="avgCycle">0d</strong>
-                  <span>avg. review</span>
-                </div>
-              </div>
-            </aside>
-
-            <section class="jobs-column" aria-label="Available jobs">
-              <div class="section-header">
-                <div>
-                  <p class="eyebrow">Careers</p>
-                  <h2>Job board</h2>
-                </div>
-                <button class="icon-button" type="button" id="resetFilters" aria-label="Reset filters">
+                <button class="secondary-action filter-tab" type="button" id="filtersToggle" aria-expanded="false" aria-controls="jobFiltersPanel">
                   <svg><use href="#icon-filter"></use></svg>
+                  Filters
                 </button>
               </div>
+
+              <div class="filters-panel" id="jobFiltersPanel" hidden>
+                <div class="filter-grid">
+                  <label class="field">
+                    <span>Location</span>
+                    <select id="locationFilter"></select>
+                  </label>
+                  <label class="field">
+                    <span>Department</span>
+                    <select id="departmentFilter"></select>
+                  </label>
+                  <label class="field">
+                    <span>Status</span>
+                    <select id="statusFilter"></select>
+                  </label>
+                </div>
+                <button class="text-link" type="button" id="resetFilters">Reset filters</button>
+              </div>
+
+              <div class="job-board-summary">
+                <div>
+                  <p class="eyebrow">Open roles</p>
+                  <h2>Job board</h2>
+                </div>
+                <p id="jobBoardCount">0 jobs</p>
+              </div>
+
               <div class="job-list" id="jobList"></div>
             </section>
 
-            <section class="detail-column" aria-live="polite">
+            <section class="job-detail-page" id="jobDetailPage" aria-live="polite" hidden>
               <article class="job-detail" id="jobDetail"></article>
-              <form class="apply-form" id="applicationForm">
+              <div class="job-detail-actions">
+                <button class="primary-action" type="button" id="showApplicationButton">
+                  <svg><use href="#icon-send"></use></svg>
+                  Apply Now
+                </button>
+              </div>
+            </section>
+
+            <section class="apply-form" id="applicationPanel" hidden>
+              <form id="applicationForm">
                 <div class="section-header compact">
                   <div>
                     <p class="eyebrow">Application</p>
@@ -366,10 +372,9 @@
                       <label class="field">
                         <span>Work type</span>
                         <select name="work_type">
-                          <option>Full-time</option>
-                          <option>Part-time</option>
-                          <option>Contract</option>
-                          <option>Internship</option>
+                          <option>Full Time</option>
+                          <option>Part Time</option>
+                          <option>Per Diem</option>
                         </select>
                       </label>
                       <label class="field">
@@ -426,9 +431,46 @@
                   <div class="section-header">
                     <div>
                       <p class="eyebrow">Governance</p>
-                      <h2>Role controls</h2>
+                      <h2>System admin controls</h2>
                     </div>
                   </div>
+
+                  <form class="board-settings-form" id="boardSettingsForm">
+                    <div class="section-header compact">
+                      <div>
+                        <p class="eyebrow">Job board layout</p>
+                        <h2>Header and overlay</h2>
+                      </div>
+                    </div>
+                    <div class="form-grid">
+                      <label class="field wide">
+                        <span>Header image URL</span>
+                        <input name="hero_image_url" type="url" placeholder="/assets/job-board-hero.png">
+                      </label>
+                      <label class="field">
+                        <span>Eyebrow text</span>
+                        <input name="hero_eyebrow" required>
+                      </label>
+                      <label class="field">
+                        <span>Overlay strength</span>
+                        <input name="overlay_opacity" type="range" min="20" max="80" step="5">
+                      </label>
+                      <label class="field wide">
+                        <span>Headline</span>
+                        <input name="hero_title" required>
+                      </label>
+                      <label class="field wide">
+                        <span>Overlay text</span>
+                        <textarea name="hero_subtitle" rows="3" required></textarea>
+                      </label>
+                    </div>
+                    <button class="secondary-action" type="submit">
+                      <svg><use href="#icon-database"></use></svg>
+                      Save job board layout
+                    </button>
+                    <p class="form-message" id="boardSettingsMessage" role="status"></p>
+                  </form>
+
                   <div class="permissions-grid" id="permissionsGrid"></div>
                 </section>
               </div>

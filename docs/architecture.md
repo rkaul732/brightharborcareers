@@ -5,7 +5,10 @@
 Applicant portal:
 
 - Reads published jobs.
-- Filters by department, location, work type, and search text.
+- Presents an editable image header with overlay text.
+- Lists jobs alphabetically below search and filters.
+- Filters by department, location, employment status, and search text.
+- Opens the full job description before showing the application form.
 - Submits applications to Supabase when configured.
 - Falls back to demo/session data when Supabase is not configured.
 
@@ -15,6 +18,7 @@ HR workspace:
 - Creates jobs and publishes selected roles in the local UI.
 - Displays application pipeline stages.
 - Moves candidates through `new`, `screening`, `interview`, and `offer`.
+- Lets admins edit the public job board header image and overlay text.
 - Shows admin-oriented role controls.
 
 ## Production Path
@@ -35,5 +39,6 @@ Core tables:
 - `application_notes`: internal HR notes.
 - `scorecards`: structured hiring feedback.
 - `activity_events`: audit-ready activity log.
+- `job_board_settings`: public applicant-board header image and overlay content.
 
 The schema keeps applicant-facing reads public only for `published` jobs. Application insertion is allowed for published jobs. HR reads and writes rely on Supabase Auth plus the role in `profiles`.
