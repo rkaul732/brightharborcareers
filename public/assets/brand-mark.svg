@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="Bright Harbor Careers mark">
+  <rect width="96" height="96" rx="18" fill="#0f2f2e"/>
+  <path d="M20 61c8-11 18-17 29-17c10 0 18 4 27 13" fill="none" stroke="#7bd4c2" stroke-width="7" stroke-linecap="round"/>
+  <path d="M23 70c10-8 20-11 31-9c7 1 13 3 19 7" fill="none" stroke="#f6b35b" stroke-width="6" stroke-linecap="round"/>
+  <path d="M48 19v51" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+  <path d="M35 31h26" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="48" cy="19" r="7" fill="#ffffff"/>
+</svg>

@@ -1,0 +1,25 @@
+name: Validate Bright Harbor Careers
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate app
+        run: npm run validate
+
+      - name: Build Netlify output
+        run: npm run build

@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Bright Harbor Careers applicant tracking system for HR teams and candidates.">
+    <title>Bright Harbor Careers</title>
+    <link rel="icon" href="/assets/brand-mark.svg" type="image/svg+xml">
+    <link rel="preload" href="/styles.css" as="style">
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/env.js"></script>
+    <script defer src="/app.js"></script>
+  </head>
+  <body>
+    <svg aria-hidden="true" class="icon-sprite">
+      <symbol id="icon-anchor" viewBox="0 0 24 24">
+        <path d="M12 3v18M7 7h10M5 12c0 4 3 8 7 8s7-4 7-8M9 4a3 3 0 1 0 6 0a3 3 0 0 0-6 0Z"/>
+      </symbol>
+      <symbol id="icon-briefcase" viewBox="0 0 24 24">
+        <path d="M10 6h4a2 2 0 0 1 2 2v2H8V8a2 2 0 0 1 2-2Z"/>
+        <path d="M4 10h16v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8Z"/>
+        <path d="M9 14h6"/>
+      </symbol>
+      <symbol id="icon-users" viewBox="0 0 24 24">
+        <path d="M16 19c0-2.2-1.8-4-4-4s-4 1.8-4 4"/>
+        <path d="M12 11a4 4 0 1 0 0-8a4 4 0 0 0 0 8Z"/>
+        <path d="M20 19c0-1.7-1-3.1-2.4-3.7M16.5 4.4a3.2 3.2 0 0 1 0 6.2"/>
+        <path d="M4 19c0-1.7 1-3.1 2.4-3.7M7.5 4.4a3.2 3.2 0 0 0 0 6.2"/>
+      </symbol>
+      <symbol id="icon-shield" viewBox="0 0 24 24">
+        <path d="M12 3l7 3v5c0 4.6-2.8 8.8-7 10c-4.2-1.2-7-5.4-7-10V6l7-3Z"/>
+        <path d="M9.5 12l1.8 1.8l3.8-4.1"/>
+      </symbol>
+      <symbol id="icon-search" viewBox="0 0 24 24">
+        <path d="M10.8 18.1a7.3 7.3 0 1 0 0-14.6a7.3 7.3 0 0 0 0 14.6Z"/>
+        <path d="M16 16l4.5 4.5"/>
+      </symbol>
+      <symbol id="icon-plus" viewBox="0 0 24 24">
+        <path d="M12 5v14M5 12h14"/>
+      </symbol>
+      <symbol id="icon-send" viewBox="0 0 24 24">
+        <path d="M21 3L10 14"/>
+        <path d="M21 3l-7 18l-4-7l-7-4l18-7Z"/>
+      </symbol>
+      <symbol id="icon-filter" viewBox="0 0 24 24">
+        <path d="M4 6h16M7 12h10M10 18h4"/>
+      </symbol>
+      <symbol id="icon-calendar" viewBox="0 0 24 24">
+        <path d="M7 3v4M17 3v4M4 9h16"/>
+        <path d="M5 6h14a1 1 0 0 1 1 1v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a1 1 0 0 1 1-1Z"/>
+      </symbol>
+      <symbol id="icon-database" viewBox="0 0 24 24">
+        <ellipse cx="12" cy="5" rx="7" ry="3"/>
+        <path d="M5 5v7c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/>
+        <path d="M5 12v7c0 1.7 3.1 3 7 3s7-1.3 7-3v-7"/>
+      </symbol>
+    </svg>
+
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#applicant" aria-label="Bright Harbor Careers home">
+          <img src="/assets/brand-mark.svg" alt="" width="38" height="38">
+          <span>
+            <strong>Bright Harbor</strong>
+            <small>Careers</small>
+          </span>
+        </a>
+
+        <nav class="main-tabs" aria-label="Main workspace">
+          <button class="tab is-active" type="button" data-view="applicant">
+            <svg><use href="#icon-search"></use></svg>
+            Applicant portal
+          </button>
+          <button class="tab" type="button" data-view="hr">
+            <svg><use href="#icon-briefcase"></use></svg>
+            HR workspace
+          </button>
+        </nav>
+
+        <div class="connection" id="connectionStatus">
+          <span class="status-dot"></span>
+          <span>Demo data</span>
+        </div>
+      </header>
+
+      <main>
+        <section class="view is-active" id="applicantView" aria-labelledby="applicantHeading">
+          <div class="applicant-layout">
+            <aside class="search-panel">
+              <div>
+                <p class="eyebrow">Open roles</p>
+                <h1 id="applicantHeading">Find your next harbor.</h1>
+              </div>
+
+              <label class="field with-icon">
+                <span>Search jobs</span>
+                <svg><use href="#icon-search"></use></svg>
+                <input id="jobSearch" type="search" placeholder="Title, team, location">
+              </label>
+
+              <div class="filter-grid">
+                <label class="field">
+                  <span>Department</span>
+                  <select id="departmentFilter"></select>
+                </label>
+                <label class="field">
+                  <span>Location</span>
+                  <select id="locationFilter"></select>
+                </label>
+                <label class="field">
+                  <span>Work type</span>
+                  <select id="workTypeFilter"></select>
+                </label>
+              </div>
+
+              <div class="portal-metrics" aria-label="Hiring overview">
+                <div>
+                  <strong id="publishedCount">0</strong>
+                  <span>published roles</span>
+                </div>
+                <div>
+                  <strong id="remoteCount">0</strong>
+                  <span>remote-friendly</span>
+                </div>
+                <div>
+                  <strong id="avgCycle">0d</strong>
+                  <span>avg. review</span>
+                </div>
+              </div>
+            </aside>
+
+            <section class="jobs-column" aria-label="Available jobs">
+              <div class="section-header">
+                <div>
+                  <p class="eyebrow">Candidate experience</p>
+                  <h2>Job board</h2>
+                </div>
+                <button class="icon-button" type="button" id="resetFilters" aria-label="Reset filters">
+                  <svg><use href="#icon-filter"></use></svg>
+                </button>
+              </div>
+              <div class="job-list" id="jobList"></div>
+            </section>
+
+            <section class="detail-column" aria-live="polite">
+              <article class="job-detail" id="jobDetail"></article>
+              <form class="apply-form" id="applicationForm">
+                <div class="section-header compact">
+                  <div>
+                    <p class="eyebrow">Application</p>
+                    <h2>Apply now</h2>
+                  </div>
+                </div>
+                <div class="form-grid">
+                  <label class="field">
+                    <span>Full name</span>
+                    <input name="full_name" required autocomplete="name">
+                  </label>
+                  <label class="field">
+                    <span>Email</span>
+                    <input name="email" type="email" required autocomplete="email">
+                  </label>
+                  <label class="field">
+                    <span>Phone</span>
+                    <input name="phone" type="tel" autocomplete="tel">
+                  </label>
+                  <label class="field">
+                    <span>Resume URL</span>
+                    <input name="resume_url" type="url" placeholder="https://">
+                  </label>
+                  <label class="field wide">
+                    <span>Short note</span>
+                    <textarea name="cover_note" rows="4" placeholder="Share the strongest fit in a few lines."></textarea>
+                  </label>
+                </div>
+                <button class="primary-action" type="submit">
+                  <svg><use href="#icon-send"></use></svg>
+                  Submit application
+                </button>
+                <p class="form-message" id="applicationMessage" role="status"></p>
+              </form>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="hrView" aria-labelledby="hrHeading">
+          <div class="workspace-layout">
+            <aside class="hr-sidebar">
+              <div class="sidebar-title">
+                <p class="eyebrow">HR backend</p>
+                <h1 id="hrHeading">Talent operations</h1>
+              </div>
+
+              <div class="role-switcher" aria-label="HR role">
+                <button class="role-button is-active" type="button" data-role="recruiter">
+                  <svg><use href="#icon-users"></use></svg>
+                  Recruiter
+                </button>
+                <button class="role-button" type="button" data-role="hiring_manager">
+                  <svg><use href="#icon-briefcase"></use></svg>
+                  Hiring manager
+                </button>
+                <button class="role-button" type="button" data-role="admin">
+                  <svg><use href="#icon-shield"></use></svg>
+                  Admin
+                </button>
+              </div>
+
+              <div class="role-card" id="roleCard"></div>
+
+              <form class="auth-panel" id="authForm">
+                <div>
+                  <p class="eyebrow">Supabase</p>
+                  <h2>HR session</h2>
+                </div>
+                <div class="session-panel" id="sessionPanel" hidden></div>
+                <label class="field" id="authEmailField">
+                  <span>Email</span>
+                  <input name="email" type="email" autocomplete="email" placeholder="hr@brightharbor.com">
+                </label>
+                <div class="auth-actions">
+                  <button class="secondary-action" type="submit">
+                    <svg><use href="#icon-database"></use></svg>
+                    Send link
+                  </button>
+                  <button class="secondary-action" type="button" id="signOutButton" hidden>
+                    Sign out
+                  </button>
+                </div>
+                <p class="form-message" id="authMessage" role="status"></p>
+              </form>
+            </aside>
+
+            <section class="hr-main">
+              <div class="metric-grid" id="metricGrid"></div>
+
+              <div class="hr-grid">
+                <section class="panel jobs-admin-panel">
+                  <div class="section-header">
+                    <div>
+                      <p class="eyebrow">Job management</p>
+                      <h2>Create and publish roles</h2>
+                    </div>
+                    <button class="primary-action small" type="button" id="publishSelected">
+                      <svg><use href="#icon-plus"></use></svg>
+                      Publish selected
+                    </button>
+                  </div>
+
+                  <form class="job-form" id="jobForm">
+                    <div class="form-grid">
+                      <label class="field">
+                        <span>Job title</span>
+                        <input name="title" required placeholder="Senior Case Manager">
+                      </label>
+                      <label class="field">
+                        <span>Department</span>
+                        <input name="department" required placeholder="Clinical Services">
+                      </label>
+                      <label class="field">
+                        <span>Location</span>
+                        <input name="location" required placeholder="Boston, MA">
+                      </label>
+                      <label class="field">
+                        <span>Work type</span>
+                        <select name="work_type">
+                          <option>Full-time</option>
+                          <option>Part-time</option>
+                          <option>Contract</option>
+                          <option>Internship</option>
+                        </select>
+                      </label>
+                      <label class="field">
+                        <span>Hiring manager</span>
+                        <input name="hiring_manager" required placeholder="Maya Rivera">
+                      </label>
+                      <label class="field">
+                        <span>Status</span>
+                        <select name="status">
+                          <option value="draft">Draft</option>
+                          <option value="published">Published</option>
+                          <option value="paused">Paused</option>
+                        </select>
+                      </label>
+                      <label class="field wide">
+                        <span>Role summary</span>
+                        <textarea name="summary" required rows="3" placeholder="Describe the job and the team."></textarea>
+                      </label>
+                    </div>
+                    <button class="secondary-action" type="submit">
+                      <svg><use href="#icon-plus"></use></svg>
+                      Create job
+                    </button>
+                    <p class="form-message" id="jobFormMessage" role="status"></p>
+                  </form>
+
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th scope="col">Role</th>
+                          <th scope="col">Owner</th>
+                          <th scope="col">Status</th>
+                          <th scope="col">Pipeline</th>
+                          <th scope="col">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody id="jobsTable"></tbody>
+                    </table>
+                  </div>
+                </section>
+
+                <section class="panel pipeline-panel">
+                  <div class="section-header">
+                    <div>
+                      <p class="eyebrow">Candidate pipeline</p>
+                      <h2>Applications</h2>
+                    </div>
+                  </div>
+                  <div class="pipeline-board" id="pipelineBoard"></div>
+                </section>
+
+                <section class="panel admin-panel" id="adminPanel">
+                  <div class="section-header">
+                    <div>
+                      <p class="eyebrow">Governance</p>
+                      <h2>Role controls</h2>
+                    </div>
+                  </div>
+                  <div class="permissions-grid" id="permissionsGrid"></div>
+                </section>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
