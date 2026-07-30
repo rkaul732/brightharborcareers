@@ -380,58 +380,121 @@
                         Cancel
                       </button>
                     </div>
-                    <form class="job-form" id="jobForm">
-                      <div class="form-grid">
-                        <label class="field">
-                          <span>Job title</span>
-                          <input name="title" required placeholder="Senior Case Manager">
-                        </label>
-                        <label class="field">
-                          <span>Department</span>
-                          <select name="department_id" id="jobDepartmentSelect" required></select>
-                        </label>
-                        <label class="field">
-                          <span>Subdepartment</span>
-                          <select name="subdepartment_id" id="jobSubdepartmentSelect"></select>
-                        </label>
-                        <label class="field">
-                          <span>Location</span>
-                          <input name="location" required placeholder="Boston, MA">
-                        </label>
-                        <label class="field">
-                          <span>Work type</span>
-                          <select name="work_type">
-                            <option>Full Time</option>
-                            <option>Part Time</option>
-                            <option>Per Diem</option>
-                          </select>
-                        </label>
-                        <label class="field">
-                          <span>Hiring manager</span>
-                          <input name="hiring_manager" required placeholder="Maya Rivera">
-                        </label>
-                        <label class="field">
-                          <span>Status</span>
-                          <select name="status">
-                            <option value="draft">Draft</option>
-                            <option value="published">Published</option>
-                            <option value="paused">Paused</option>
-                          </select>
-                        </label>
-                        <label class="field wide">
-                          <span>Role summary</span>
-                          <textarea name="summary" required rows="3" placeholder="Describe the job and the team."></textarea>
-                        </label>
-                      </div>
-                      <button class="secondary-action" type="submit">
-                        <svg><use href="#icon-plus"></use></svg>
-                        Create job
-                      </button>
-                      <p class="form-message" id="jobFormMessage" role="status"></p>
-                    </form>
+                    <div class="job-create-layout">
+                      <form class="job-form" id="jobForm">
+                        <section class="form-section">
+                          <div class="section-header compact">
+                            <div>
+                              <p class="eyebrow">Categorization</p>
+                              <h2>Job setup</h2>
+                            </div>
+                          </div>
+                          <div class="form-grid">
+                            <label class="field">
+                              <span>Job title</span>
+                              <input name="title" required placeholder="Senior Case Manager">
+                            </label>
+                            <label class="field">
+                              <span>Department</span>
+                              <select name="department_id" id="jobDepartmentSelect" required></select>
+                            </label>
+                            <label class="field">
+                              <span>Subdepartment</span>
+                              <select name="subdepartment_id" id="jobSubdepartmentSelect"></select>
+                            </label>
+                            <label class="field">
+                              <span>Location</span>
+                              <input name="location" required placeholder="Boston, MA">
+                            </label>
+                            <label class="field">
+                              <span>Work type</span>
+                              <select name="work_type">
+                                <option>Full Time</option>
+                                <option>Part Time</option>
+                                <option>Per Diem</option>
+                              </select>
+                            </label>
+                            <label class="field">
+                              <span>Hiring manager</span>
+                              <input name="hiring_manager" required placeholder="Maya Rivera">
+                            </label>
+                            <label class="field">
+                              <span>Status</span>
+                              <select name="status">
+                                <option value="draft">Draft</option>
+                                <option value="published">Published</option>
+                                <option value="paused">Paused</option>
+                              </select>
+                            </label>
+                            <label class="field">
+                              <span>Salary minimum</span>
+                              <input name="salary_min" type="number" min="0" step="1000" placeholder="65000">
+                            </label>
+                            <label class="field">
+                              <span>Salary maximum</span>
+                              <input name="salary_max" type="number" min="0" step="1000" placeholder="85000">
+                            </label>
+                          </div>
+                        </section>
+
+                        <section class="form-section">
+                          <div class="section-header compact">
+                            <div>
+                              <p class="eyebrow">Role summary</p>
+                              <h2>Job content</h2>
+                            </div>
+                          </div>
+                          <div class="form-grid">
+                            <label class="field wide">
+                              <span>Job Description</span>
+                              <textarea name="job_description" required rows="5" placeholder="Describe the role, team, and day-to-day work."></textarea>
+                            </label>
+                            <label class="field wide">
+                              <span>Requirements</span>
+                              <textarea name="requirements" rows="5" placeholder="List required experience, credentials, skills, and schedule expectations."></textarea>
+                            </label>
+                            <label class="field wide">
+                              <span>Benefits</span>
+                              <textarea name="benefits" rows="4" placeholder="List benefits, supports, growth opportunities, and other employment details."></textarea>
+                            </label>
+                          </div>
+                        </section>
+
+                        <section class="form-section seo-section">
+                          <div class="section-header compact">
+                            <div>
+                              <p class="eyebrow">SEO configuration</p>
+                              <h2>Search visibility</h2>
+                            </div>
+                          </div>
+                          <div class="form-grid">
+                            <label class="field wide keyword-field">
+                              <span>SEO keywords</span>
+                              <textarea name="seo_keywords" rows="3" placeholder="case manager, behavioral health, clinical services, Boston"></textarea>
+                            </label>
+                            <label class="field">
+                              <span>SEO title</span>
+                              <input name="seo_title" placeholder="Senior Case Manager | Bright Harbor Careers">
+                            </label>
+                            <label class="field wide">
+                              <span>SEO description</span>
+                              <textarea name="seo_description" rows="3" placeholder="Short search-friendly description for this job."></textarea>
+                            </label>
+                          </div>
+                        </section>
+
+                        <button class="secondary-action" type="submit">
+                          <svg><use href="#icon-plus"></use></svg>
+                          Create job
+                        </button>
+                        <p class="form-message" id="jobFormMessage" role="status"></p>
+                      </form>
+
+                      <aside class="job-draft-panel" id="jobDraftPreview" aria-live="polite"></aside>
+                    </div>
                   </section>
 
-                  <div class="table-wrap">
+                  <div class="table-wrap" id="jobsTableWrap">
                     <table>
                       <thead>
                         <tr>

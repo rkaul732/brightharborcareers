@@ -17,6 +17,7 @@ HR workspace:
 
 - Uses a top header menu for Jobs, Candidates, and Reports.
 - Shows a searchable Jobs list by default with job creation behind a Create new job action.
+- Shows a focused job draft editor with categorization, salary range, content sections, and SEO keywords.
 - Shows each job with pipeline-stage counts.
 - Lists all candidates alphabetically in the Candidates view.
 - Displays application pipeline stages in Reports.
@@ -41,6 +42,7 @@ Core tables:
 - `profiles`: Supabase Auth users plus role metadata.
 - `profiles.avatar_url`: optional profile photo URL for the HR header avatar.
 - `jobs`: requisitions and published career-site roles.
+- `jobs` content fields: salary min/max, job description, requirements, benefits, and SEO metadata.
 - `applications`: candidate submissions and pipeline status.
 - `application_notes`: internal HR notes.
 - `scorecards`: structured hiring feedback.

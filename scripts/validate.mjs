@@ -14,7 +14,8 @@ const requiredFiles = [
   "supabase/migrations/20260730170000_job_board_settings.sql",
   "supabase/migrations/20260730183000_departments.sql",
   "supabase/migrations/20260730190000_profile_avatar.sql",
-  "supabase/migrations/20260730200000_pipeline_settings.sql"
+  "supabase/migrations/20260730200000_pipeline_settings.sql",
+  "supabase/migrations/20260730210000_job_content_sections.sql"
 ];
 
 const root = process.cwd();
@@ -41,6 +42,10 @@ const pipelineSql = await readFile(
   path.join(root, "supabase/migrations/20260730200000_pipeline_settings.sql"),
   "utf8"
 );
+const jobContentSql = await readFile(
+  path.join(root, "supabase/migrations/20260730210000_job_content_sections.sql"),
+  "utf8"
+);
 
 const checks = [
   [html.includes("Welcome to Bright Harbor Careers."), "Landing chooser"],
@@ -57,6 +62,10 @@ const checks = [
   [html.includes('name="username"') && html.includes('name="password"'), "Hiring-team credentials form"],
   [html.includes('data-hr-section="jobs"') && app.includes("pipeline-chip"), "HR jobs top navigation"],
   [html.includes("hrJobSearch") && html.includes("showJobCreate") && app.includes("hrJobQuery"), "HR jobs search and create control"],
+  [html.includes("jobDraftPreview") && html.includes("jobsTableWrap") && app.includes("renderJobDraftPreview"), "Focused job drafting view"],
+  [html.includes('name="salary_min"') && html.includes('name="salary_max"'), "Salary range fields"],
+  [html.includes('name="job_description"') && html.includes('name="requirements"') && html.includes('name="benefits"'), "Sectioned job content fields"],
+  [html.includes('name="seo_keywords"') && app.includes("parseKeywords"), "SEO keyword entry"],
   [html.includes('data-hr-section="candidates"') && html.includes("candidatesTable") && app.includes("renderCandidatesTable"), "HR candidates view"],
   [html.includes('data-hr-section="reports"') && html.includes("pipelineBoard"), "HR reports view"],
   [html.includes("profileMenuButton") && html.includes("profileDropdown"), "HR profile dropdown"],
@@ -68,6 +77,7 @@ const checks = [
   [app.includes("departments") && departmentsSql.includes("public.departments"), "Department persistence"],
   [app.includes("avatar_url") && profileSql.includes("avatar_url"), "Profile avatar persistence"],
   [app.includes("pipeline_settings") && pipelineSql.includes("pipeline_settings"), "Pipeline settings persistence"],
+  [app.includes("job_description") && jobContentSql.includes("seo_keywords"), "Job content section persistence"],
   [app.includes("localeCompare"), "Alphabetical job sorting"],
   [app.includes("/auth/v1/token?grant_type=password"), "Supabase password auth"],
   [app.includes("recruiter") && app.includes("hiring_manager") && app.includes("admin"), "HR roles"]

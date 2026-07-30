@@ -1,6 +1,6 @@
 # Supabase Setup
 
-Bright Harbor Careers uses Supabase for durable job, application, account request, department, job board layout, pipeline configuration, profile, note, scorecard, and role data.
+Bright Harbor Careers uses Supabase for durable job, application, account request, department, job content, job board layout, pipeline configuration, profile, note, scorecard, and role data.
 
 1. Create a Supabase project.
 2. Run every SQL file in `supabase/migrations/` in filename order in the SQL editor or through the Supabase CLI.
@@ -10,7 +10,7 @@ Bright Harbor Careers uses Supabase for durable job, application, account reques
 6. Add the private service role key to Netlify as `SUPABASE_SERVICE_ROLE_KEY`. Use it only in Netlify environment variables, never in browser code.
 7. Add `RESEND_API_KEY`, `EMAIL_FROM`, `HR_APPROVAL_EMAIL`, and `SITE_URL` in Netlify so account request emails can be sent to HR.
 
-The migrations create applicant profiles automatically for new Supabase Auth users, add optional profile avatar URLs, and add settings records for the editable applicant-board header, department filters, and pipeline labels. The public career site can read `published` jobs and active departments, then submit fresh applications. Hiring-team visitors can request access, which creates an `account_requests` row and emails `hr@brightharbor.org` approval links through Netlify functions. HR users sign in from the Hiring Team login page with their work email as the username and their Supabase password; row-level security decides whether that signed-in user can create jobs, update applications, manage profiles, edit the job board layout, configure pipeline labels, or manage departments.
+The migrations create applicant profiles automatically for new Supabase Auth users, add optional profile avatar URLs, add sectioned job content fields, and add settings records for the editable applicant-board header, department filters, and pipeline labels. The public career site can read `published` jobs and active departments, then submit fresh applications. Hiring-team visitors can request access, which creates an `account_requests` row and emails `hr@brightharbor.org` approval links through Netlify functions. HR users sign in from the Hiring Team login page with their work email as the username and their Supabase password; row-level security decides whether that signed-in user can create jobs, update applications, manage profiles, edit the job board layout, configure pipeline labels, or manage departments.
 
 Example HR profile:
 

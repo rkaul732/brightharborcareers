@@ -434,6 +434,59 @@ function saveLocalProfile(profile) {
   }
 }
 
+function numberOrNull(value) {
+  const number = Number(String(value || "").replace(/[^0-9.]/g, ""));
+  return Number.isFinite(number) && number > 0 ? number : null;
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0
+  }).format(value);
+}
+
+function normalizeSalaryValues(min, max) {
+  if (min && max && max < min) return [max, min];
+  return [min, max];
+}
+
+function buildSalaryRange(min, max) {
+  [min, max] = normalizeSalaryValues(min, max);
+  if (min && max) return `${formatCurrency(min)} - ${formatCurrency(max)}`;
+  if (min) return `From ${formatCurrency(min)}`;
+  if (max) return `Up to ${formatCurrency(max)}`;
+  return "Shared during screening";
+}
+
+function parseKeywords(value) {
+  if (Array.isArray(value)) {
+    return value.map((keyword) => String(keyword).trim()).filter(Boolean);
+  }
+
+  return String(value || "")
+    .split(/[,\n]/)
+    .map((keyword) => keyword.trim())
+    .filter(Boolean);
+}
+
+function summarizeText(value) {
+  const clean = String(value || "").replace(/\s+/g, " ").trim();
+  if (!clean) return "";
+  return clean.length > 180 ? `${clean.slice(0, 177).trim()}...` : clean;
+}
+
+function renderTextBlock(value, fallback) {
+  const lines = String(value || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (!lines.length) return `<p class="summary">${escapeHtml(fallback)}</p>`;
+  return lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("");
+}
+
 function profileDisplayName() {
   return state.profile.full_name || state.session?.email || state.profile.email || "Hiring Team";
 }
@@ -496,19 +549,31 @@ async function loadSupabaseData() {
     try {
       jobs = await supabaseSelect(
         "jobs",
-        "select=id,title,department,department_id,subdepartment,subdepartment_id,location,work_type,status,hiring_manager,summary,salary_range,review_days,remote,skills,posted_at&order=posted_at.desc"
+        "select=id,title,department,department_id,subdepartment,subdepartment_id,location,work_type,status,hiring_manager,summary,salary_range,salary_min,salary_max,job_description,requirements,benefits,seo_title,seo_description,seo_keywords,review_days,remote,skills,posted_at&order=posted_at.desc"
       );
     } catch (error) {
-      jobs = await supabaseSelect(
-        "jobs",
-        "select=id,title,department,location,work_type,status,hiring_manager,summary,salary_range,review_days,remote,skills,posted_at&order=posted_at.desc"
-      );
+      try {
+        jobs = await supabaseSelect(
+          "jobs",
+          "select=id,title,department,department_id,subdepartment,subdepartment_id,location,work_type,status,hiring_manager,summary,salary_range,review_days,remote,skills,posted_at&order=posted_at.desc"
+        );
+      } catch (fallbackError) {
+        jobs = await supabaseSelect(
+          "jobs",
+          "select=id,title,department,location,work_type,status,hiring_manager,summary,salary_range,review_days,remote,skills,posted_at&order=posted_at.desc"
+        );
+      }
     }
     setConnection(true, "Supabase connected");
 
     if (Array.isArray(jobs) && jobs.length) {
       state.jobs = jobs.map((job) => ({
         ...job,
+        job_description: job.job_description || job.summary || "",
+        requirements: job.requirements || "",
+        benefits: job.benefits || "",
+        seo_keywords: parseKeywords(job.seo_keywords || job.skills || []),
+        skills: Array.isArray(job.skills) ? job.skills : parseKeywords(job.skills),
         applicants: demoApplications.filter((application) => application.job_id === job.id).length,
         interviews: demoApplications.filter(
           (application) => application.job_id === job.id && application.status === "interview"
@@ -720,7 +785,19 @@ function filteredJobs() {
       if (job.status !== "published") return false;
       const matchesQuery =
         !query ||
-        [job.title, job.department, job.location, job.summary, ...(job.skills || [])]
+        [
+          job.title,
+          job.department,
+          job.location,
+          job.summary,
+          job.job_description,
+          job.requirements,
+          job.benefits,
+          job.seo_title,
+          job.seo_description,
+          ...(job.skills || []),
+          ...parseKeywords(job.seo_keywords)
+        ]
           .join(" ")
           .toLowerCase()
           .includes(query);
@@ -826,8 +903,20 @@ function renderJobCard(job) {
 }
 
 function renderJobDetail(job) {
-  const skills = job.skills || [];
+  const keywords = parseKeywords(job.seo_keywords);
+  const skills = job.skills?.length ? job.skills : keywords;
   const subdepartment = findSubdepartmentForJob(job)?.name || job.subdepartment || "";
+  const description = job.job_description || job.summary;
+  const requirementsMarkup = job.requirements
+    ? renderTextBlock(job.requirements, "")
+    : `<ul>${
+        skills.length
+          ? skills.map((skill) => `<li>${escapeHtml(skill)}</li>`).join("")
+          : "<li>Relevant experience, attention to detail, and a collaborative working style.</li>"
+      }</ul>`;
+  const benefitsMarkup = job.benefits
+    ? renderTextBlock(job.benefits, "")
+    : `<p>Bright Harbor offers a supportive team environment, thoughtful onboarding, and role-specific benefits shared during screening.</p>`;
   return `
     <header>
       <p class="eyebrow">Full job description</p>
@@ -839,24 +928,18 @@ function renderJobDetail(job) {
         <span>${escapeHtml(job.work_type)}</span>
       </div>
     </header>
-    <p class="summary">${escapeHtml(job.summary)}</p>
+    ${job.summary && job.summary !== description ? `<p class="summary">${escapeHtml(job.summary)}</p>` : ""}
     <section class="description-block">
-      <h3>What you will do</h3>
-      <ul>
-        <li>Partner with the Bright Harbor team to deliver consistent, high-quality work for the department.</li>
-        <li>Use sound judgment, clear communication, and strong follow-through in day-to-day responsibilities.</li>
-        <li>Support a thoughtful experience for colleagues, clients, candidates, and community partners.</li>
-      </ul>
+      <h3>Job Description</h3>
+      ${renderTextBlock(description, "Details will be shared during screening.")}
     </section>
     <section class="description-block">
-      <h3>What you bring</h3>
-      <ul>
-        ${
-          skills.length
-            ? skills.map((skill) => `<li>${escapeHtml(skill)}</li>`).join("")
-            : "<li>Relevant experience, attention to detail, and a collaborative working style.</li>"
-        }
-      </ul>
+      <h3>Requirements</h3>
+      ${requirementsMarkup}
+    </section>
+    <section class="description-block">
+      <h3>Benefits</h3>
+      ${benefitsMarkup}
     </section>
     <dl>
       <div>
@@ -877,7 +960,7 @@ function renderJobDetail(job) {
       </div>
     </dl>
     <div class="tag-row">
-      ${skills.map((skill) => `<span class="tag">${escapeHtml(skill)}</span>`).join("")}
+      ${[...new Set([...skills, ...keywords])].map((keyword) => `<span class="tag">${escapeHtml(keyword)}</span>`).join("")}
     </div>
   `;
 }
@@ -895,6 +978,7 @@ function renderHrWorkspace() {
   renderAuthPanel();
   syncRoleControls();
   populateJobDepartmentControls();
+  renderJobDraftPreview();
   renderMetrics();
   renderJobsTable();
   renderCandidatesTable();
@@ -975,9 +1059,15 @@ function syncRoleControls() {
 function renderJobsToolbar() {
   const search = $("#hrJobSearch");
   const createPanel = $("#jobCreatePanel");
+  const tableWrap = $("#jobsTableWrap");
+  const createButton = $("#showJobCreate");
+  const searchField = search?.closest(".job-search-field");
   if (search && document.activeElement !== search) search.value = state.hrJobQuery;
   createPanel.hidden = !state.jobCreateOpen;
-  $("#showJobCreate").setAttribute("aria-expanded", String(state.jobCreateOpen));
+  tableWrap.hidden = state.jobCreateOpen;
+  if (searchField) searchField.hidden = state.jobCreateOpen;
+  createButton.hidden = state.jobCreateOpen;
+  createButton.setAttribute("aria-expanded", String(state.jobCreateOpen));
 }
 
 function renderSettingsSections() {
@@ -987,6 +1077,109 @@ function renderSettingsSections() {
   $$("[data-settings-panel]").forEach((panel) => {
     panel.hidden = panel.dataset.settingsPanel !== state.settingsSection;
   });
+}
+
+function currentJobDraft() {
+  const form = $("#jobForm");
+  if (!form) {
+    return {
+      title: "Untitled job",
+      department: "Department pending",
+      subdepartment: "",
+      location: "Location pending",
+      work_type: "Full Time",
+      status: "draft",
+      hiring_manager: "Hiring manager pending",
+      salary_min: null,
+      salary_max: null,
+      salary_range: "Shared during screening",
+      job_description: "",
+      requirements: "",
+      benefits: "",
+      seo_title: "",
+      seo_description: "",
+      seo_keywords: []
+    };
+  }
+
+  const data = Object.fromEntries(new FormData(form));
+  const department = getDepartmentById(data.department_id);
+  const subdepartment = getDepartmentById(data.subdepartment_id);
+  const [salaryMin, salaryMax] = normalizeSalaryValues(numberOrNull(data.salary_min), numberOrNull(data.salary_max));
+  const jobDescription = String(data.job_description || "").trim();
+
+  return {
+    title: String(data.title || "").trim() || "Untitled job",
+    department: department?.name || "Department pending",
+    subdepartment: subdepartment?.name || "",
+    location: String(data.location || "").trim() || "Location pending",
+    work_type: data.work_type || "Full Time",
+    status: data.status || "draft",
+    hiring_manager: String(data.hiring_manager || "").trim() || "Hiring manager pending",
+    salary_min: salaryMin,
+    salary_max: salaryMax,
+    salary_range: buildSalaryRange(salaryMin, salaryMax),
+    summary: summarizeText(jobDescription),
+    job_description: jobDescription,
+    requirements: String(data.requirements || "").trim(),
+    benefits: String(data.benefits || "").trim(),
+    seo_title: String(data.seo_title || "").trim(),
+    seo_description: String(data.seo_description || "").trim(),
+    seo_keywords: parseKeywords(data.seo_keywords)
+  };
+}
+
+function renderJobDraftPreview() {
+  const preview = $("#jobDraftPreview");
+  if (!preview) return;
+
+  const draft = currentJobDraft();
+  const keywordMarkup = draft.seo_keywords.length
+    ? draft.seo_keywords.map((keyword) => `<span class="tag">${escapeHtml(keyword)}</span>`).join("")
+    : `<span class="tag">Add SEO keywords</span>`;
+
+  preview.innerHTML = `
+    <div class="job-draft-sticky">
+      <p class="eyebrow">Draft preview</p>
+      <h3>${escapeHtml(draft.title)}</h3>
+      <div class="job-meta">
+        <span>${escapeHtml(draft.department)}</span>
+        ${draft.subdepartment ? `<span>${escapeHtml(draft.subdepartment)}</span>` : ""}
+        <span>${escapeHtml(draft.location)}</span>
+        <span>${escapeHtml(draft.work_type)}</span>
+      </div>
+      <dl>
+        <div>
+          <dt>Status</dt>
+          <dd>${escapeHtml(formatStatus(draft.status))}</dd>
+        </div>
+        <div>
+          <dt>Salary range</dt>
+          <dd>${escapeHtml(draft.salary_range)}</dd>
+        </div>
+        <div>
+          <dt>Hiring manager</dt>
+          <dd>${escapeHtml(draft.hiring_manager)}</dd>
+        </div>
+      </dl>
+      <section class="description-block">
+        <h4>Job Description</h4>
+        ${renderTextBlock(draft.job_description, "Start writing the job description.")}
+      </section>
+      <section class="description-block">
+        <h4>Requirements</h4>
+        ${renderTextBlock(draft.requirements, "Add required experience, credentials, and skills.")}
+      </section>
+      <section class="description-block">
+        <h4>Benefits</h4>
+        ${renderTextBlock(draft.benefits, "Add benefits and employment details.")}
+      </section>
+      <section class="description-block">
+        <h4>SEO keywords</h4>
+        <div class="tag-row">${keywordMarkup}</div>
+      </section>
+    </div>
+  `;
 }
 
 function renderRoleCard() {
@@ -1383,6 +1576,7 @@ function bindEvents() {
     state.jobCreateOpen = true;
     renderJobsToolbar();
     populateJobDepartmentControls();
+    renderJobDraftPreview();
     $("#jobForm input[name='title']").focus();
   });
 
@@ -1457,9 +1651,12 @@ function bindEvents() {
   });
 
   $("#applicationForm").addEventListener("submit", handleApplicationSubmit);
+  $("#jobForm").addEventListener("input", renderJobDraftPreview);
+  $("#jobForm").addEventListener("change", renderJobDraftPreview);
   $("#jobForm").addEventListener("submit", handleJobSubmit);
   $("#jobDepartmentSelect").addEventListener("change", (event) => {
     populateSubdepartmentControls(event.target.value);
+    renderJobDraftPreview();
   });
   $("#departmentForm").addEventListener("submit", handleDepartmentSubmit);
   $("#boardSettingsForm").addEventListener("submit", handleBoardSettingsSubmit);
@@ -1846,6 +2043,9 @@ async function handleJobSubmit(event) {
   const data = Object.fromEntries(new FormData(event.currentTarget));
   const department = getDepartmentById(data.department_id);
   const subdepartment = getDepartmentById(data.subdepartment_id);
+  const [salaryMin, salaryMax] = normalizeSalaryValues(numberOrNull(data.salary_min), numberOrNull(data.salary_max));
+  const jobDescription = String(data.job_description || "").trim();
+  const seoKeywords = parseKeywords(data.seo_keywords);
   const job = {
     id: `job-${Date.now()}`,
     title: data.title.trim(),
@@ -1857,11 +2057,19 @@ async function handleJobSubmit(event) {
     work_type: data.work_type,
     status: data.status,
     hiring_manager: data.hiring_manager.trim(),
-    summary: data.summary.trim(),
-    salary_range: "Shared during screening",
+    summary: summarizeText(jobDescription) || "Details will be shared during screening.",
+    salary_min: salaryMin,
+    salary_max: salaryMax,
+    salary_range: buildSalaryRange(salaryMin, salaryMax),
+    job_description: jobDescription,
+    requirements: String(data.requirements || "").trim(),
+    benefits: String(data.benefits || "").trim(),
+    seo_title: String(data.seo_title || "").trim(),
+    seo_description: String(data.seo_description || "").trim(),
+    seo_keywords: seoKeywords,
     review_days: 5,
     remote: data.location.toLowerCase().includes("remote") || data.location.toLowerCase().includes("hybrid"),
-    skills: ["Role fit", "Team communication", "Execution"],
+    skills: seoKeywords.length ? seoKeywords.slice(0, 6) : ["Role fit", "Team communication", "Execution"],
     applicants: 0,
     interviews: 0,
     posted_at: new Date().toISOString().slice(0, 10)
@@ -1882,20 +2090,45 @@ async function handleJobSubmit(event) {
         remote: job.remote,
         skills: job.skills
       };
+      const expandedJobPayload = {
+        ...baseJobPayload,
+        salary_min: job.salary_min,
+        salary_max: job.salary_max,
+        job_description: job.job_description,
+        requirements: job.requirements,
+        benefits: job.benefits,
+        seo_title: job.seo_title || null,
+        seo_description: job.seo_description || null,
+        seo_keywords: job.seo_keywords
+      };
+      const departmentJobPayload = {
+        department_id: job.department_id || null,
+        subdepartment_id: job.subdepartment_id || null,
+        subdepartment: job.subdepartment || null
+      };
       let createdJobs = [];
       try {
         createdJobs = await supabaseInsert(
           "jobs",
           {
-            ...baseJobPayload,
-            department_id: job.department_id || null,
-            subdepartment_id: job.subdepartment_id || null,
-            subdepartment: job.subdepartment || null
+            ...expandedJobPayload,
+            ...departmentJobPayload
           },
           true
         );
       } catch (error) {
-        createdJobs = await supabaseInsert("jobs", baseJobPayload, true);
+        try {
+          createdJobs = await supabaseInsert(
+            "jobs",
+            {
+              ...baseJobPayload,
+              ...departmentJobPayload
+            },
+            true
+          );
+        } catch (fallbackError) {
+          createdJobs = await supabaseInsert("jobs", baseJobPayload, true);
+        }
       }
       const [created] = createdJobs;
       if (created?.id) job.id = created.id;

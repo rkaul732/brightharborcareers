@@ -491,6 +491,62 @@ main {
   padding-top: 16px;
 }
 
+.job-create-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.form-section {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  padding: 14px;
+}
+
+.seo-section {
+  border-left: 4px solid var(--gold);
+}
+
+.keyword-field textarea {
+  min-height: 92px;
+}
+
+.job-draft-panel {
+  min-width: 0;
+}
+
+.job-draft-sticky {
+  position: sticky;
+  top: 184px;
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.job-draft-sticky h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.job-draft-sticky h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.job-draft-sticky .description-block {
+  margin-top: 0;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
 .search-panel,
 .panel,
 .job-board-panel,
@@ -1168,6 +1224,11 @@ button:disabled:hover {
 .pipeline-settings-form {
   display: grid;
   gap: 12px;
+}
+
+.department-form,
+.profile-form,
+.pipeline-settings-form {
   margin-bottom: 16px;
   border-bottom: 1px solid var(--line);
   padding-bottom: 16px;
@@ -1482,8 +1543,13 @@ td strong {
 @media (max-width: 1220px) {
   .landing-layout,
   .login-layout,
-  .hr-grid {
+  .hr-grid,
+  .job-create-layout {
     grid-template-columns: 1fr;
+  }
+
+  .job-draft-sticky {
+    position: static;
   }
 
   .search-panel {

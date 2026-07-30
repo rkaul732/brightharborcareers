@@ -4,7 +4,7 @@ Bright Harbor Careers is a dual-sided applicant tracking system for applicants a
 
 - Applicants can browse an image-led job board, filter roles, view full job descriptions, and submit applications.
 - Visitors first choose between Applicant and Hiring Team.
-- Recruiters can create jobs, publish roles, and move candidates through the pipeline.
+- Recruiters can create focused job drafts with salary ranges, sectioned descriptions, SEO keywords, and pipeline tracking.
 - Hiring managers can review candidates and advance interview-stage applicants.
 - Admins can edit the public job board header, manage agency departments and subdepartments, and configure pipeline labels.
 - HR users navigate Jobs, Candidates, and Reports from the top header, with Settings and profile editing in the profile menu.
@@ -104,6 +104,7 @@ supabase/migrations/20260730170000_job_board_settings.sql
 supabase/migrations/20260730183000_departments.sql
 supabase/migrations/20260730190000_profile_avatar.sql
 supabase/migrations/20260730200000_pipeline_settings.sql
+supabase/migrations/20260730210000_job_content_sections.sql
 ```
 
 4. Paste and run each file in Supabase before moving to the next one.
@@ -121,6 +122,7 @@ This creates:
 - `departments`
 - `pipeline_settings`
 - profile avatar URLs
+- salary ranges, job description sections, benefits, and SEO keywords for jobs
 - HR role types for `recruiter`, `hiring_manager`, and `admin`
 - row-level security policies
 
