@@ -376,9 +376,14 @@
                         <p class="eyebrow">New job</p>
                         <h2>Create a job</h2>
                       </div>
-                      <button class="secondary-action small" type="button" id="cancelJobCreate">
-                        Cancel
-                      </button>
+                      <div class="create-header-actions">
+                        <button class="secondary-action small" type="button" id="showJobPreview" aria-controls="jobPreviewPanel">
+                          Preview
+                        </button>
+                        <button class="secondary-action small" type="button" id="cancelJobCreate">
+                          Cancel
+                        </button>
+                      </div>
                     </div>
                     <div class="job-create-layout">
                       <form class="job-form" id="jobForm">
@@ -489,9 +494,22 @@
                         </button>
                         <p class="form-message" id="jobFormMessage" role="status"></p>
                       </form>
-
-                      <aside class="job-draft-panel" id="jobDraftPreview" aria-live="polite"></aside>
                     </div>
+
+                    <section class="job-preview-overlay" id="jobPreviewPanel" role="dialog" aria-modal="true" aria-labelledby="jobPreviewHeading" hidden>
+                      <div class="job-preview-dialog">
+                        <div class="section-header compact">
+                          <div>
+                            <p class="eyebrow">Draft preview</p>
+                            <h2 id="jobPreviewHeading">Job posting preview</h2>
+                          </div>
+                          <button class="secondary-action small" type="button" id="closeJobPreview">
+                            Close
+                          </button>
+                        </div>
+                        <div class="job-preview-body" id="jobDraftPreview" aria-live="polite"></div>
+                      </div>
+                    </section>
                   </section>
 
                   <div class="table-wrap" id="jobsTableWrap">

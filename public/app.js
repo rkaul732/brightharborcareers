@@ -1139,8 +1139,7 @@ function renderJobDraftPreview() {
     : `<span class="tag">Add SEO keywords</span>`;
 
   preview.innerHTML = `
-    <div class="job-draft-sticky">
-      <p class="eyebrow">Draft preview</p>
+    <div class="job-preview-content">
       <h3>${escapeHtml(draft.title)}</h3>
       <div class="job-meta">
         <span>${escapeHtml(draft.department)}</span>
@@ -1180,6 +1179,17 @@ function renderJobDraftPreview() {
       </section>
     </div>
   `;
+}
+
+function openJobPreview() {
+  renderJobDraftPreview();
+  $("#jobPreviewPanel").hidden = false;
+  $("#closeJobPreview").focus();
+}
+
+function closeJobPreview() {
+  $("#jobPreviewPanel").hidden = true;
+  $("#showJobPreview").focus();
 }
 
 function renderRoleCard() {
@@ -1580,8 +1590,23 @@ function bindEvents() {
     $("#jobForm input[name='title']").focus();
   });
 
+  $("#showJobPreview").addEventListener("click", openJobPreview);
+
+  $("#closeJobPreview").addEventListener("click", closeJobPreview);
+
+  $("#jobPreviewPanel").addEventListener("click", (event) => {
+    if (event.target === event.currentTarget) closeJobPreview();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !$("#jobPreviewPanel").hidden) {
+      closeJobPreview();
+    }
+  });
+
   $("#cancelJobCreate").addEventListener("click", () => {
     state.jobCreateOpen = false;
+    $("#jobPreviewPanel").hidden = true;
     renderJobsToolbar();
   });
 

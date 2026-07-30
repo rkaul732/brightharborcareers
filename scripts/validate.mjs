@@ -62,7 +62,7 @@ const checks = [
   [html.includes('name="username"') && html.includes('name="password"'), "Hiring-team credentials form"],
   [html.includes('data-hr-section="jobs"') && app.includes("pipeline-chip"), "HR jobs top navigation"],
   [html.includes("hrJobSearch") && html.includes("showJobCreate") && app.includes("hrJobQuery"), "HR jobs search and create control"],
-  [html.includes("jobDraftPreview") && html.includes("jobsTableWrap") && app.includes("renderJobDraftPreview"), "Focused job drafting view"],
+  [html.includes("showJobPreview") && html.includes("jobPreviewPanel") && app.includes("openJobPreview"), "On-demand job preview"],
   [html.includes('name="salary_min"') && html.includes('name="salary_max"'), "Salary range fields"],
   [html.includes('name="job_description"') && html.includes('name="requirements"') && html.includes('name="benefits"'), "Sectioned job content fields"],
   [html.includes('name="seo_keywords"') && app.includes("parseKeywords"), "SEO keyword entry"],

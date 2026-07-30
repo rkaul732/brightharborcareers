@@ -491,9 +491,15 @@ main {
   padding-top: 16px;
 }
 
+.create-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .job-create-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
   gap: 16px;
   align-items: start;
 }
@@ -515,33 +521,44 @@ main {
   min-height: 92px;
 }
 
-.job-draft-panel {
-  min-width: 0;
+.job-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  background: rgba(28, 47, 67, 0.44);
+  padding: 24px;
 }
 
-.job-draft-sticky {
-  position: sticky;
-  top: 184px;
-  display: grid;
-  gap: 14px;
+.job-preview-dialog {
+  width: min(780px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: #fff;
   padding: 16px;
-  box-shadow: var(--shadow);
+  box-shadow: 0 18px 48px rgba(28, 47, 67, 0.22);
 }
 
-.job-draft-sticky h3 {
+.job-preview-body,
+.job-preview-content {
+  display: grid;
+  gap: 14px;
+}
+
+.job-preview-content h3 {
   margin: 0;
   font-size: 22px;
 }
 
-.job-draft-sticky h4 {
+.job-preview-content h4 {
   margin: 0 0 8px;
   font-size: 14px;
 }
 
-.job-draft-sticky .description-block {
+.job-preview-content .description-block {
   margin-top: 0;
   border-top: 1px solid var(--line);
   padding-top: 12px;
@@ -1546,10 +1563,6 @@ td strong {
   .hr-grid,
   .job-create-layout {
     grid-template-columns: 1fr;
-  }
-
-  .job-draft-sticky {
-    position: static;
   }
 
   .search-panel {
