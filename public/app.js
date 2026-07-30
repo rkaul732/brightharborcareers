@@ -41,11 +41,23 @@ const defaultBoardSettings = {
   overlay_opacity: 55
 };
 
+const demoDepartments = [
+  { id: "dept-people", name: "People Operations", parent_id: null, status: "active" },
+  { id: "dept-recruiting", name: "Recruiting", parent_id: "dept-people", status: "active" },
+  { id: "dept-client", name: "Client Experience", parent_id: null, status: "active" },
+  { id: "dept-analytics", name: "Analytics", parent_id: null, status: "active" },
+  { id: "dept-clinical", name: "Clinical Services", parent_id: null, status: "active" },
+  { id: "dept-programs", name: "Program Coordination", parent_id: "dept-clinical", status: "active" }
+];
+
 const demoJobs = [
   {
     id: "job-101",
     title: "Senior Talent Partner",
+    department_id: "dept-people",
+    subdepartment_id: "dept-recruiting",
     department: "People Operations",
+    subdepartment: "Recruiting",
     location: "Boston, MA",
     work_type: "Full Time",
     status: "published",
@@ -63,7 +75,10 @@ const demoJobs = [
   {
     id: "job-102",
     title: "Client Success Manager",
+    department_id: "dept-client",
+    subdepartment_id: null,
     department: "Client Experience",
+    subdepartment: "",
     location: "Providence, RI",
     work_type: "Full Time",
     status: "published",
@@ -81,7 +96,10 @@ const demoJobs = [
   {
     id: "job-103",
     title: "Workforce Data Analyst",
+    department_id: "dept-analytics",
+    subdepartment_id: null,
     department: "Analytics",
+    subdepartment: "",
     location: "Remote",
     work_type: "Full Time",
     status: "published",
@@ -99,7 +117,10 @@ const demoJobs = [
   {
     id: "job-104",
     title: "Clinical Program Coordinator",
+    department_id: "dept-clinical",
+    subdepartment_id: "dept-programs",
     department: "Clinical Services",
+    subdepartment: "Program Coordination",
     location: "New Haven, CT",
     work_type: "Part Time",
     status: "published",
@@ -117,7 +138,10 @@ const demoJobs = [
   {
     id: "job-105",
     title: "HR Systems Administrator",
+    department_id: "dept-people",
+    subdepartment_id: null,
     department: "People Operations",
+    subdepartment: "",
     location: "Hybrid",
     work_type: "Full Time",
     status: "draft",
@@ -199,8 +223,10 @@ const state = {
   selectedJobId: "job-101",
   selectedJobIds: new Set(),
   role: "recruiter",
+  hrSection: "workspace",
   session: readInitialSession(),
   boardSettings: readLocalBoardSettings(),
+  departments: readLocalDepartments(),
   jobDetailOpen: false,
   applicationOpen: false,
   filters: {
@@ -293,16 +319,94 @@ function saveLocalBoardSettings(settings) {
   }
 }
 
+function normalizeDepartment(department = {}) {
+  return {
+    id: String(department.id || `dept-${Date.now()}`),
+    name: String(department.name || "").trim(),
+    parent_id: department.parent_id || null,
+    status: department.status || "active"
+  };
+}
+
+function normalizeDepartments(departments = []) {
+  return departments
+    .map(normalizeDepartment)
+    .filter((department) => department.id && department.name)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function readLocalDepartments() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("bhc-departments") || "null");
+    return normalizeDepartments(Array.isArray(saved) && saved.length ? saved : demoDepartments);
+  } catch (error) {
+    return normalizeDepartments(demoDepartments);
+  }
+}
+
+function saveLocalDepartments(departments) {
+  try {
+    localStorage.setItem("bhc-departments", JSON.stringify(departments));
+  } catch (error) {
+    return;
+  }
+}
+
+function activeDepartments() {
+  return state.departments.filter((department) => department.status === "active");
+}
+
+function parentDepartments() {
+  return activeDepartments()
+    .filter((department) => !department.parent_id)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function childDepartments(parentId) {
+  return activeDepartments()
+    .filter((department) => department.parent_id === parentId)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function getDepartmentById(id) {
+  return activeDepartments().find((department) => department.id === id) || null;
+}
+
+function findParentDepartmentForJob(job) {
+  const byId = getDepartmentById(job.department_id);
+  if (byId && !byId.parent_id) return byId;
+
+  const byName = parentDepartments().find((department) => department.name === job.department);
+  if (byName) return byName;
+
+  return job.department
+    ? { id: `legacy-${job.department}`, name: job.department, parent_id: null, status: "active" }
+    : null;
+}
+
+function findSubdepartmentForJob(job) {
+  return getDepartmentById(job.subdepartment_id) || null;
+}
+
 async function loadSupabaseData() {
   if (!hasSupabase) return;
 
   try {
     await loadJobBoardSettings();
+    await loadDepartments();
 
-    const jobs = await supabaseSelect(
-      "jobs",
-      "select=id,title,department,location,work_type,status,hiring_manager,summary,salary_range,review_days,remote,skills,posted_at&order=posted_at.desc"
-    );
+    let jobs = [];
+    try {
+      jobs = await supabaseSelect(
+        "jobs",
+        "select=id,title,department,department_id,subdepartment,subdepartment_id,location,work_type,status,hiring_manager,summary,salary_range,review_days,remote,skills,posted_at&order=posted_at.desc"
+      );
+    } catch (error) {
+      jobs = await supabaseSelect(
+        "jobs",
+        "select=id,title,department,location,work_type,status,hiring_manager,summary,salary_range,review_days,remote,skills,posted_at&order=posted_at.desc"
+      );
+    }
     setConnection(true, "Supabase connected");
 
     if (Array.isArray(jobs) && jobs.length) {
@@ -334,6 +438,21 @@ async function loadSupabaseData() {
     }
   } catch (error) {
     setConnection(Boolean(state.session?.accessToken), state.session?.accessToken ? "HR session limited" : "Demo data");
+  }
+}
+
+async function loadDepartments() {
+  try {
+    const departments = await supabaseSelect(
+      "departments",
+      "select=id,name,parent_id,status&order=name.asc"
+    );
+    if (Array.isArray(departments) && departments.length) {
+      state.departments = normalizeDepartments(departments);
+      saveLocalDepartments(state.departments);
+    }
+  } catch (error) {
+    return;
   }
 }
 
@@ -484,6 +603,38 @@ function renderJobBoardHero() {
   $("#jobBoardSubtitle").textContent = settings.hero_subtitle;
 }
 
+function departmentOpeningCounts() {
+  const counts = new Map();
+  state.jobs
+    .filter((job) => job.status === "published")
+    .forEach((job) => {
+      const department = findParentDepartmentForJob(job);
+      if (!department) return;
+      counts.set(department.name, (counts.get(department.name) || 0) + 1);
+    });
+
+  return [...counts.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function renderDepartmentCards() {
+  const cards = departmentOpeningCounts();
+  const selected = state.filters.department;
+  $("#departmentCards").innerHTML = cards.length
+    ? cards
+        .map(
+          (department) => `
+            <button class="department-filter-card${selected === department.name ? " is-selected" : ""}" type="button" data-department-card="${escapeHtml(department.name)}">
+              <strong>${escapeHtml(department.name)}</strong>
+              <span>${department.count} ${department.count === 1 ? "job" : "jobs"}</span>
+            </button>
+          `
+        )
+        .join("")
+    : `<div class="empty-state compact">No departments have published openings yet.</div>`;
+}
+
 function renderApplicantPortal() {
   const jobs = filteredJobs();
   if (!jobs.some((job) => job.id === state.selectedJobId)) {
@@ -493,6 +644,7 @@ function renderApplicantPortal() {
   }
 
   renderJobBoardHero();
+  renderDepartmentCards();
   $("#jobBoardCount").textContent = `${jobs.length} ${jobs.length === 1 ? "job" : "jobs"}`;
 
   const list = $("#jobList");
@@ -526,12 +678,14 @@ function renderJobCard(job) {
 
 function renderJobDetail(job) {
   const skills = job.skills || [];
+  const subdepartment = findSubdepartmentForJob(job)?.name || job.subdepartment || "";
   return `
     <header>
       <p class="eyebrow">Full job description</p>
       <h2>${escapeHtml(job.title)}</h2>
       <div class="job-meta">
         <span>${escapeHtml(job.department)}</span>
+        ${subdepartment ? `<span>${escapeHtml(subdepartment)}</span>` : ""}
         <span>${escapeHtml(job.location)}</span>
         <span>${escapeHtml(job.work_type)}</span>
       </div>
@@ -584,14 +738,25 @@ function renderNoJobDetail() {
 }
 
 function renderHrWorkspace() {
+  renderHrSections();
   renderRoleCard();
   renderAuthPanel();
   syncRoleControls();
+  populateJobDepartmentControls();
   renderMetrics();
   renderJobsTable();
   renderPipeline();
   renderBoardSettingsForm();
+  renderDepartmentSettings();
   renderPermissions();
+}
+
+function renderHrSections() {
+  $$(".hr-menu-button").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.hrSection === state.hrSection);
+  });
+  $("#hrWorkspaceSection").hidden = state.hrSection !== "workspace";
+  $("#hrSettingsSection").hidden = state.hrSection !== "settings";
 }
 
 function renderAuthPanel() {
@@ -628,6 +793,9 @@ function syncRoleControls() {
     control.disabled = !canManageJobs;
   });
   $$("#boardSettingsForm input, #boardSettingsForm textarea, #boardSettingsForm button").forEach((control) => {
+    control.disabled = !canManageBoard;
+  });
+  $$("#departmentForm input, #departmentForm select, #departmentForm button").forEach((control) => {
     control.disabled = !canManageBoard;
   });
   $("#adminPanel").hidden = state.role !== "admin";
@@ -680,6 +848,7 @@ function renderJobsTable() {
             <strong>${escapeHtml(job.title)}</strong>
             <div class="table-meta">
               <span>${escapeHtml(job.department)}</span>
+              ${job.subdepartment ? `<span>${escapeHtml(job.subdepartment)}</span>` : ""}
               <span>${escapeHtml(job.location)}</span>
             </div>
           </td>
@@ -776,6 +945,75 @@ function renderBoardSettingsForm() {
   form.elements.overlay_opacity.value = settings.overlay_opacity;
 }
 
+function populateJobDepartmentControls() {
+  const departmentSelect = $("#jobDepartmentSelect");
+  const subdepartmentSelect = $("#jobSubdepartmentSelect");
+  const parents = parentDepartments();
+  const currentDepartment = departmentSelect.value;
+  const selectedDepartment = parents.some((department) => department.id === currentDepartment)
+    ? currentDepartment
+    : parents[0]?.id || "";
+
+  departmentSelect.innerHTML = parents.length
+    ? parents
+        .map((department) => `<option value="${escapeHtml(department.id)}">${escapeHtml(department.name)}</option>`)
+        .join("")
+    : `<option value="">Create a department in Settings first</option>`;
+  departmentSelect.value = selectedDepartment;
+  subdepartmentSelect.disabled = !selectedDepartment || departmentSelect.disabled;
+  populateSubdepartmentControls(selectedDepartment, subdepartmentSelect.value);
+}
+
+function populateSubdepartmentControls(parentId, selectedChildId = "") {
+  const subdepartmentSelect = $("#jobSubdepartmentSelect");
+  const children = childDepartments(parentId);
+  subdepartmentSelect.innerHTML = [
+    `<option value="">None</option>`,
+    ...children.map((department) => `<option value="${escapeHtml(department.id)}">${escapeHtml(department.name)}</option>`)
+  ].join("");
+  subdepartmentSelect.value = children.some((department) => department.id === selectedChildId) ? selectedChildId : "";
+}
+
+function populateParentDepartmentSelect() {
+  const select = $("#parentDepartmentSelect");
+  const selected = select.value;
+  const parents = parentDepartments();
+  select.innerHTML = [
+    `<option value="">None - create agency department</option>`,
+    ...parents.map((department) => `<option value="${escapeHtml(department.id)}">${escapeHtml(department.name)}</option>`)
+  ].join("");
+  select.value = parents.some((department) => department.id === selected) ? selected : "";
+}
+
+function renderDepartmentSettings() {
+  populateParentDepartmentSelect();
+  const parents = parentDepartments();
+  const counts = new Map(departmentOpeningCounts().map((department) => [department.name, department.count]));
+
+  $("#departmentTree").innerHTML = parents.length
+    ? parents
+        .map((department) => {
+          const children = childDepartments(department.id);
+          return `
+            <article class="department-group">
+              <div>
+                <h3>${escapeHtml(department.name)}</h3>
+                <span>${counts.get(department.name) || 0} open ${counts.get(department.name) === 1 ? "job" : "jobs"}</span>
+              </div>
+              ${
+                children.length
+                  ? `<ul class="subdepartment-list">${children
+                      .map((child) => `<li>${escapeHtml(child.name)}</li>`)
+                      .join("")}</ul>`
+                  : `<p class="summary">No subdepartments yet.</p>`
+              }
+            </article>
+          `;
+        })
+        .join("")
+    : `<div class="empty-state compact">No departments have been created yet.</div>`;
+}
+
 function getNextStage(status) {
   const order = ["new", "screening", "interview", "offer"];
   const index = order.indexOf(status);
@@ -831,6 +1069,13 @@ function bindEvents() {
     });
   });
 
+  $$(".hr-menu-button").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.hrSection = button.dataset.hrSection;
+      renderHrWorkspace();
+    });
+  });
+
   $("#jobSearch").addEventListener("input", (event) => {
     state.filters.query = event.target.value;
     resetApplicantDrilldown();
@@ -870,6 +1115,15 @@ function bindEvents() {
     renderApplicantPortal();
   });
 
+  $("#departmentCards").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-department-card]");
+    if (!button) return;
+    state.filters.department = button.dataset.departmentCard;
+    populateFilters();
+    resetApplicantDrilldown();
+    renderApplicantPortal();
+  });
+
   $("#jobList").addEventListener("click", (event) => {
     const button = event.target.closest("[data-apply-job]");
     if (!button) return;
@@ -882,6 +1136,10 @@ function bindEvents() {
 
   $("#applicationForm").addEventListener("submit", handleApplicationSubmit);
   $("#jobForm").addEventListener("submit", handleJobSubmit);
+  $("#jobDepartmentSelect").addEventListener("change", (event) => {
+    populateSubdepartmentControls(event.target.value);
+  });
+  $("#departmentForm").addEventListener("submit", handleDepartmentSubmit);
   $("#boardSettingsForm").addEventListener("submit", handleBoardSettingsSubmit);
   $("#showApplicationButton").addEventListener("click", () => {
     state.applicationOpen = true;
@@ -949,6 +1207,61 @@ function bindEvents() {
       );
     }
   });
+}
+
+async function handleDepartmentSubmit(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const data = Object.fromEntries(new FormData(form));
+  const name = String(data.department_name || "").trim();
+  const parentId = data.parent_id || null;
+  if (!name) return;
+
+  const duplicate = activeDepartments().some(
+    (department) =>
+      department.parent_id === parentId &&
+      department.name.toLowerCase() === name.toLowerCase()
+  );
+  if (duplicate) {
+    showMessage("#departmentMessage", "That department already exists.");
+    return;
+  }
+
+  let department = {
+    id: `dept-${Date.now()}`,
+    name,
+    parent_id: parentId,
+    status: "active"
+  };
+
+  try {
+    if (hasSupabase && state.session?.accessToken) {
+      const [created] = await supabaseInsert(
+        "departments",
+        {
+          name: department.name,
+          parent_id: department.parent_id || null,
+          status: department.status
+        },
+        true
+      );
+      if (created?.id) department = normalizeDepartment(created);
+      showMessage("#departmentMessage", department.parent_id ? "Subdepartment created." : "Department created.");
+    } else if (hasSupabase) {
+      throw new Error("Missing admin session");
+    } else {
+      showMessage("#departmentMessage", "Department created for this preview.");
+    }
+  } catch (error) {
+    showMessage("#departmentMessage", "Department created locally. Supabase save requires an admin account.");
+  }
+
+  state.departments = normalizeDepartments([...state.departments, department]);
+  saveLocalDepartments(state.departments);
+  form.reset();
+  populateFilters();
+  renderApplicantPortal();
+  renderHrWorkspace();
 }
 
 async function handleBoardSettingsSubmit(event) {
@@ -1138,10 +1451,15 @@ async function handleApplicationSubmit(event) {
 async function handleJobSubmit(event) {
   event.preventDefault();
   const data = Object.fromEntries(new FormData(event.currentTarget));
+  const department = getDepartmentById(data.department_id);
+  const subdepartment = getDepartmentById(data.subdepartment_id);
   const job = {
     id: `job-${Date.now()}`,
     title: data.title.trim(),
-    department: data.department.trim(),
+    department_id: department?.id || "",
+    subdepartment_id: subdepartment?.id || "",
+    department: department?.name || "General",
+    subdepartment: subdepartment?.name || "",
     location: data.location.trim(),
     work_type: data.work_type,
     status: data.status,
@@ -1158,7 +1476,7 @@ async function handleJobSubmit(event) {
 
   try {
     if (hasSupabase && state.session?.accessToken) {
-      const [created] = await supabaseInsert("jobs", {
+      const baseJobPayload = {
         title: job.title,
         department: job.department,
         location: job.location,
@@ -1170,7 +1488,23 @@ async function handleJobSubmit(event) {
         review_days: job.review_days,
         remote: job.remote,
         skills: job.skills
-      }, true);
+      };
+      let createdJobs = [];
+      try {
+        createdJobs = await supabaseInsert(
+          "jobs",
+          {
+            ...baseJobPayload,
+            department_id: job.department_id || null,
+            subdepartment_id: job.subdepartment_id || null,
+            subdepartment: job.subdepartment || null
+          },
+          true
+        );
+      } catch (error) {
+        createdJobs = await supabaseInsert("jobs", baseJobPayload, true);
+      }
+      const [created] = createdJobs;
       if (created?.id) job.id = created.id;
     } else if (hasSupabase) {
       throw new Error("Missing HR session");
@@ -1178,6 +1512,7 @@ async function handleJobSubmit(event) {
     state.jobs.unshift(job);
     if (job.status === "published") state.selectedJobId = job.id;
     event.currentTarget.reset();
+    populateJobDepartmentControls();
     showMessage("#jobFormMessage", "Job created.");
     populateFilters();
     renderApplicantPortal();

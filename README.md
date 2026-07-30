@@ -6,7 +6,7 @@ Bright Harbor Careers is a dual-sided applicant tracking system for applicants a
 - Visitors first choose between Applicant and Hiring Team.
 - Recruiters can create jobs, publish roles, and move candidates through the pipeline.
 - Hiring managers can review candidates and advance interview-stage applicants.
-- Admins can edit the public job board header image, overlay text, and layout settings.
+- Admins can edit the public job board header and manage agency departments and subdepartments.
 - Hiring-team users without accounts can request access for HR approval.
 - Supabase stores jobs, applications, notes, scorecards, activity, and role profiles.
 - Netlify hosts the site, and GitHub stores the source.
@@ -100,6 +100,7 @@ Netlify publishes that `dist/` folder.
 ```text
 supabase/migrations/20260729160000_bright_harbor_careers.sql
 supabase/migrations/20260730170000_job_board_settings.sql
+supabase/migrations/20260730183000_departments.sql
 ```
 
 4. Paste and run each file in Supabase before moving to the next one.
@@ -114,6 +115,7 @@ This creates:
 - `activity_events`
 - `account_requests`
 - `job_board_settings`
+- `departments`
 - HR role types for `recruiter`, `hiring_manager`, and `admin`
 - row-level security policies
 

@@ -54,6 +54,10 @@
         <path d="M5 5v7c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/>
         <path d="M5 12v7c0 1.7 3.1 3 7 3s7-1.3 7-3v-7"/>
       </symbol>
+      <symbol id="icon-settings" viewBox="0 0 24 24">
+        <path d="M12 15.5a3.5 3.5 0 1 0 0-7a3.5 3.5 0 0 0 0 7Z"/>
+        <path d="M19 13.4a7.8 7.8 0 0 0 0-2.8l2-1.5l-2-3.5l-2.4 1a8.7 8.7 0 0 0-2.4-1.4L14 2.7h-4l-.3 2.5a8.7 8.7 0 0 0-2.4 1.4l-2.4-1l-2 3.5l2 1.5a7.8 7.8 0 0 0 0 2.8l-2 1.5l2 3.5l2.4-1a8.7 8.7 0 0 0 2.4 1.4l.3 2.5h4l.3-2.5a8.7 8.7 0 0 0 2.4-1.4l2.4 1l2-3.5l-2.1-1.5Z"/>
+      </symbol>
     </svg>
 
     <div class="app-shell">
@@ -130,6 +134,10 @@
             </section>
 
             <section class="job-board-panel" aria-label="Available jobs">
+              <section class="department-strip" aria-label="Departments with openings">
+                <div class="department-card-grid" id="departmentCards"></div>
+              </section>
+
               <div class="job-board-controls">
                 <label class="field with-icon board-search">
                   <span>Search jobs</span>
@@ -327,6 +335,17 @@
 
               <div class="role-card" id="roleCard"></div>
 
+              <nav class="hr-menu" aria-label="HR main menu">
+                <button class="hr-menu-button is-active" type="button" data-hr-section="workspace">
+                  <svg><use href="#icon-briefcase"></use></svg>
+                  Workspace
+                </button>
+                <button class="hr-menu-button" type="button" data-hr-section="settings">
+                  <svg><use href="#icon-settings"></use></svg>
+                  Settings
+                </button>
+              </nav>
+
               <div class="auth-panel">
                 <div>
                   <p class="eyebrow">Session</p>
@@ -340,9 +359,10 @@
             </aside>
 
             <section class="hr-main">
-              <div class="metric-grid" id="metricGrid"></div>
+              <section class="hr-section" id="hrWorkspaceSection">
+                <div class="metric-grid" id="metricGrid"></div>
 
-              <div class="hr-grid">
+                <div class="hr-grid">
                 <section class="panel jobs-admin-panel">
                   <div class="section-header">
                     <div>
@@ -363,7 +383,11 @@
                       </label>
                       <label class="field">
                         <span>Department</span>
-                        <input name="department" required placeholder="Clinical Services">
+                        <select name="department_id" id="jobDepartmentSelect" required></select>
+                      </label>
+                      <label class="field">
+                        <span>Subdepartment</span>
+                        <select name="subdepartment_id" id="jobSubdepartmentSelect"></select>
                       </label>
                       <label class="field">
                         <span>Location</span>
@@ -426,12 +450,61 @@
                   </div>
                   <div class="pipeline-board" id="pipelineBoard"></div>
                 </section>
+                </div>
+              </section>
+
+              <section class="hr-section" id="hrSettingsSection" hidden>
+                <section class="panel settings-panel">
+                  <div class="section-header">
+                    <div>
+                      <p class="eyebrow">Settings</p>
+                      <h2>System configuration</h2>
+                    </div>
+                  </div>
+
+                  <div class="settings-grid">
+                    <button class="settings-tile is-active" type="button" id="departmentsSettingsButton">
+                      <svg><use href="#icon-settings"></use></svg>
+                      <span>
+                        <strong>Departments</strong>
+                        <small>Create agency departments and subdepartments.</small>
+                      </span>
+                    </button>
+                  </div>
+
+                  <section class="settings-detail" id="departmentsSettingsPanel">
+                    <div class="section-header compact">
+                      <div>
+                        <p class="eyebrow">Departments</p>
+                        <h2>Agency department structure</h2>
+                      </div>
+                    </div>
+                    <form class="department-form" id="departmentForm">
+                      <div class="form-grid">
+                        <label class="field">
+                          <span>Department or subdepartment name</span>
+                          <input name="department_name" required placeholder="Clinical Services">
+                        </label>
+                        <label class="field">
+                          <span>Parent department</span>
+                          <select name="parent_id" id="parentDepartmentSelect"></select>
+                        </label>
+                      </div>
+                      <button class="secondary-action" type="submit">
+                        <svg><use href="#icon-plus"></use></svg>
+                        Create department
+                      </button>
+                      <p class="form-message" id="departmentMessage" role="status"></p>
+                    </form>
+                    <div class="department-tree" id="departmentTree"></div>
+                  </section>
+                </section>
 
                 <section class="panel admin-panel" id="adminPanel">
                   <div class="section-header">
                     <div>
-                      <p class="eyebrow">Governance</p>
-                      <h2>System admin controls</h2>
+                      <p class="eyebrow">Job board</p>
+                      <h2>Public layout controls</h2>
                     </div>
                   </div>
 
@@ -473,7 +546,7 @@
 
                   <div class="permissions-grid" id="permissionsGrid"></div>
                 </section>
-              </div>
+              </section>
             </section>
           </div>
         </section>

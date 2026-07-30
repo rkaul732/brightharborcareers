@@ -135,6 +135,8 @@ svg {
 
 .tab svg,
 .role-button svg,
+.hr-menu-button svg,
+.settings-tile svg,
 .primary-action svg,
 .secondary-action svg,
 .icon-button svg {
@@ -148,7 +150,8 @@ svg {
 }
 
 .tab.is-active,
-.role-button.is-active {
+.role-button.is-active,
+.hr-menu-button.is-active {
   background: var(--harbor-dark);
   color: #fff;
 }
@@ -387,6 +390,46 @@ main {
 .job-detail-page,
 .panel {
   padding: 16px;
+}
+
+.department-strip {
+  margin-bottom: 16px;
+}
+
+.department-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.department-filter-card {
+  display: grid;
+  gap: 8px;
+  min-height: 86px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--harbor);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--ink);
+  padding: 14px;
+  text-align: left;
+}
+
+.department-filter-card:hover,
+.department-filter-card.is-selected {
+  border-color: var(--harbor);
+  box-shadow: 0 8px 18px rgba(28, 47, 67, 0.08);
+}
+
+.department-filter-card strong {
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.department-filter-card span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .job-board-controls {
@@ -856,9 +899,33 @@ button:disabled:hover {
   display: grid;
 }
 
-.role-button {
+.role-button,
+.hr-menu-button {
   justify-content: flex-start;
   width: 100%;
+}
+
+.hr-menu {
+  display: grid;
+  gap: 6px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.hr-menu-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .role-card {
@@ -959,6 +1026,11 @@ button:disabled:hover {
   gap: 16px;
 }
 
+.hr-section {
+  display: grid;
+  gap: 16px;
+}
+
 .metric-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -990,7 +1062,8 @@ button:disabled:hover {
   display: none;
 }
 
-.job-form {
+.job-form,
+.department-form {
   display: grid;
   gap: 12px;
   margin-bottom: 16px;
@@ -1004,6 +1077,110 @@ button:disabled:hover {
   margin-bottom: 16px;
   border-bottom: 1px solid var(--line);
   padding-bottom: 16px;
+}
+
+.settings-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.settings-tile {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-height: 84px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--ink);
+  padding: 14px;
+  text-align: left;
+}
+
+.settings-tile.is-active,
+.settings-tile:hover {
+  border-color: var(--harbor);
+  box-shadow: 0 8px 18px rgba(28, 47, 67, 0.08);
+}
+
+.settings-tile svg {
+  justify-self: center;
+  color: var(--harbor-dark);
+}
+
+.settings-tile strong,
+.settings-tile small {
+  display: block;
+}
+
+.settings-tile small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.settings-detail {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+
+.department-tree {
+  display: grid;
+  gap: 10px;
+}
+
+.department-group {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  padding: 14px;
+}
+
+.department-group > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.department-group h3 {
+  margin: 0;
+}
+
+.department-group span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.subdepartment-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.subdepartment-list li {
+  min-height: 28px;
+  border-radius: 999px;
+  background: var(--subtle);
+  color: var(--harbor-dark);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .request-form {
@@ -1141,6 +1318,11 @@ td strong {
   text-align: center;
 }
 
+.empty-state.compact {
+  min-height: 86px;
+  padding: 12px;
+}
+
 @media (max-width: 1220px) {
   .landing-layout,
   .login-layout,
@@ -1163,7 +1345,8 @@ td strong {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .role-button {
+  .role-button,
+  .hr-menu-button {
     justify-content: center;
   }
 }
@@ -1208,6 +1391,11 @@ td strong {
     grid-template-columns: 1fr;
   }
 
+  .department-card-grid,
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+
   .section-header {
     align-items: flex-start;
     flex-direction: column;
@@ -1230,7 +1418,8 @@ td strong {
   }
 
   .job-board-summary,
-  .job-detail-actions {
+  .job-detail-actions,
+  .department-group > div {
     align-items: flex-start;
     flex-direction: column;
   }
