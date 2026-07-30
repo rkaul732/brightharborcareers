@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { loadEnv } from "./load-env.mjs";
 
 const root = process.cwd();
@@ -39,6 +40,42 @@ function safePath(url) {
   return path.join(publicDir, normalized === "/" ? "index.html" : normalized);
 }
 
+async function readBody(request) {
+  const chunks = [];
+  for await (const chunk of request) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+async function handleNetlifyFunction(request, response, pathname) {
+  const name = pathname.replace("/.netlify/functions/", "").split("/")[0];
+  const functionPath = path.join(root, "netlify", "functions", `${name}.mjs`);
+  const fileStat = await stat(functionPath).catch(() => null);
+  if (!fileStat) return false;
+
+  try {
+    const requestUrl = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
+    const moduleUrl = `${pathToFileURL(functionPath).href}?t=${Date.now()}`;
+    const module = await import(moduleUrl);
+    const result = await module.handler({
+      httpMethod: request.method,
+      headers: request.headers,
+      body: await readBody(request),
+      queryStringParameters: Object.fromEntries(requestUrl.searchParams),
+      rawUrl: requestUrl.toString()
+    });
+
+    response.writeHead(result.statusCode || 200, result.headers || {});
+    response.end(result.body || "");
+  } catch (error) {
+    response.writeHead(500, { "Content-Type": "application/json" });
+    response.end(JSON.stringify({ error: error.message || "Function failed." }));
+  }
+
+  return true;
+}
+
 const server = createServer(async (request, response) => {
   try {
     const pathname = new URL(request.url || "/", "http://localhost").pathname;
@@ -49,6 +86,11 @@ const server = createServer(async (request, response) => {
       });
       response.end(envScript());
       return;
+    }
+
+    if (pathname.startsWith("/.netlify/functions/")) {
+      const handled = await handleNetlifyFunction(request, response, pathname);
+      if (handled) return;
     }
 
     let filePath = safePath(request.url || "/");

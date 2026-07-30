@@ -184,6 +184,7 @@ const demoApplications = [
 ];
 
 const state = {
+  currentView: "landing",
   jobs: [...demoJobs],
   applications: [...demoApplications],
   selectedJobId: "job-101",
@@ -336,6 +337,26 @@ function setConnection(isLive, label) {
   $("span:last-child", status).textContent = label;
 }
 
+function showView(view, updateHash = true) {
+  const targetView = view === "hr" && !state.session?.accessToken ? "login" : view;
+  state.currentView = targetView;
+
+  $$(".view").forEach((section) => section.classList.remove("is-active"));
+  $(`#${targetView}View`)?.classList.add("is-active");
+
+  $$(".tab").forEach((tab) => {
+    const tabView = tab.dataset.view;
+    const isActive =
+      tabView === targetView ||
+      (targetView === "hr" && tabView === "login");
+    tab.classList.toggle("is-active", isActive);
+  });
+
+  if (updateHash) {
+    history.replaceState(null, "", `#${targetView}`);
+  }
+}
+
 function uniqueOptions(field, sourceJobs = state.jobs) {
   return ["All", ...new Set(sourceJobs.map((job) => job[field]).filter(Boolean))];
 }
@@ -470,16 +491,22 @@ function renderHrWorkspace() {
 
 function renderAuthPanel() {
   const signedIn = Boolean(state.session?.accessToken);
-  $("#authEmailField").hidden = signedIn;
-  $("#authForm button[type='submit']").hidden = signedIn;
-  $("#signOutButton").hidden = !signedIn;
-  $("#sessionPanel").hidden = !signedIn;
-  $("#sessionPanel").innerHTML = signedIn
+  const sessionMarkup = signedIn
     ? `
       <span class="status-pill">Signed in</span>
       <strong>${escapeHtml(state.session.email || "HR user")}</strong>
     `
     : "";
+
+  $("#authEmailField").hidden = signedIn;
+  $("#authForm button[type='submit']").hidden = signedIn;
+  $("#continueToWorkspace").hidden = !signedIn;
+  $("#loginSessionPanel").hidden = !signedIn;
+  $("#loginSessionPanel").innerHTML = sessionMarkup;
+  $("#signOutButton").hidden = !signedIn;
+  $("#hrSessionPanel").innerHTML = signedIn
+    ? sessionMarkup
+    : `<p class="summary">Sign in from the Hiring Team page to open this workspace.</p>`;
 }
 
 function syncRoleControls() {
@@ -659,11 +686,13 @@ function showMessage(selector, message) {
 function bindEvents() {
   $$(".tab").forEach((button) => {
     button.addEventListener("click", () => {
-      const view = button.dataset.view;
-      $$(".tab").forEach((tab) => tab.classList.toggle("is-active", tab === button));
-      $$(".view").forEach((section) => section.classList.remove("is-active"));
-      $(`#${view}View`).classList.add("is-active");
-      history.replaceState(null, "", `#${view}`);
+      showView(button.dataset.view);
+    });
+  });
+
+  $$("[data-go-view]").forEach((button) => {
+    button.addEventListener("click", () => {
+      showView(button.dataset.goView);
     });
   });
 
@@ -712,10 +741,14 @@ function bindEvents() {
   $("#applicationForm").addEventListener("submit", handleApplicationSubmit);
   $("#jobForm").addEventListener("submit", handleJobSubmit);
   $("#authForm").addEventListener("submit", handleAuthSubmit);
+  $("#requestAccountForm").addEventListener("submit", handleAccountRequestSubmit);
+  $("#continueToWorkspace").addEventListener("click", () => showView("hr"));
   $("#signOutButton").addEventListener("click", () => {
     saveSession(null);
     setConnection(false, "Demo data");
+    renderAuthPanel();
     renderHrWorkspace();
+    showView("login");
   });
 
   $("#jobsTable").addEventListener("change", (event) => {
@@ -777,7 +810,7 @@ async function handleAuthSubmit(event) {
     },
     body: JSON.stringify({
       email,
-      create_user: true,
+      create_user: false,
       options: {
         email_redirect_to: `${location.origin}${location.pathname}`
       }
@@ -795,8 +828,45 @@ async function handleAuthSubmit(event) {
     "#authMessage",
     response.ok
       ? "Sign-in link sent. Check inbox and spam."
-      : `Supabase error: ${responseBody.msg || responseBody.message || "could not send link"}`
+      : `Supabase error: ${responseBody.msg || responseBody.message || "account not approved yet"}`
   );
+}
+
+async function handleAccountRequestSubmit(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const submitButton = $("button[type='submit']", form);
+  const data = Object.fromEntries(new FormData(form));
+
+  submitButton.disabled = true;
+  showMessage("#requestAccountMessage", "Sending request...");
+
+  try {
+    const response = await fetch("/.netlify/functions/request-account", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        full_name: data.full_name?.trim(),
+        email: data.email?.trim(),
+        requested_role: data.requested_role,
+        department: data.department?.trim(),
+        message: data.message?.trim()
+      })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(result.error || "Request could not be sent.");
+    }
+
+    form.reset();
+    showMessage("#requestAccountMessage", result.message || "Request sent to HR.");
+  } catch (error) {
+    showMessage("#requestAccountMessage", error.message || "Request could not be sent.");
+  } finally {
+    submitButton.disabled = false;
+  }
 }
 
 async function handleApplicationSubmit(event) {
@@ -903,9 +973,12 @@ async function handleJobSubmit(event) {
 
 function activateHashView() {
   const hash = location.hash.replace("#", "");
-  if (hash === "hr") {
-    $('[data-view="hr"]').click();
+  if (["landing", "applicant", "login", "hr"].includes(hash)) {
+    showView(hash, false);
+    return;
   }
+
+  showView("landing", false);
 }
 
 async function init() {

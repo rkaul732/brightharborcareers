@@ -58,7 +58,7 @@
 
     <div class="app-shell">
       <header class="topbar">
-        <a class="brand" href="#applicant" aria-label="Bright Harbor Careers home">
+        <a class="brand" href="#landing" aria-label="Bright Harbor Careers home">
           <img src="/assets/brand-mark.svg" alt="" width="38" height="38">
           <span>
             <strong>Bright Harbor</strong>
@@ -67,13 +67,17 @@
         </a>
 
         <nav class="main-tabs" aria-label="Main workspace">
-          <button class="tab is-active" type="button" data-view="applicant">
-            <svg><use href="#icon-search"></use></svg>
-            Applicant portal
+          <button class="tab is-active" type="button" data-view="landing">
+            <svg><use href="#icon-anchor"></use></svg>
+            Start
           </button>
-          <button class="tab" type="button" data-view="hr">
+          <button class="tab" type="button" data-view="applicant">
+            <svg><use href="#icon-search"></use></svg>
+            Applicant
+          </button>
+          <button class="tab" type="button" data-view="login">
             <svg><use href="#icon-briefcase"></use></svg>
-            HR workspace
+            Hiring Team
           </button>
         </nav>
 
@@ -84,7 +88,36 @@
       </header>
 
       <main>
-        <section class="view is-active" id="applicantView" aria-labelledby="applicantHeading">
+        <section class="view is-active" id="landingView" aria-labelledby="landingHeading">
+          <div class="landing-layout">
+            <section class="landing-hero">
+              <p class="eyebrow">Bright Harbor Careers</p>
+              <h1 id="landingHeading">Choose how you want to continue.</h1>
+              <p class="landing-copy">
+                Applicants can explore open roles right away. Hiring team members can sign in to manage jobs, candidates, and approvals.
+              </p>
+            </section>
+
+            <section class="choice-grid" aria-label="Choose user type">
+              <button class="choice-card" type="button" data-go-view="applicant">
+                <svg><use href="#icon-search"></use></svg>
+                <span>
+                  <strong>Applicant</strong>
+                  <small>Browse jobs and submit an application.</small>
+                </span>
+              </button>
+              <button class="choice-card" type="button" data-go-view="login">
+                <svg><use href="#icon-briefcase"></use></svg>
+                <span>
+                  <strong>Hiring Team</strong>
+                  <small>Sign in or request access to the HR workspace.</small>
+                </span>
+              </button>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="applicantView" aria-labelledby="applicantHeading">
           <div class="applicant-layout">
             <aside class="search-panel">
               <div>
@@ -183,6 +216,79 @@
           </div>
         </section>
 
+        <section class="view" id="loginView" aria-labelledby="loginHeading">
+          <div class="login-layout">
+            <section class="login-panel">
+              <div>
+                <p class="eyebrow">Hiring team</p>
+                <h1 id="loginHeading">Sign in to manage hiring.</h1>
+                <p class="landing-copy">
+                  Approved recruiters, hiring managers, and admins use a Supabase magic link to enter the workspace.
+                </p>
+              </div>
+
+              <div class="session-panel" id="loginSessionPanel" hidden></div>
+
+              <form class="auth-panel" id="authForm">
+                <label class="field" id="authEmailField">
+                  <span>Email</span>
+                  <input name="email" type="email" autocomplete="email" placeholder="you@brightharbor.org">
+                </label>
+                <div class="auth-actions">
+                  <button class="primary-action" type="submit">
+                    <svg><use href="#icon-database"></use></svg>
+                    Send sign-in link
+                  </button>
+                  <button class="secondary-action" type="button" id="continueToWorkspace" hidden>
+                    Continue to workspace
+                  </button>
+                </div>
+                <p class="form-message" id="authMessage" role="status"></p>
+              </form>
+            </section>
+
+            <section class="login-panel">
+              <div>
+                <p class="eyebrow">Need access?</p>
+                <h2>Request a hiring-team account</h2>
+              </div>
+              <form class="request-form" id="requestAccountForm">
+                <div class="form-grid">
+                  <label class="field">
+                    <span>Full name</span>
+                    <input name="full_name" required autocomplete="name">
+                  </label>
+                  <label class="field">
+                    <span>Work email</span>
+                    <input name="email" type="email" required autocomplete="email">
+                  </label>
+                  <label class="field">
+                    <span>Requested role</span>
+                    <select name="requested_role" required>
+                      <option value="recruiter">Recruiter</option>
+                      <option value="hiring_manager">Hiring manager</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>Department</span>
+                    <input name="department" placeholder="People Operations">
+                  </label>
+                  <label class="field wide">
+                    <span>Access reason</span>
+                    <textarea name="message" rows="4" placeholder="Share why this account is needed."></textarea>
+                  </label>
+                </div>
+                <button class="secondary-action" type="submit">
+                  <svg><use href="#icon-send"></use></svg>
+                  Request account
+                </button>
+                <p class="form-message" id="requestAccountMessage" role="status"></p>
+              </form>
+            </section>
+          </div>
+        </section>
+
         <section class="view" id="hrView" aria-labelledby="hrHeading">
           <div class="workspace-layout">
             <aside class="hr-sidebar">
@@ -208,27 +314,16 @@
 
               <div class="role-card" id="roleCard"></div>
 
-              <form class="auth-panel" id="authForm">
+              <div class="auth-panel">
                 <div>
-                  <p class="eyebrow">Supabase</p>
-                  <h2>HR session</h2>
+                  <p class="eyebrow">Session</p>
+                  <h2>Hiring team</h2>
                 </div>
-                <div class="session-panel" id="sessionPanel" hidden></div>
-                <label class="field" id="authEmailField">
-                  <span>Email</span>
-                  <input name="email" type="email" autocomplete="email" placeholder="hr@brightharbor.com">
-                </label>
-                <div class="auth-actions">
-                  <button class="secondary-action" type="submit">
-                    <svg><use href="#icon-database"></use></svg>
-                    Send link
-                  </button>
-                  <button class="secondary-action" type="button" id="signOutButton" hidden>
-                    Sign out
-                  </button>
-                </div>
-                <p class="form-message" id="authMessage" role="status"></p>
-              </form>
+                <div class="session-panel" id="hrSessionPanel"></div>
+                <button class="secondary-action" type="button" id="signOutButton">
+                  Sign out
+                </button>
+              </div>
             </aside>
 
             <section class="hr-main">

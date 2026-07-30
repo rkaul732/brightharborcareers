@@ -112,12 +112,31 @@ create table if not exists public.activity_events (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.account_requests (
+  id uuid primary key default gen_random_uuid(),
+  full_name text not null,
+  email citext not null,
+  requested_role public.user_role not null check (requested_role in ('recruiter', 'hiring_manager', 'admin')),
+  department text,
+  message text,
+  status text not null default 'pending' check (status in ('pending', 'approved', 'denied')),
+  approval_token text unique not null,
+  denial_token text unique not null,
+  reviewed_by_email citext not null default 'hr@brightharbor.org',
+  requested_at timestamptz not null default now(),
+  reviewed_at timestamptz,
+  email_sent_at timestamptz,
+  invite_sent_at timestamptz
+);
+
 create index if not exists jobs_status_posted_idx on public.jobs (status, posted_at desc);
 create index if not exists jobs_department_idx on public.jobs (department);
 create index if not exists applications_job_status_idx on public.applications (job_id, status);
 create index if not exists applications_email_idx on public.applications (email);
 create index if not exists notes_application_idx on public.application_notes (application_id);
 create index if not exists scorecards_application_idx on public.scorecards (application_id);
+create index if not exists account_requests_status_idx on public.account_requests (status, requested_at desc);
+create index if not exists account_requests_email_idx on public.account_requests (email);
 
 create or replace function public.touch_updated_at()
 returns trigger
@@ -195,6 +214,7 @@ alter table public.applications enable row level security;
 alter table public.application_notes enable row level security;
 alter table public.scorecards enable row level security;
 alter table public.activity_events enable row level security;
+alter table public.account_requests enable row level security;
 
 drop policy if exists "Users can view their profile" on public.profiles;
 create policy "Users can view their profile"
@@ -308,3 +328,16 @@ create policy "HR users create activity"
 on public.activity_events for insert
 to authenticated
 with check (public.is_hr_user());
+
+drop policy if exists "Admins read account requests" on public.account_requests;
+create policy "Admins read account requests"
+on public.account_requests for select
+to authenticated
+using (public.current_user_role() = 'admin');
+
+drop policy if exists "Admins update account requests" on public.account_requests;
+create policy "Admins update account requests"
+on public.account_requests for update
+to authenticated
+using (public.current_user_role() = 'admin')
+with check (public.current_user_role() = 'admin');

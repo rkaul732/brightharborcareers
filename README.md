@@ -3,9 +3,11 @@
 Bright Harbor Careers is a dual-sided applicant tracking system for applicants and HR teams.
 
 - Applicants can browse published jobs, filter roles, view job details, and submit applications.
+- Visitors first choose between Applicant and Hiring Team.
 - Recruiters can create jobs, publish roles, and move candidates through the pipeline.
 - Hiring managers can review candidates and advance interview-stage applicants.
 - Admins can see role controls and are intended to manage users, permissions, and governance.
+- Hiring-team users without accounts can request access for HR approval.
 - Supabase stores jobs, applications, notes, scorecards, activity, and role profiles.
 - Netlify hosts the site, and GitHub stores the source.
 
@@ -38,6 +40,7 @@ docs/
   architecture.md     Product and data model overview
   supabase-setup.md   Supabase setup notes
 netlify.toml          Netlify build, redirects, and headers
+netlify/functions/    Account request and approval endpoints
 ```
 
 ## 1. Run The App Locally
@@ -107,6 +110,7 @@ This creates:
 - `application_notes`
 - `scorecards`
 - `activity_events`
+- `account_requests`
 - HR role types for `recruiter`, `hiring_manager`, and `admin`
 - row-level security policies
 
@@ -139,13 +143,29 @@ You can find these in Supabase under Project Settings, then API:
 
 Do not use the `service_role` key in this app.
 
+To test hiring-team account requests locally, also add the server-only values:
+
+```text
+SUPABASE_SERVICE_ROLE_KEY=your-private-service-role-key
+RESEND_API_KEY=your-resend-api-key
+EMAIL_FROM=Bright Harbor Careers <no-reply@yourdomain.com>
+HR_APPROVAL_EMAIL=hr@brightharbor.org
+SITE_URL=http://localhost:5173
+```
+
+Important:
+
+- `SUPABASE_ANON_KEY` is safe for the browser.
+- `SUPABASE_SERVICE_ROLE_KEY` is private and must only be used in Netlify functions or local `.env`.
+- `RESEND_API_KEY` is used by the account-request function to email HR.
+
 After adding or changing `.env`, stop the local preview and start it again:
 
 ```bash
 npm run dev
 ```
 
-## 5. Enable HR Sign-In
+## 5. Enable HR Sign-In And Account Requests
 
 Bright Harbor Careers uses Supabase email magic links for HR sessions.
 
@@ -166,6 +186,19 @@ After Netlify is deployed, also add your Netlify URL, for example:
 ```text
 https://bright-harbor-careers.netlify.app
 ```
+
+Hiring-team account requests are emailed to:
+
+```text
+hr@brightharbor.org
+```
+
+The email contains two links:
+
+- Approve request
+- Deny request
+
+Approving a request marks it approved in Supabase and attempts to send the requester a Supabase invite.
 
 ## 6. Create Your First HR User
 
@@ -265,7 +298,14 @@ Node version: 20
 ```text
 SUPABASE_URL
 SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+RESEND_API_KEY
+EMAIL_FROM
+HR_APPROVAL_EMAIL
+SITE_URL
 ```
+
+Use `hr@brightharbor.org` for `HR_APPROVAL_EMAIL`. Use your deployed Netlify URL for `SITE_URL`.
 
 5. Deploy the site.
 6. Copy the Netlify URL.

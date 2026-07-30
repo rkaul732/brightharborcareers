@@ -7,6 +7,8 @@ const requiredFiles = [
   "public/app.js",
   "public/assets/brand-mark.svg",
   "netlify.toml",
+  "netlify/functions/request-account.mjs",
+  "netlify/functions/review-account-request.mjs",
   "supabase/migrations/20260729160000_bright_harbor_careers.sql"
 ];
 
@@ -20,9 +22,12 @@ const html = await readFile(path.join(root, "public/index.html"), "utf8");
 const app = await readFile(path.join(root, "public/app.js"), "utf8");
 
 const checks = [
-  [html.includes("Applicant portal"), "Applicant portal tab"],
-  [html.includes("HR workspace"), "HR workspace tab"],
+  [html.includes("Choose how you want to continue."), "Landing chooser"],
+  [html.includes("Applicant"), "Applicant entry"],
+  [html.includes("Hiring Team"), "Hiring Team entry"],
+  [html.includes("Request account"), "Account request form"],
   [html.includes("role-button"), "Role switcher"],
+  [app.includes("handleAccountRequestSubmit"), "Account request handler"],
   [app.includes("supabaseInsert"), "Supabase insert wiring"],
   [app.includes("/auth/v1/otp"), "Supabase Auth magic link"],
   [app.includes("recruiter") && app.includes("hiring_manager") && app.includes("admin"), "HR roles"]
