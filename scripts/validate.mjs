@@ -22,7 +22,8 @@ const requiredFiles = [
   "supabase/migrations/20260731120000_communications.sql",
   "supabase/migrations/20260731130000_workflows.sql",
   "supabase/migrations/20260731133000_application_requirement_levels.sql",
-  "supabase/migrations/20260731140000_job_status_options.sql"
+  "supabase/migrations/20260731140000_job_status_options.sql",
+  "supabase/migrations/20260731150000_communication_template_type.sql"
 ];
 
 const root = process.cwd();
@@ -34,6 +35,10 @@ for (const file of requiredFiles) {
 const html = await readFile(path.join(root, "public/index.html"), "utf8");
 const app = await readFile(path.join(root, "public/app.js"), "utf8");
 const css = await readFile(path.join(root, "public/styles.css"), "utf8");
+const automationFunction = await readFile(
+  path.join(root, "netlify/functions/run-communication-automations.mjs"),
+  "utf8"
+);
 const settingsSql = await readFile(
   path.join(root, "supabase/migrations/20260730170000_job_board_settings.sql"),
   "utf8"
@@ -70,6 +75,12 @@ const jobStatusesSql = await readFile(
   path.join(root, "supabase/migrations/20260731140000_job_status_options.sql"),
   "utf8"
 );
+const templateTypeSql = await readFile(
+  path.join(root, "supabase/migrations/20260731150000_communication_template_type.sql"),
+  "utf8"
+);
+const netlifyFunctionsIncludeNameMergeFields =
+  automationFunction.includes("candidate_first_name") && automationFunction.includes("candidate_last_name");
 
 const checks = [
   [html.includes("Welcome to Bright Harbor Careers."), "Landing chooser"],
@@ -84,6 +95,7 @@ const checks = [
   [html.includes("boardSettingsForm") && app.includes("handleBoardSettingsSubmit"), "Admin job board editor"],
   [html.includes("Request a Hiring Team Account"), "Account request link"],
   [html.includes('name="username"') && html.includes('name="password"'), "Hiring-team credentials form"],
+  [html.includes('data-hr-section="home"') && html.includes("hrHomeSection") && app.includes("renderHomeDashboard"), "HR home dashboard"],
   [html.includes('data-hr-section="jobs"') && app.includes("pipeline-chip"), "HR jobs top navigation"],
   [html.includes("hrJobSearch") && html.includes("showJobCreate") && app.includes("hrJobQuery"), "HR jobs search and create control"],
   [
@@ -121,12 +133,26 @@ const checks = [
   [html.includes('data-hr-section="reports"') && html.includes("pipelineBoard"), "HR reports view"],
   [html.includes("profileMenuButton") && html.includes("profileDropdown"), "HR profile dropdown"],
   [html.includes("profileForm") && app.includes("handleProfileSubmit"), "HR profile editor"],
+  [html.includes("settings-layout") && html.includes("settings-content") && css.includes(".settings-layout"), "Left settings configuration menu"],
   [html.includes("pipelineSettingsForm") && app.includes("handlePipelineSettingsSubmit"), "Pipeline settings form"],
   [html.includes("workflowSettingsButton") && app.includes("handleWorkflowSubmit"), "Admin workflow settings"],
   [workflowsSql.includes("create table if not exists public.workflows") && workflowsSql.includes("workflow_id"), "Workflow persistence"],
   [requirementLevelsSql.includes("resume_requirement") && app.includes("normalizeRequirement"), "Application requirement level persistence"],
   [html.includes("communicationsSettingsButton") && html.includes("communicationTemplateForm"), "Communications settings module"],
   [html.includes("templatesTable") && app.includes("handleCommunicationTemplateSubmit"), "Communication template library"],
+  [
+    html.includes('name="template_type"') &&
+      app.includes("template-list-card") &&
+      app.includes("template-content-details") &&
+      templateTypeSql.includes("template_type"),
+    "Expandable communication template types"
+  ],
+  [
+    app.includes("candidate_first_name") &&
+      app.includes("candidate_last_name") &&
+      netlifyFunctionsIncludeNameMergeFields,
+    "Candidate first and last name merge fields"
+  ],
   [html.includes("automationRulesTable") && app.includes("handleAutomationRuleSubmit"), "Communication automation rules"],
   [html.includes("candidateProfilePanel") && app.includes("manualCommunicationForm"), "Candidate communications tab"],
   [app.includes("dispatchAutomationEvent") && app.includes("run-communication-automations") && app.includes("candidate_stage_changed"), "Communication automation dispatch"],

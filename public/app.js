@@ -89,6 +89,8 @@ const defaultBoardSettings = {
 
 const communicationMergeFields = [
   { key: "candidate_name", label: "Candidate name" },
+  { key: "candidate_first_name", label: "Candidate first name" },
+  { key: "candidate_last_name", label: "Candidate last name" },
   { key: "candidate_email", label: "Candidate email" },
   { key: "job_title", label: "Job title" },
   { key: "department", label: "Department" },
@@ -128,6 +130,8 @@ const communicationDelayOptions = [
   { value: 4320, label: "3 days" }
 ];
 
+const communicationTemplateTypes = ["Automated email", "Manual email", "Interview email", "Offer email", "Status update"];
+
 const defaultSenderAccounts = [
   {
     id: "sender-bright-harbor-hr",
@@ -146,8 +150,9 @@ const defaultCommunicationTemplates = [
     name: "Application received",
     subject: "We received your application for {{job_title}}",
     body:
-      "Hello {{candidate_name}},\n\nThank you for applying for {{job_title}} at {{company_name}}. Our hiring team has received your application and will review your experience soon.\n\nIf your background aligns with the role, {{recruiter_name}} will contact you with next steps.\n\nThank you,\n{{company_name}} Careers",
+      "Hello {{candidate_first_name}},\n\nThank you for applying for {{job_title}} at {{company_name}}. Our hiring team has received your application and will review your experience soon.\n\nIf your background aligns with the role, {{recruiter_name}} will contact you with next steps.\n\nThank you,\n{{company_name}} Careers",
     category: "Application",
+    template_type: "Automated email",
     status: "active",
     archived_at: ""
   },
@@ -156,8 +161,9 @@ const defaultCommunicationTemplates = [
     name: "Interview stage follow-up",
     subject: "Next steps for {{job_title}}",
     body:
-      "Hello {{candidate_name}},\n\nWe are glad to move you forward for {{job_title}}. The next step is an interview with our team.\n\nInterview timing: {{interview_date_time}}\n\nPlease reply to {{reply_to}} with any scheduling questions.\n\nThank you,\n{{recruiter_name}}",
+      "Hello {{candidate_first_name}},\n\nWe are glad to move you forward for {{job_title}}. The next step is an interview with our team.\n\nInterview timing: {{interview_date_time}}\n\nPlease reply to {{reply_to}} with any scheduling questions.\n\nThank you,\n{{recruiter_name}}",
     category: "Interview",
+    template_type: "Interview email",
     status: "active",
     archived_at: ""
   },
@@ -166,8 +172,9 @@ const defaultCommunicationTemplates = [
     name: "Offer sent",
     subject: "Offer details for {{job_title}}",
     body:
-      "Hello {{candidate_name}},\n\nWe are excited to share offer details for {{job_title}} with {{company_name}}.\n\n{{offer_details}}\n\nPlease review and reply to {{reply_to}} with any questions.\n\nWarmly,\n{{recruiter_name}}",
+      "Hello {{candidate_first_name}},\n\nWe are excited to share offer details for {{job_title}} with {{company_name}}.\n\n{{offer_details}}\n\nPlease review and reply to {{reply_to}} with any questions.\n\nWarmly,\n{{recruiter_name}}",
     category: "Offer",
+    template_type: "Offer email",
     status: "active",
     archived_at: ""
   },
@@ -176,8 +183,9 @@ const defaultCommunicationTemplates = [
     name: "Candidate status update",
     subject: "Update from {{company_name}} Careers",
     body:
-      "Hello {{candidate_name}},\n\nThank you for your interest in {{job_title}}. We wanted to share that your current application stage is {{application_stage}}.\n\nWe appreciate your time and interest in {{company_name}}.\n\nThank you,\n{{company_name}} Careers",
+      "Hello {{candidate_first_name}},\n\nThank you for your interest in {{job_title}}. We wanted to share that your current application stage is {{application_stage}}.\n\nWe appreciate your time and interest in {{company_name}}.\n\nThank you,\n{{company_name}} Careers",
     category: "Status update",
+    template_type: "Status update",
     status: "active",
     archived_at: ""
   }
@@ -518,7 +526,7 @@ const state = {
   applications: [...demoApplications],
   selectedJobId: "job-101",
   role: initialProfile.role,
-  hrSection: "jobs",
+  hrSection: "home",
   settingsSection: "departments",
   hrJobQuery: "",
   jobCreateOpen: false,
@@ -852,6 +860,11 @@ function newClientId(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function normalizeTemplateType(value = "") {
+  const normalized = String(value || "").trim();
+  return communicationTemplateTypes.includes(normalized) ? normalized : "Automated email";
+}
+
 function normalizeCommunicationTemplate(template = {}) {
   return {
     id: String(template.id || newClientId("tmpl")),
@@ -859,6 +872,7 @@ function normalizeCommunicationTemplate(template = {}) {
     subject: String(template.subject || "").trim(),
     body: String(template.body || "").trim(),
     category: String(template.category || "General").trim() || "General",
+    template_type: normalizeTemplateType(template.template_type),
     status: template.status === "inactive" ? "inactive" : "active",
     archived_at: template.archived_at || "",
     created_at: template.created_at || "",
@@ -1117,6 +1131,17 @@ function communicationTemplateById(id) {
   return state.communicationTemplates.find((template) => template.id === id) || null;
 }
 
+function candidateNameParts(name = "") {
+  const parts = String(name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  return {
+    first: parts[0] || "Candidate",
+    last: parts.length > 1 ? parts[parts.length - 1] : ""
+  };
+}
+
 function senderAccountById(id) {
   return state.senderAccounts.find((account) => account.id === id) || state.senderAccounts[0] || defaultSenderAccounts[0];
 }
@@ -1132,8 +1157,12 @@ function jobById(id) {
 function communicationContext(application = {}, details = {}) {
   const job = jobById(application.job_id) || {};
   const sender = details.sender || senderAccountById(details.sender_account_id);
+  const candidateName = application.full_name || details.candidate_name || "Candidate";
+  const nameParts = candidateNameParts(candidateName);
   return {
-    candidate_name: application.full_name || details.candidate_name || "Candidate",
+    candidate_name: candidateName,
+    candidate_first_name: nameParts.first,
+    candidate_last_name: nameParts.last,
     candidate_email: application.email || details.candidate_email || "",
     job_title: job.title || details.job_title || "the role",
     department: job.department || details.department || "Bright Harbor",
@@ -1389,12 +1418,21 @@ async function loadCommunicationData() {
   if (!hasSupabase || !state.session?.accessToken) return;
 
   try {
-    const [templates, rules, accounts, communications] = await Promise.all([
-      supabaseSelect(
+    let templates = [];
+    try {
+      templates = await supabaseSelect(
+        "communication_templates",
+        "select=id,name,subject,body,category,template_type,status,archived_at,created_at,updated_at&order=name.asc",
+        true
+      );
+    } catch (error) {
+      templates = await supabaseSelect(
         "communication_templates",
         "select=id,name,subject,body,category,status,archived_at,created_at,updated_at&order=name.asc",
         true
-      ),
+      );
+    }
+    const [rules, accounts, communications] = await Promise.all([
       supabaseSelect(
         "automation_rules",
         "select=id,name,trigger_event,pipeline_stage,template_id,sender_account_id,sender_email,reply_to,delay_minutes,status,action_type,action_config,created_at,updated_at&order=name.asc",
@@ -1786,6 +1824,7 @@ function renderHrWorkspace() {
   syncRoleControls();
   populateJobDepartmentControls();
   renderJobDraftPreview();
+  renderHomeDashboard();
   renderMetrics();
   renderJobsTable();
   renderCandidatesTable();
@@ -1805,6 +1844,7 @@ function renderHrSections() {
   $$(".hr-menu-button").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.hrSection === state.hrSection);
   });
+  $("#hrHomeSection").hidden = state.hrSection !== "home";
   $("#hrJobsSection").hidden = state.hrSection !== "jobs";
   $("#hrCandidatesSection").hidden = state.hrSection !== "candidates";
   $("#hrReportsSection").hidden = state.hrSection !== "reports";
@@ -1848,9 +1888,142 @@ function renderAuthPanel() {
     : `<p class="summary">Sign in from the Hiring Team page to open this workspace.</p>`;
 }
 
+function currentUserAssignmentTokens() {
+  const email = state.profile.email || state.session?.email || "";
+  const name = profileDisplayName();
+  const localEmailName = email.includes("@") ? email.split("@")[0].replace(/[._-]+/g, " ") : "";
+  return [name, email, localEmailName, ...name.split(/\s+/)]
+    .map((value) => String(value || "").trim().toLowerCase())
+    .filter((value) => value.length > 1 && value !== "hiring" && value !== "team");
+}
+
+function isJobAssignedToCurrentUser(job = {}) {
+  const assignmentText = [job.hiring_manager, job.recruiter_name, job.review_lead, job.team_members]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return currentUserAssignmentTokens().some((token) => assignmentText.includes(token));
+}
+
+function assignedJobsForCurrentUser() {
+  return state.jobs
+    .filter(isJobAssignedToCurrentUser)
+    .sort((a, b) => a.title.localeCompare(b.title));
+}
+
+function homeTodoItems() {
+  const newApplications = state.applications.filter((application) => application.status === "new").length;
+  const interviewApplications = state.applications.filter((application) => application.status === "interview").length;
+  const draftJobs = state.jobs.filter((job) => job.status === "draft").length;
+  const failedCommunications = state.communications.filter((record) => record.delivery_status === "failed" || record.status === "failed").length;
+  const queuedCommunications = state.communications.filter((record) => record.delivery_status === "queued" || record.status === "queued").length;
+  return [
+    {
+      count: newApplications,
+      label: "Review new applicants",
+      note: `${newApplications} ${newApplications === 1 ? "candidate" : "candidates"} waiting for screening`,
+      section: "candidates"
+    },
+    {
+      count: interviewApplications,
+      label: "Prepare interview follow-up",
+      note: `${interviewApplications} ${interviewApplications === 1 ? "candidate" : "candidates"} in interview stage`,
+      section: "candidates"
+    },
+    {
+      count: draftJobs,
+      label: "Finish draft jobs",
+      note: `${draftJobs} ${draftJobs === 1 ? "draft" : "drafts"} not yet published`,
+      section: "jobs"
+    },
+    {
+      count: failedCommunications + queuedCommunications,
+      label: "Check communications",
+      note: `${failedCommunications} failed, ${queuedCommunications} queued`,
+      section: "settings"
+    }
+  ];
+}
+
+function renderHomeDashboard() {
+  const profileCard = $("#homeProfileCard");
+  const assignedJobs = $("#homeAssignedJobs");
+  const todoList = $("#homeTodoList");
+  const activityList = $("#homeActivityList");
+  if (!profileCard || !assignedJobs || !todoList || !activityList) return;
+
+  const assigned = assignedJobsForCurrentUser();
+  const activeAssigned = assigned.filter((job) => job.status === "published").length;
+  const profileAvatar = state.profile.avatar_url
+    ? `<img src="${escapeHtml(state.profile.avatar_url)}" alt="${escapeHtml(profileDisplayName())}">`
+    : `<span>${escapeHtml(profileInitials())}</span>`;
+
+  profileCard.innerHTML = `
+    <div class="home-profile-top">
+      <div class="home-profile-avatar">${profileAvatar}</div>
+      <div>
+        <p class="eyebrow">${escapeHtml(formatStatus(state.role))}</p>
+        <h3>${escapeHtml(profileDisplayName())}</h3>
+        <p>${escapeHtml(state.profile.title || state.profile.department || state.session?.email || "Hiring team member")}</p>
+      </div>
+    </div>
+    <div class="home-profile-stats">
+      <span><b>${assigned.length}</b> assigned jobs</span>
+      <span><b>${activeAssigned}</b> published</span>
+    </div>
+    <button class="secondary-action small" type="button" data-home-section="jobs">View jobs</button>
+  `;
+
+  assignedJobs.innerHTML = assigned.length
+    ? assigned
+        .slice(0, 5)
+        .map(
+          (job) => `
+            <article class="home-job-item">
+              <div>
+                <span class="home-job-title">${escapeHtml(job.title)}</span>
+                <p>${escapeHtml(job.department)} · ${escapeHtml(job.location)}</p>
+              </div>
+              <span class="status-pill ${escapeHtml(job.status)}">${escapeHtml(formatStatus(job.status))}</span>
+            </article>
+          `
+        )
+        .join("")
+    : `<div class="empty-state compact">No jobs are assigned to ${escapeHtml(profileDisplayName())} yet.</div>`;
+
+  todoList.innerHTML = homeTodoItems()
+    .map(
+      (item) => `
+        <button class="home-todo-item" type="button" data-home-section="${escapeHtml(item.section)}">
+          <span>${escapeHtml(item.label)}</span>
+          <small>${escapeHtml(item.note)}</small>
+        </button>
+      `
+    )
+    .join("");
+
+  const recentCommunications = state.communications
+    .slice()
+    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+    .slice(0, 4);
+  activityList.innerHTML = recentCommunications.length
+    ? recentCommunications
+        .map(
+          (record) => `
+            <article class="home-activity-item">
+              <span>${escapeHtml(record.subject || "Email communication")}</span>
+              <small>${escapeHtml(record.candidate_name || record.candidate_email)} · ${escapeHtml(formatStatus(record.delivery_status || record.status))}</small>
+            </article>
+          `
+        )
+        .join("")
+    : `<div class="empty-state compact">No communication activity yet.</div>`;
+}
+
 function syncRoleControls() {
   const canManageJobs = state.role === "recruiter" || state.role === "admin";
   const canManageBoard = state.role === "admin";
+  const canManageDepartments = Boolean(roleProfiles[state.role]);
   const canManageCommunications = state.role === "admin";
   const canSendCandidateEmail = state.role === "recruiter" || state.role === "admin";
   $("#showJobCreate").disabled = !canManageJobs;
@@ -1861,7 +2034,7 @@ function syncRoleControls() {
     control.disabled = !canManageBoard;
   });
   $$("#departmentForm input, #departmentForm select, #departmentForm button").forEach((control) => {
-    control.disabled = !canManageBoard;
+    control.disabled = !canManageDepartments;
   });
   $$("#pipelineSettingsForm input, #pipelineSettingsForm button").forEach((control) => {
     control.disabled = !canManageBoard;
@@ -2453,6 +2626,7 @@ function renderTemplateLibrary() {
       subject: "",
       body: "",
       category: "General",
+      template_type: "Automated email",
       status: "active"
     });
   if (!state.selectedTemplateId && selected.id) state.selectedTemplateId = selected.id;
@@ -2461,35 +2635,37 @@ function renderTemplateLibrary() {
     ? templates
         .map(
           (template) => `
-            <tr class="${template.id === state.selectedTemplateId ? "is-selected" : ""}">
-              <td>
-                <strong>${escapeHtml(template.name)}</strong>
-                <div class="table-meta">
-                  <span>${escapeHtml(template.category)}</span>
+            <article class="template-list-card ${template.id === state.selectedTemplateId ? "is-selected" : ""}">
+              <div class="template-list-header">
+                <div>
+                  <span class="template-list-title">${escapeHtml(template.name)}</span>
+                  <div class="template-list-meta">
+                    <span>Category: ${escapeHtml(template.category)}</span>
+                    <span>Template type: ${escapeHtml(template.template_type)}</span>
+                  </div>
                 </div>
-              </td>
-              <td>${escapeHtml(template.subject)}</td>
-              <td><span class="status-pill ${escapeHtml(template.status)}">${escapeHtml(formatStatus(template.status))}</span></td>
-              <td>
-                <button class="table-action" type="button" data-select-template="${escapeHtml(template.id)}">
-                  Edit
-                </button>
-              </td>
-            </tr>
+                <div class="template-list-actions">
+                  <span class="status-pill ${escapeHtml(template.status)}">${escapeHtml(formatStatus(template.status))}</span>
+                  <button class="table-action" type="button" data-select-template="${escapeHtml(template.id)}">
+                    Edit
+                  </button>
+                </div>
+              </div>
+              <p class="template-subject">${escapeHtml(template.subject)}</p>
+              <details class="template-content-details">
+                <summary>View template content</summary>
+                <div class="email-preview-body">${renderEmailBody(template.body)}</div>
+              </details>
+            </article>
           `
         )
         .join("")
-    : `
-      <tr>
-        <td colspan="4">
-          <div class="empty-state compact">No active templates.</div>
-        </td>
-      </tr>
-    `;
+    : `<div class="empty-state compact">No active templates.</div>`;
 
   form.elements.template_id.value = selected.id || "";
   form.elements.name.value = selected.name || "";
   form.elements.category.value = selected.category || "General";
+  form.elements.template_type.value = normalizeTemplateType(selected.template_type);
   form.elements.status.value = selected.status || "active";
   form.elements.subject.value = selected.subject || "";
   form.elements.body.value = selected.body || "";
@@ -3173,6 +3349,7 @@ async function handleCommunicationTemplateSubmit(event) {
     id: data.template_id || newClientId("tmpl"),
     name: data.name,
     category: data.category,
+    template_type: data.template_type,
     status: data.status,
     subject: data.subject,
     body: data.body,
@@ -3189,10 +3366,17 @@ async function handleCommunicationTemplateSubmit(event) {
 
   try {
     if (hasSupabase && state.session?.accessToken) {
-      const [saved] = await supabaseUpsert("communication_templates", template, true);
+      let savedRows = [];
+      try {
+        savedRows = await supabaseUpsert("communication_templates", template, true);
+      } catch (error) {
+        const { template_type: _templateType, ...legacyTemplate } = template;
+        savedRows = await supabaseUpsert("communication_templates", legacyTemplate, true);
+      }
+      const [saved] = savedRows;
       if (saved) {
         state.communicationTemplates = normalizeCommunicationTemplates(
-          state.communicationTemplates.map((item) => (item.id === template.id ? saved : item))
+          state.communicationTemplates.map((item) => (item.id === template.id ? { ...template, ...saved } : item))
         );
         saveLocalCommunicationTemplates(state.communicationTemplates);
         renderCommunicationSettings();
@@ -3472,11 +3656,19 @@ function bindEvents() {
   $$(".hr-menu-button").forEach((button) => {
     button.addEventListener("click", () => {
       state.hrSection = button.dataset.hrSection;
-      if (state.hrSection === "jobs") state.jobCreateOpen = false;
+      if (state.hrSection !== "jobs") state.jobCreateOpen = false;
       $("#profileDropdown").hidden = true;
       $("#profileMenuButton").setAttribute("aria-expanded", "false");
       renderHrWorkspace();
     });
+  });
+
+  $("#hrHomeSection").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-home-section]");
+    if (!button) return;
+    state.hrSection = button.dataset.homeSection;
+    if (state.hrSection === "settings") state.settingsSection = "communications";
+    renderHrWorkspace();
   });
 
   $("#profileMenuButton").addEventListener("click", () => {

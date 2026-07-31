@@ -104,9 +104,24 @@ async function insertCommunication(record) {
   return Array.isArray(rows) ? rows[0] : rows;
 }
 
-function mergeContext({ application, job, sender, details }) {
+function candidateNameParts(name = "") {
+  const parts = String(name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
   return {
-    candidate_name: application.full_name || "Candidate",
+    first: parts[0] || "Candidate",
+    last: parts.length > 1 ? parts[parts.length - 1] : ""
+  };
+}
+
+function mergeContext({ application, job, sender, details }) {
+  const candidateName = application.full_name || "Candidate";
+  const nameParts = candidateNameParts(candidateName);
+  return {
+    candidate_name: candidateName,
+    candidate_first_name: nameParts.first,
+    candidate_last_name: nameParts.last,
     candidate_email: application.email || "",
     job_title: job.title || "the role",
     department: job.department || "Bright Harbor",

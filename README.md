@@ -4,12 +4,13 @@ Bright Harbor Careers is a dual-sided applicant tracking system for applicants a
 
 - Applicants can browse an image-led job board, filter roles, view full job descriptions, and submit applications.
 - Visitors first choose between Applicant and Hiring Team.
+- HR users land on a Home page with their profile, assigned jobs, to-do items, and recent communication activity.
 - Recruiters can create focused jobs with Published, Draft, Internal, or Confidential status, plus salary ranges, sectioned descriptions, SEO keywords, and pipeline tracking.
 - Job creation is split into Description, Application, Team Members, and Workflow sections.
 - Application fields can be marked Mandatory, Optional, or Not required.
 - Hiring managers can review candidates and advance interview-stage applicants.
-- Admins can edit the public job board header, manage agency departments and subdepartments, and configure reusable workflows.
-- Admins can manage email templates, merge fields, sender accounts, and automated communication rules.
+- Admins can edit the public job board header, manage agency departments and subdepartments, and configure reusable workflows from a left-side system configuration menu.
+- Admins can manage email templates, template types, merge fields, sender accounts, and automated communication rules.
 - Recruiters can view candidate communication history, send manual emails, and resend previous messages.
 - HR users navigate Jobs, Candidates, and Reports from the top header, with Settings and profile editing in the profile menu.
 - Hiring-team users without accounts can request access for HR approval.
@@ -256,7 +257,7 @@ After running the communications migration, sign in as an `admin` and open:
 Hiring Team -> profile icon -> Settings -> Communications
 ```
 
-Admins can create templates, add merge fields such as `{{candidate_name}}` and `{{job_title}}`, preview messages, send test emails, and attach templates to automation rules.
+Admins can create templates, categorize them by template type, add merge fields such as `{{candidate_name}}`, `{{candidate_first_name}}`, `{{candidate_last_name}}`, and `{{job_title}}`, preview messages, send test emails, and attach templates to automation rules.
 
 Built-in automation support includes:
 

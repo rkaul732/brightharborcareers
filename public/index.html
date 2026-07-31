@@ -338,7 +338,11 @@
               </div>
 
               <nav class="hr-top-menu" aria-label="HR main menu">
-                <button class="hr-menu-button is-active" type="button" data-hr-section="jobs">
+                <button class="hr-menu-button is-active" type="button" data-hr-section="home">
+                  <svg><use href="#icon-anchor"></use></svg>
+                  Home
+                </button>
+                <button class="hr-menu-button" type="button" data-hr-section="jobs">
                   <svg><use href="#icon-briefcase"></use></svg>
                   Jobs
                 </button>
@@ -364,7 +368,48 @@
             </header>
 
             <section class="hr-main">
-              <section class="hr-section" id="hrJobsSection">
+              <section class="hr-section" id="hrHomeSection">
+                <section class="panel home-panel">
+                  <div class="section-header">
+                    <div>
+                      <p class="eyebrow">Home</p>
+                      <h2>Today in hiring</h2>
+                    </div>
+                  </div>
+                  <div class="home-dashboard-grid">
+                    <article class="home-profile-card" id="homeProfileCard"></article>
+                    <article class="home-dashboard-card">
+                      <div class="section-header compact">
+                        <div>
+                          <p class="eyebrow">Assigned jobs</p>
+                          <h2>Your requisitions</h2>
+                        </div>
+                      </div>
+                      <div class="home-job-list" id="homeAssignedJobs"></div>
+                    </article>
+                    <article class="home-dashboard-card">
+                      <div class="section-header compact">
+                        <div>
+                          <p class="eyebrow">To do</p>
+                          <h2>Needs attention</h2>
+                        </div>
+                      </div>
+                      <div class="home-todo-list" id="homeTodoList"></div>
+                    </article>
+                    <article class="home-dashboard-card">
+                      <div class="section-header compact">
+                        <div>
+                          <p class="eyebrow">Activity</p>
+                          <h2>Recent communication</h2>
+                        </div>
+                      </div>
+                      <div class="home-activity-list" id="homeActivityList"></div>
+                    </article>
+                  </div>
+                </section>
+              </section>
+
+              <section class="hr-section" id="hrJobsSection" hidden>
                 <section class="panel jobs-list-panel">
                   <div class="section-header jobs-toolbar" id="jobsToolbar">
                     <div id="jobsListHeader">
@@ -743,37 +788,39 @@
                     </div>
                   </div>
 
-                  <div class="settings-grid">
-                    <button class="settings-tile is-active" type="button" id="departmentsSettingsButton" data-settings-section="departments">
-                      <svg><use href="#icon-settings"></use></svg>
-                      <span>
-                        <strong>Departments</strong>
-                        <small>Create agency departments and subdepartments.</small>
-                      </span>
-                    </button>
-                    <button class="settings-tile" type="button" id="pipelineSettingsButton" data-settings-section="pipeline">
-                      <svg><use href="#icon-chart"></use></svg>
-                      <span>
-                        <strong>Pipeline configuration</strong>
-                        <small>Manage the visible hiring stages.</small>
-                      </span>
-                    </button>
-                    <button class="settings-tile" type="button" id="workflowSettingsButton" data-settings-section="workflows">
-                      <svg><use href="#icon-database"></use></svg>
-                      <span>
-                        <strong>Workflows</strong>
-                        <small>Create reusable hiring workflows for jobs.</small>
-                      </span>
-                    </button>
-                    <button class="settings-tile" type="button" id="communicationsSettingsButton" data-settings-section="communications">
-                      <svg><use href="#icon-mail"></use></svg>
-                      <span>
-                        <strong>Communications</strong>
-                        <small>Manage email templates and automation rules.</small>
-                      </span>
-                    </button>
-                  </div>
+                  <div class="settings-layout">
+                    <nav class="settings-grid" aria-label="System configuration menu">
+                      <button class="settings-tile is-active" type="button" id="departmentsSettingsButton" data-settings-section="departments">
+                        <svg><use href="#icon-settings"></use></svg>
+                        <span>
+                          <strong>Departments</strong>
+                          <small>Create agency departments and subdepartments.</small>
+                        </span>
+                      </button>
+                      <button class="settings-tile" type="button" id="pipelineSettingsButton" data-settings-section="pipeline">
+                        <svg><use href="#icon-chart"></use></svg>
+                        <span>
+                          <strong>Pipeline configuration</strong>
+                          <small>Manage the visible hiring stages.</small>
+                        </span>
+                      </button>
+                      <button class="settings-tile" type="button" id="workflowSettingsButton" data-settings-section="workflows">
+                        <svg><use href="#icon-database"></use></svg>
+                        <span>
+                          <strong>Workflows</strong>
+                          <small>Create reusable hiring workflows for jobs.</small>
+                        </span>
+                      </button>
+                      <button class="settings-tile" type="button" id="communicationsSettingsButton" data-settings-section="communications">
+                        <svg><use href="#icon-mail"></use></svg>
+                        <span>
+                          <strong>Communications</strong>
+                          <small>Manage email templates and automation rules.</small>
+                        </span>
+                      </button>
+                    </nav>
 
+                    <div class="settings-content">
                   <section class="settings-detail" id="departmentsSettingsPanel" data-settings-panel="departments">
                     <div class="section-header compact">
                       <div>
@@ -927,19 +974,7 @@
                             New template
                           </button>
                         </div>
-                        <div class="table-wrap compact-table-wrap">
-                          <table>
-                            <thead>
-                              <tr>
-                                <th scope="col">Template</th>
-                                <th scope="col">Subject</th>
-                                <th scope="col">Status</th>
-                                <th scope="col">Actions</th>
-                              </tr>
-                            </thead>
-                            <tbody id="templatesTable"></tbody>
-                          </table>
-                        </div>
+                        <div class="template-library-list" id="templatesTable"></div>
 
                         <form class="communication-form" id="communicationTemplateForm">
                           <input type="hidden" name="template_id">
@@ -959,6 +994,16 @@
                               </select>
                             </label>
                             <label class="field">
+                              <span>Template type</span>
+                              <select name="template_type">
+                                <option>Automated email</option>
+                                <option>Manual email</option>
+                                <option>Interview email</option>
+                                <option>Offer email</option>
+                                <option>Status update</option>
+                              </select>
+                            </label>
+                            <label class="field">
                               <span>Status</span>
                               <select name="status">
                                 <option value="active">Active</option>
@@ -975,7 +1020,7 @@
                             </label>
                             <label class="field wide">
                               <span>Message body</span>
-                              <textarea name="body" required rows="8" placeholder="Hello {{candidate_name}},"></textarea>
+                              <textarea name="body" required rows="8" placeholder="Hello {{candidate_first_name}},"></textarea>
                             </label>
                           </div>
 
@@ -1116,6 +1161,8 @@
                       <div class="sender-account-list" id="senderAccountList"></div>
                     </section>
                   </section>
+                    </div>
+                  </div>
                 </section>
 
                 <section class="panel admin-panel" id="adminPanel">
