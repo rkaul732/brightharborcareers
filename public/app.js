@@ -76,6 +76,8 @@ const requirementOptions = [
   { value: "not_required", label: "Not required" }
 ];
 
+const jobStatusOptions = ["published", "draft", "internal", "confidential"];
+
 const defaultBoardSettings = {
   id: "default",
   hero_image_url: "/assets/job-board-hero.png",
@@ -1263,7 +1265,8 @@ async function loadSupabaseData() {
         applicants: demoApplications.filter((application) => application.job_id === job.id).length,
         interviews: demoApplications.filter(
           (application) => application.job_id === job.id && application.status === "interview"
-        ).length
+        ).length,
+        status: normalizeJobStatus(job.status)
       }));
       state.selectedJobId = state.jobs.find((job) => job.status === "published")?.id || state.jobs[0].id;
       setConnection(true, "Supabase public data");
@@ -1962,7 +1965,7 @@ function currentJobDraft() {
     subdepartment: subdepartment?.name || "",
     location: String(data.location || "").trim() || "Location pending",
     work_type: data.work_type || "Full Time",
-    status: data.status || "draft",
+    status: normalizeJobStatus(data.status),
     hiring_manager: String(data.hiring_manager || "").trim() || "Hiring manager pending",
     recruiter_name: String(data.recruiter_name || "").trim(),
     review_lead: String(data.review_lead || "").trim(),
@@ -2961,6 +2964,10 @@ function formatStatus(status = "") {
     .split("_")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
+}
+
+function normalizeJobStatus(status = "draft") {
+  return jobStatusOptions.includes(status) ? status : "draft";
 }
 
 function escapeHtml(value) {
@@ -4263,7 +4270,7 @@ async function handleJobSubmit(event) {
     subdepartment: subdepartment?.name || "",
     location: data.location.trim(),
     work_type: data.work_type,
-    status: data.status,
+    status: normalizeJobStatus(data.status),
     hiring_manager: data.hiring_manager.trim(),
     workflow_id: workflow.id,
     recruiter_name: String(data.recruiter_name || "").trim(),

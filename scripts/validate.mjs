@@ -21,7 +21,8 @@ const requiredFiles = [
   "supabase/migrations/20260730210000_job_content_sections.sql",
   "supabase/migrations/20260731120000_communications.sql",
   "supabase/migrations/20260731130000_workflows.sql",
-  "supabase/migrations/20260731133000_application_requirement_levels.sql"
+  "supabase/migrations/20260731133000_application_requirement_levels.sql",
+  "supabase/migrations/20260731140000_job_status_options.sql"
 ];
 
 const root = process.cwd();
@@ -65,6 +66,10 @@ const requirementLevelsSql = await readFile(
   path.join(root, "supabase/migrations/20260731133000_application_requirement_levels.sql"),
   "utf8"
 );
+const jobStatusesSql = await readFile(
+  path.join(root, "supabase/migrations/20260731140000_job_status_options.sql"),
+  "utf8"
+);
 
 const checks = [
   [html.includes("Welcome to Bright Harbor Careers."), "Landing chooser"],
@@ -82,6 +87,14 @@ const checks = [
   [html.includes('data-hr-section="jobs"') && app.includes("pipeline-chip"), "HR jobs top navigation"],
   [html.includes("hrJobSearch") && html.includes("showJobCreate") && app.includes("hrJobQuery"), "HR jobs search and create control"],
   [html.includes("showJobPreview") && html.includes("jobPreviewPanel") && app.includes("openJobPreview"), "On-demand job preview"],
+  [html.includes('value="internal"') && html.includes('value="confidential"'), "Internal and confidential job status options"],
+  [app.includes("normalizeJobStatus") && app.includes("jobStatusOptions"), "Job status normalization"],
+  [
+    jobStatusesSql.includes("'internal'") &&
+      jobStatusesSql.includes("'confidential'") &&
+      jobStatusesSql.includes("jobs_status_current_options_check"),
+    "Job status persistence"
+  ],
   [html.includes("job-create-subnav") && html.includes('data-job-create-tab="description"'), "Create-job section navigation"],
   [html.includes('data-job-create-tab="application"') && html.includes("application-requirement-list"), "Create-job application settings"],
   [html.includes('value="mandatory"') && html.includes('value="not_required"'), "Three-state application requirements"],

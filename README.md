@@ -4,7 +4,7 @@ Bright Harbor Careers is a dual-sided applicant tracking system for applicants a
 
 - Applicants can browse an image-led job board, filter roles, view full job descriptions, and submit applications.
 - Visitors first choose between Applicant and Hiring Team.
-- Recruiters can create focused job drafts with salary ranges, sectioned descriptions, SEO keywords, and pipeline tracking.
+- Recruiters can create focused jobs with Published, Draft, Internal, or Confidential status, plus salary ranges, sectioned descriptions, SEO keywords, and pipeline tracking.
 - Job creation is split into Description, Application, Team Members, and Workflow sections.
 - Application fields can be marked Mandatory, Optional, or Not required.
 - Hiring managers can review candidates and advance interview-stage applicants.
@@ -414,7 +414,7 @@ Once your HR user is an `admin` or `recruiter`:
 2. Go to HR workspace.
 3. Sign in with your username and password.
 4. Create a job.
-5. Set the job status to `Published`, or select a draft job and publish it.
+5. Set the job status to `Published` when it should appear publicly. Use `Draft`, `Internal`, or `Confidential` for HR-only jobs.
 6. Return to Applicant portal and confirm the job appears.
 
 ## Troubleshooting
@@ -424,6 +424,7 @@ If the applicant portal only shows demo jobs:
 - Confirm `SUPABASE_URL` and `SUPABASE_ANON_KEY` are set in Netlify.
 - For local preview, confirm they are set in `/Users/rebeccakaul/Documents/Bright Harbor Careers/.env`.
 - Confirm at least one job has `status = 'published'`.
+- Confirm the job is not set to `draft`, `internal`, or `confidential`, because those statuses stay off the applicant-facing job board.
 - Restart `npm run dev` after changing local `.env`.
 - Redeploy Netlify after changing Netlify environment variables.
 
