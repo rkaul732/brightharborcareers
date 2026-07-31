@@ -1207,6 +1207,10 @@ function activeDepartments() {
   return state.departments.filter((department) => department.status === "active");
 }
 
+function departmentById(id) {
+  return state.departments.find((department) => department.id === id) || null;
+}
+
 function parentDepartments() {
   return activeDepartments()
     .filter((department) => !department.parent_id)
@@ -1221,6 +1225,131 @@ function childDepartments(parentId) {
 
 function getDepartmentById(id) {
   return activeDepartments().find((department) => department.id === id) || null;
+}
+
+function descendantDepartmentIds(departmentId, departments = activeDepartments()) {
+  const children = departments.filter((department) => department.parent_id === departmentId);
+  return children.reduce((ids, child) => {
+    ids.add(child.id);
+    descendantDepartmentIds(child.id, departments).forEach((id) => ids.add(id));
+    return ids;
+  }, new Set());
+}
+
+function eligibleParentDepartments(departmentId = "") {
+  const blockedIds = departmentId
+    ? new Set([departmentId, ...descendantDepartmentIds(departmentId)])
+    : new Set();
+  return activeDepartments()
+    .filter((department) => !blockedIds.has(department.id))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function departmentDisplayRows() {
+  const departments = activeDepartments();
+  const byParent = departments.reduce((map, department) => {
+    const parentKey = department.parent_id || "";
+    if (!map.has(parentKey)) map.set(parentKey, []);
+    map.get(parentKey).push(department);
+    return map;
+  }, new Map());
+  const rows = [];
+  const visited = new Set();
+
+  const walk = (parentId = "", depth = 0) => {
+    const children = (byParent.get(parentId) || []).slice().sort((a, b) => a.name.localeCompare(b.name));
+    children.forEach((department) => {
+      if (visited.has(department.id)) return;
+      visited.add(department.id);
+      rows.push({ department, depth });
+      walk(department.id, depth + 1);
+    });
+  };
+
+  walk();
+  departments
+    .filter((department) => !visited.has(department.id))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .forEach((department) => rows.push({ department, depth: 0 }));
+  return rows;
+}
+
+function departmentParentOptions(departmentId = "", selectedParentId = "") {
+  const selectedParent = selectedParentId ? getDepartmentById(selectedParentId) : null;
+  const options = eligibleParentDepartments(departmentId);
+  if (selectedParent && !options.some((department) => department.id === selectedParent.id)) {
+    options.push(selectedParent);
+  }
+  return options.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function renderDepartmentParentOptions(departmentId = "", selectedParentId = "") {
+  return [
+    `<option value="">None - parent department</option>`,
+    ...departmentParentOptions(departmentId, selectedParentId).map(
+      (department) =>
+        `<option value="${escapeAttribute(department.id)}"${department.id === selectedParentId ? " selected" : ""}>${escapeHtml(department.name)}</option>`
+    )
+  ].join("");
+}
+
+function syncJobsWithDepartments() {
+  state.jobs = state.jobs.map((job) => {
+    const department = getDepartmentById(job.department_id);
+    const subdepartment = getDepartmentById(job.subdepartment_id);
+
+    if (subdepartment?.parent_id) {
+      const parent = getDepartmentById(subdepartment.parent_id);
+      return {
+        ...job,
+        department_id: parent?.id || "",
+        department: parent?.name || job.department || "General",
+        subdepartment_id: subdepartment.id,
+        subdepartment: subdepartment.name
+      };
+    }
+
+    if (department?.parent_id) {
+      const parent = getDepartmentById(department.parent_id);
+      return {
+        ...job,
+        department_id: parent?.id || "",
+        department: parent?.name || job.department || "General",
+        subdepartment_id: department.id,
+        subdepartment: department.name
+      };
+    }
+
+    if (department) {
+      return {
+        ...job,
+        department_id: department.id,
+        department: department.name,
+        subdepartment_id:
+          subdepartment && subdepartment.parent_id === department.id ? subdepartment.id : "",
+        subdepartment:
+          subdepartment && subdepartment.parent_id === department.id ? subdepartment.name : ""
+      };
+    }
+
+    if (subdepartment && !subdepartment.parent_id) {
+      return {
+        ...job,
+        department_id: subdepartment.id,
+        department: subdepartment.name,
+        subdepartment_id: "",
+        subdepartment: ""
+      };
+    }
+
+    return {
+      ...job,
+      department_id: job.department_id && !department ? "" : job.department_id,
+      department: job.department_id && !department ? "General" : job.department,
+      subdepartment_id: job.subdepartment_id && !subdepartment ? "" : job.subdepartment_id,
+      subdepartment: job.subdepartment_id && !subdepartment ? "" : job.subdepartment
+    };
+  });
 }
 
 function findParentDepartmentForJob(job) {
@@ -1302,6 +1431,7 @@ async function loadSupabaseData() {
         ).length,
         status: normalizeJobStatus(job.status)
       }));
+      syncJobsWithDepartments();
       state.selectedJobId = state.jobs.find((job) => job.status === "published")?.id || state.jobs[0].id;
       setConnection(true, "Supabase public data");
     }
@@ -2058,6 +2188,9 @@ function syncRoleControls() {
     control.disabled = !canManageBoard;
   });
   $$("#departmentForm input, #departmentForm select, #departmentForm button").forEach((control) => {
+    control.disabled = !canManageDepartments;
+  });
+  $$("#departmentTree input, #departmentTree select, #departmentTree button").forEach((control) => {
     control.disabled = !canManageDepartments;
   });
   $$("#pipelineSettingsForm input, #pipelineSettingsForm button").forEach((control) => {
@@ -3172,26 +3305,44 @@ function populateWorkflowControls() {
 
 function renderDepartmentSettings() {
   populateParentDepartmentSelect();
-  const parents = parentDepartments();
-  const counts = new Map(departmentOpeningCounts().map((department) => [department.name, department.count]));
+  const rows = departmentDisplayRows();
+  const countLabel = `${rows.length} ${rows.length === 1 ? "department" : "departments"}`;
+  const count = $("#departmentListCount");
+  if (count) count.textContent = countLabel;
 
-  $("#departmentTree").innerHTML = parents.length
-    ? parents
-        .map((department) => {
-          const children = childDepartments(department.id);
+  $("#departmentTree").innerHTML = rows.length
+    ? rows
+        .map(({ department, depth }) => {
+          const openJobs = state.jobs.filter(
+            (job) =>
+              job.status === "published" &&
+              (job.department_id === department.id ||
+                job.subdepartment_id === department.id ||
+                (!job.department_id && job.department === department.name))
+          ).length;
           return `
-            <article class="department-group">
-              <div>
-                <h3>${escapeHtml(department.name)}</h3>
-                <span>${counts.get(department.name) || 0} open ${counts.get(department.name) === 1 ? "job" : "jobs"}</span>
+            <article class="department-list-row" data-department-row="${escapeAttribute(department.id)}" style="--department-depth: ${depth}">
+              <label class="field compact-field department-name-field">
+                <span>Name</span>
+                <input data-department-name value="${escapeAttribute(department.name)}">
+              </label>
+              <label class="field compact-field">
+                <span>Parent</span>
+                <select data-department-parent>
+                  ${renderDepartmentParentOptions(department.id, department.parent_id || "")}
+                </select>
+              </label>
+              <span class="status-pill department-type-pill">
+                ${department.parent_id ? "Subdepartment" : "Parent department"} · ${openJobs} open
+              </span>
+              <div class="department-row-actions">
+                <button class="secondary-action small" type="button" data-save-department="${escapeAttribute(department.id)}">
+                  Save
+                </button>
+                <button class="danger-action" type="button" data-delete-department="${escapeAttribute(department.id)}">
+                  Delete
+                </button>
               </div>
-              ${
-                children.length
-                  ? `<ul class="subdepartment-list">${children
-                      .map((child) => `<li>${escapeHtml(child.name)}</li>`)
-                      .join("")}</ul>`
-                  : `<p class="summary">No subdepartments yet.</p>`
-              }
             </article>
           `;
         })
@@ -3226,6 +3377,10 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function escapeAttribute(value) {
+  return escapeHtml(value);
 }
 
 function showMessage(selector, message) {
@@ -3955,6 +4110,18 @@ function bindEvents() {
     renderJobDraftPreview();
   });
   $("#departmentForm").addEventListener("submit", handleDepartmentSubmit);
+  $("#departmentTree").addEventListener("click", (event) => {
+    const saveButton = event.target.closest("[data-save-department]");
+    if (saveButton) {
+      handleDepartmentRowSave(saveButton.closest("[data-department-row]"));
+      return;
+    }
+
+    const deleteButton = event.target.closest("[data-delete-department]");
+    if (deleteButton) {
+      handleDepartmentDelete(deleteButton.dataset.deleteDepartment);
+    }
+  });
   $("#boardSettingsForm").addEventListener("submit", handleBoardSettingsSubmit);
   $("#pipelineSettingsForm").addEventListener("submit", handlePipelineSettingsSubmit);
   $("#workflowSettingsForm").addEventListener("submit", handleWorkflowSubmit);
@@ -4140,12 +4307,7 @@ async function handleDepartmentSubmit(event) {
   const parentId = data.parent_id || null;
   if (!name) return;
 
-  const duplicate = activeDepartments().some(
-    (department) =>
-      department.parent_id === parentId &&
-      department.name.toLowerCase() === name.toLowerCase()
-  );
-  if (duplicate) {
+  if (departmentDuplicateExists(name, parentId)) {
     showMessage("#departmentMessage", "That department already exists.");
     return;
   }
@@ -4180,11 +4342,112 @@ async function handleDepartmentSubmit(event) {
   }
 
   state.departments = normalizeDepartments([...state.departments, department]);
-  saveLocalDepartments(state.departments);
   form.reset();
+  refreshDepartmentDependentViews();
+}
+
+function refreshDepartmentDependentViews() {
+  state.departments = normalizeDepartments(state.departments);
+  syncJobsWithDepartments();
+  saveLocalDepartments(state.departments);
   populateFilters();
   renderApplicantPortal();
   renderHrWorkspace();
+}
+
+function departmentDuplicateExists(name, parentId, departmentId = "") {
+  const normalizedName = name.toLowerCase();
+  return activeDepartments().some(
+    (department) =>
+      department.id !== departmentId &&
+      (department.parent_id || "") === (parentId || "") &&
+      department.name.toLowerCase() === normalizedName
+  );
+}
+
+async function handleDepartmentRowSave(row) {
+  const departmentId = row?.dataset.departmentRow;
+  const department = departmentById(departmentId);
+  if (!department || department.status !== "active") return;
+
+  const name = String(row.querySelector("[data-department-name]")?.value || "").trim();
+  const parentId = row.querySelector("[data-department-parent]")?.value || null;
+  if (!name) {
+    showMessage("#departmentMessage", "Department name is required.");
+    return;
+  }
+  if (parentId === departmentId || descendantDepartmentIds(departmentId).has(parentId)) {
+    showMessage("#departmentMessage", "A department cannot report to itself or one of its subdepartments.");
+    return;
+  }
+  if (departmentDuplicateExists(name, parentId, departmentId)) {
+    showMessage("#departmentMessage", "That department already exists under the selected parent.");
+    return;
+  }
+
+  const updatedDepartment = normalizeDepartment({
+    ...department,
+    name,
+    parent_id: parentId
+  });
+  state.departments = state.departments.map((item) =>
+    item.id === departmentId ? updatedDepartment : item
+  );
+  refreshDepartmentDependentViews();
+
+  try {
+    if (hasSupabase && state.session?.accessToken) {
+      await supabasePatch(
+        "departments",
+        `id=eq.${encodeURIComponent(departmentId)}`,
+        {
+          name: updatedDepartment.name,
+          parent_id: updatedDepartment.parent_id || null,
+          status: updatedDepartment.status
+        },
+        true
+      );
+      showMessage("#departmentMessage", "Department updated.");
+    } else if (hasSupabase) {
+      throw new Error("Missing admin session");
+    } else {
+      showMessage("#departmentMessage", "Department updated for this preview.");
+    }
+  } catch (error) {
+    showMessage("#departmentMessage", "Department updated locally. Supabase save requires an admin account.");
+  }
+}
+
+async function handleDepartmentDelete(departmentId) {
+  const department = departmentById(departmentId);
+  if (!department || department.status !== "active") return;
+
+  const descendantIds = descendantDepartmentIds(departmentId);
+  state.departments = state.departments.filter(
+    (item) => item.id !== departmentId && !descendantIds.has(item.id)
+  );
+  refreshDepartmentDependentViews();
+
+  try {
+    if (hasSupabase && state.session?.accessToken) {
+      await supabaseDelete("departments", `id=eq.${encodeURIComponent(departmentId)}`, true);
+      showMessage(
+        "#departmentMessage",
+        descendantIds.size ? "Department and subdepartments deleted." : "Department deleted."
+      );
+    } else if (hasSupabase) {
+      throw new Error("Missing admin session");
+    } else {
+      showMessage(
+        "#departmentMessage",
+        descendantIds.size
+          ? "Department and subdepartments deleted for this preview."
+          : "Department deleted for this preview."
+      );
+    }
+  } catch (error) {
+    showMessage("#departmentMessage", "Department deleted locally. Supabase delete requires an admin account.");
+  }
 }
 
 async function handleBoardSettingsSubmit(event) {

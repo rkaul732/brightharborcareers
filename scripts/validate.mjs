@@ -153,7 +153,25 @@ const checks = [
   [html.includes('data-hr-section="reports"') && html.includes("pipelineBoard"), "HR reports view"],
   [html.includes("profileMenuButton") && html.includes("profileDropdown"), "HR profile dropdown"],
   [html.includes("profileForm") && app.includes("handleProfileSubmit"), "HR profile editor"],
-  [html.includes("settings-layout") && html.includes("settings-content") && css.includes(".settings-layout"), "Left settings configuration menu"],
+  [
+    html.includes("settings-layout") &&
+      html.includes("settings-content") &&
+      html.includes("settings-nav") &&
+      html.includes("settings-link") &&
+      !html.includes("settings-tile") &&
+      css.includes(".settings-link"),
+    "Plain left settings navigation"
+  ],
+  [
+    html.includes("department-list-widget") &&
+      html.includes("departmentListCount") &&
+      app.includes("handleDepartmentRowSave") &&
+      app.includes("handleDepartmentDelete") &&
+      app.includes("renderDepartmentParentOptions") &&
+      app.includes("data-save-department") &&
+      app.includes("data-delete-department"),
+    "Editable department list"
+  ],
   [html.includes("pipelineSettingsForm") && app.includes("handlePipelineSettingsSubmit"), "Pipeline settings form"],
   [html.includes("workflowSettingsButton") && app.includes("handleWorkflowSubmit"), "Admin workflow settings"],
   [workflowsSql.includes("create table if not exists public.workflows") && workflowsSql.includes("workflow_id"), "Workflow persistence"],

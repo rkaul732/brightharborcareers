@@ -802,34 +802,19 @@
                   </div>
 
                   <div class="settings-layout">
-                    <nav class="settings-grid" aria-label="System configuration menu">
-                      <button class="settings-tile is-active" type="button" id="departmentsSettingsButton" data-settings-section="departments">
-                        <svg><use href="#icon-settings"></use></svg>
-                        <span>
-                          <strong>Departments</strong>
-                          <small>Create agency departments and subdepartments.</small>
-                        </span>
+                    <nav class="settings-nav" aria-label="System configuration menu">
+                      <p class="settings-nav-title">Settings</p>
+                      <button class="settings-link is-active" type="button" id="departmentsSettingsButton" data-settings-section="departments">
+                        Departments
                       </button>
-                      <button class="settings-tile" type="button" id="pipelineSettingsButton" data-settings-section="pipeline">
-                        <svg><use href="#icon-chart"></use></svg>
-                        <span>
-                          <strong>Pipeline configuration</strong>
-                          <small>Manage the visible hiring stages.</small>
-                        </span>
+                      <button class="settings-link" type="button" id="pipelineSettingsButton" data-settings-section="pipeline">
+                        Pipeline configuration
                       </button>
-                      <button class="settings-tile" type="button" id="workflowSettingsButton" data-settings-section="workflows">
-                        <svg><use href="#icon-database"></use></svg>
-                        <span>
-                          <strong>Workflows</strong>
-                          <small>Create reusable hiring workflows for jobs.</small>
-                        </span>
+                      <button class="settings-link" type="button" id="workflowSettingsButton" data-settings-section="workflows">
+                        Workflows
                       </button>
-                      <button class="settings-tile" type="button" id="communicationsSettingsButton" data-settings-section="communications">
-                        <svg><use href="#icon-mail"></use></svg>
-                        <span>
-                          <strong>Communications</strong>
-                          <small>Manage email templates and automation rules.</small>
-                        </span>
+                      <button class="settings-link" type="button" id="communicationsSettingsButton" data-settings-section="communications">
+                        Communications
                       </button>
                     </nav>
 
@@ -858,7 +843,16 @@
                       </button>
                       <p class="form-message" id="departmentMessage" role="status"></p>
                     </form>
-                    <div class="department-tree" id="departmentTree"></div>
+                    <section class="department-list-widget" aria-labelledby="departmentListHeading">
+                      <div class="department-list-heading">
+                        <div>
+                          <h3 id="departmentListHeading">Department list</h3>
+                          <p>Rename, delete, or change parent relationships.</p>
+                        </div>
+                        <span id="departmentListCount">0 departments</span>
+                      </div>
+                      <div class="department-edit-list" id="departmentTree"></div>
+                    </section>
                   </section>
 
                   <section class="settings-detail" id="pipelineSettingsPanel" data-settings-panel="pipeline" hidden>
