@@ -99,7 +99,10 @@ const checks = [
   [
     html.includes("profileSignOutButton") &&
       app.includes("signOutHrUser") &&
-      css.includes(".app-shell.is-hr-session .main-tabs") &&
+      css.includes(".app-shell.is-hr-session .public-tabs") &&
+      html.includes("hr-header-menu") &&
+      html.includes("hrSubheaderTitle") &&
+      app.includes("renderHrSubheader") &&
       !html.includes("HR backend") &&
       !html.includes("hrHeading"),
     "Signed-in HR navigation cleanup"
@@ -107,10 +110,19 @@ const checks = [
   [html.includes('data-hr-section="jobs"') && app.includes("pipeline-chip"), "HR jobs top navigation"],
   [html.includes("hrJobSearch") && html.includes("showJobCreate") && app.includes("hrJobQuery"), "HR jobs search and create control"],
   [
+    html.includes("hrJobStatusFilter") &&
+      html.includes("hrJobDepartmentFilter") &&
+      html.includes("hrJobWorkTypeFilter") &&
+      app.includes("hrJobFilters") &&
+      app.includes("renderHrJobFilters"),
+    "HR jobs filter controls"
+  ],
+  [
     !html.includes("<th scope=\"col\">Owner</th>") &&
       app.includes('colspan="3"') &&
       app.includes("hr-job-title") &&
-      app.includes("job-status-pill"),
+      app.includes("job-status-pill") &&
+      app.includes("status-cell"),
     "Ownerless framed jobs preview"
   ],
   [
@@ -133,7 +145,7 @@ const checks = [
   [html.includes('value="mandatory"') && html.includes('value="not_required"'), "Three-state application requirements"],
   [html.includes('data-job-create-tab="team"') && html.includes('name="team_members"'), "Create-job team members settings"],
   [html.includes('data-job-create-tab="workflow"') && html.includes("jobWorkflowSelect"), "Create-job workflow selection"],
-  [css.includes(".jobs-list-panel td:last-child .pipeline-chip-row") && css.includes("repeat(4, minmax"), "Equal-width job pipeline preview"],
+  [css.includes(".jobs-list-panel .pipeline-cell .pipeline-chip-row") && css.includes("repeat(4, minmax"), "Equal-width job pipeline preview"],
   [html.includes('name="salary_min"') && html.includes('name="salary_max"'), "Salary range fields"],
   [html.includes('name="job_description"') && html.includes('name="requirements"') && html.includes('name="benefits"'), "Sectioned job content fields"],
   [html.includes('name="seo_keywords"') && app.includes("parseKeywords"), "SEO keyword entry"],

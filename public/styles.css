@@ -64,7 +64,7 @@ svg {
   top: 0;
   z-index: 20;
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) auto minmax(180px, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 18px;
   align-items: center;
   min-height: 72px;
@@ -75,15 +75,23 @@ svg {
 }
 
 .app-shell.is-hr-session .topbar {
-  grid-template-columns: minmax(220px, 1fr) minmax(180px, auto);
+  grid-template-columns: auto minmax(0, 1fr) auto;
 }
 
-.app-shell.is-hr-session .main-tabs {
+.app-shell.is-hr-session .public-tabs {
   display: none;
 }
 
-.app-shell.is-hr-session .connection {
-  justify-self: end;
+.app-shell.is-hr-session .hr-header-menu {
+  display: flex;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-width: 0;
 }
 
 .brand {
@@ -120,11 +128,17 @@ svg {
 
 .main-tabs {
   display: flex;
+  justify-self: center;
   gap: 6px;
   padding: 3px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: #fff;
+}
+
+.hr-header-menu {
+  display: none;
+  justify-self: start;
 }
 
 .tab {
@@ -165,7 +179,6 @@ svg {
 }
 
 .connection {
-  justify-self: end;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -377,12 +390,7 @@ main {
   position: sticky;
   top: 92px;
   z-index: 10;
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: nowrap;
-  overflow: visible;
+  display: block;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.96);
@@ -390,20 +398,34 @@ main {
   padding: 14px 16px;
 }
 
-.hr-top-menu {
-  display: flex;
-  flex: 1 1 auto;
-  gap: 6px;
-  padding: 3px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: #fff;
+.hr-subheader {
+  min-width: 0;
+}
+
+.hr-subheader h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.hr-subheader .eyebrow {
+  margin-bottom: 4px;
 }
 
 .profile-menu {
   position: relative;
   flex: 0 0 auto;
   margin-left: auto;
+}
+
+.topbar-profile-menu {
+  display: none;
+  margin-left: 0;
+}
+
+.app-shell.is-hr-session .topbar-profile-menu {
+  display: block;
 }
 
 .profile-button {
@@ -469,6 +491,13 @@ main {
 
 .jobs-toolbar {
   align-items: end;
+}
+
+.jobs-filter-bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
+  gap: 10px;
+  min-width: min(100%, 560px);
 }
 
 .jobs-toolbar-actions {
@@ -1999,19 +2028,20 @@ tr.is-selected {
 }
 
 .jobs-list-panel .hr-job-row td:first-child {
-  width: 46%;
+  width: 42%;
   border-left: 1px solid var(--line);
   border-radius: var(--radius) 0 0 var(--radius);
 }
 
 .jobs-list-panel .hr-job-row td:nth-child(2) {
-  width: 16%;
+  width: 42%;
 }
 
 .jobs-list-panel .hr-job-row td:last-child {
-  width: 38%;
+  width: 16%;
   border-right: 1px solid var(--line);
   border-radius: 0 var(--radius) var(--radius) 0;
+  text-align: right;
 }
 
 .jobs-list-panel .hr-job-row:hover td {
@@ -2031,9 +2061,13 @@ tr.is-selected {
   line-height: 1.25;
 }
 
-.jobs-list-panel td:last-child .pipeline-chip-row {
+.jobs-list-panel .pipeline-cell .pipeline-chip-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(92px, 1fr));
+}
+
+.status-cell {
+  text-align: right;
 }
 
 .pipeline-chip {
@@ -2301,7 +2335,7 @@ td strong {
     gap: 10px;
   }
 
-  .hr-top-menu {
+  .hr-header-menu {
     overflow-x: visible;
   }
 
@@ -2318,12 +2352,22 @@ td strong {
     padding: 14px;
   }
 
+  .app-shell.is-hr-session .topbar {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar-actions {
+    justify-content: space-between;
+  }
+
   .connection {
     justify-self: start;
   }
 
-  .main-tabs {
+  .main-tabs,
+  .hr-header-menu {
     overflow-x: auto;
+    justify-self: stretch;
   }
 
   main {
@@ -2354,7 +2398,7 @@ td strong {
   }
 
   .requirement-options,
-  .jobs-list-panel td:last-child .pipeline-chip-row {
+  .jobs-list-panel .pipeline-cell .pipeline-chip-row {
     grid-template-columns: 1fr;
   }
 
@@ -2391,6 +2435,12 @@ td strong {
 
   .jobs-toolbar-actions {
     flex-wrap: nowrap;
+  }
+
+  .jobs-filter-bar {
+    grid-template-columns: repeat(3, minmax(130px, 1fr));
+    overflow-x: auto;
+    width: 100%;
   }
 
   .job-create-subnav {
@@ -2448,7 +2498,7 @@ td strong {
     width: 100%;
   }
 
-  .hr-top-menu {
+  .hr-header-menu {
     flex: 1 0 auto;
   }
 
@@ -2463,6 +2513,10 @@ td strong {
 
   .jobs-toolbar-actions {
     width: 100%;
+  }
+
+  .jobs-filter-bar {
+    grid-template-columns: 1fr;
   }
 
   .job-search-field {

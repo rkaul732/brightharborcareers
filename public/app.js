@@ -529,6 +529,11 @@ const state = {
   hrSection: "home",
   settingsSection: "departments",
   hrJobQuery: "",
+  hrJobFilters: {
+    status: "All",
+    department: "All",
+    workType: "All"
+  },
   jobCreateOpen: false,
   session: readInitialSession(),
   profile: initialProfile,
@@ -1815,6 +1820,7 @@ function renderApplicationRequirements(job) {
 
 function renderHrWorkspace() {
   renderHrSections();
+  renderHrSubheader();
   renderProfileMenu();
   renderJobsToolbar();
   renderJobCreateTabs();
@@ -1850,6 +1856,24 @@ function renderHrSections() {
   $("#hrReportsSection").hidden = state.hrSection !== "reports";
   $("#hrSettingsSection").hidden = state.hrSection !== "settings";
   $("#hrProfileSection").hidden = state.hrSection !== "profile";
+}
+
+function renderHrSubheader() {
+  const eyebrow = $("#hrSubheaderEyebrow");
+  const title = $("#hrSubheaderTitle");
+  if (!eyebrow || !title) return;
+
+  const labels = {
+    home: ["Home", "Today in hiring"],
+    jobs: ["Jobs", state.jobCreateOpen ? "Create a job" : "All Jobs"],
+    candidates: ["Candidates", "All applicants"],
+    reports: ["Reports", "Pipeline overview"],
+    settings: ["Settings", "System configuration"],
+    profile: ["Profile", "Edit my profile"]
+  };
+  const [sectionLabel, sectionTitle] = labels[state.hrSection] || labels.home;
+  eyebrow.textContent = sectionLabel;
+  title.textContent = sectionTitle;
 }
 
 function renderProfileMenu() {
@@ -2067,16 +2091,49 @@ function renderJobsToolbar() {
   const tableWrap = $("#jobsTableWrap");
   const createButton = $("#showJobCreate");
   const toolbar = $("#jobsToolbar");
-  const jobsListHeader = $("#jobsListHeader");
+  const filterBar = $("#jobsFilterBar");
   const searchField = search?.closest(".job-search-field");
   if (search && document.activeElement !== search) search.value = state.hrJobQuery;
+  renderHrJobFilters();
   createPanel.hidden = !state.jobCreateOpen;
   tableWrap.hidden = state.jobCreateOpen;
   if (toolbar) toolbar.hidden = state.jobCreateOpen;
-  if (jobsListHeader) jobsListHeader.hidden = state.jobCreateOpen;
+  if (filterBar) filterBar.hidden = state.jobCreateOpen;
   if (searchField) searchField.hidden = state.jobCreateOpen;
   createButton.hidden = state.jobCreateOpen;
   createButton.setAttribute("aria-expanded", String(state.jobCreateOpen));
+}
+
+function fillHrFilterSelect(select, options, selected, labelFor = (value) => value) {
+  if (!select) return "All";
+  const cleanOptions = ["All", ...new Set(options.filter(Boolean).filter((option) => option !== "All"))];
+  select.innerHTML = cleanOptions
+    .map((option) => `<option value="${escapeHtml(option)}">${escapeHtml(option === "All" ? "All" : labelFor(option))}</option>`)
+    .join("");
+  select.value = cleanOptions.includes(selected) ? selected : "All";
+  return select.value;
+}
+
+function renderHrJobFilters() {
+  const statusOptions = ["All", ...jobStatusOptions];
+  const departmentOptions = uniqueOptions("department", state.jobs);
+  const workTypeOptions = uniqueOptions("work_type", state.jobs);
+  state.hrJobFilters.status = fillHrFilterSelect(
+    $("#hrJobStatusFilter"),
+    statusOptions,
+    state.hrJobFilters.status,
+    formatStatus
+  );
+  state.hrJobFilters.department = fillHrFilterSelect(
+    $("#hrJobDepartmentFilter"),
+    departmentOptions,
+    state.hrJobFilters.department
+  );
+  state.hrJobFilters.workType = fillHrFilterSelect(
+    $("#hrJobWorkTypeFilter"),
+    workTypeOptions,
+    state.hrJobFilters.workType
+  );
 }
 
 function renderJobCreateTabs() {
@@ -2314,6 +2371,13 @@ function renderJobsTable() {
   const jobs = state.jobs
     .slice()
     .filter((job) => {
+      const matchesJobStatus =
+        state.hrJobFilters.status === "All" || normalizeJobStatus(job.status) === state.hrJobFilters.status;
+      const matchesDepartment =
+        state.hrJobFilters.department === "All" || job.department === state.hrJobFilters.department;
+      const matchesWorkType =
+        state.hrJobFilters.workType === "All" || job.work_type === state.hrJobFilters.workType;
+      if (!matchesJobStatus || !matchesDepartment || !matchesWorkType) return false;
       if (!query) return true;
       return [
         job.title,
@@ -2321,7 +2385,7 @@ function renderJobsTable() {
         job.subdepartment,
         job.location,
         job.work_type,
-        job.status,
+        formatStatus(job.status),
         job.hiring_manager
       ]
         .filter(Boolean)
@@ -2333,7 +2397,7 @@ function renderJobsTable() {
     $("#jobsTable").innerHTML = `
       <tr>
         <td colspan="3">
-          <div class="empty-state compact">No jobs match this search.</div>
+          <div class="empty-state compact">No jobs match these filters.</div>
         </td>
       </tr>
     `;
@@ -2361,8 +2425,8 @@ function renderJobsTable() {
               <span>${escapeHtml(workflow.name)}</span>
             </div>
           </td>
-          <td><span class="status-pill job-status-pill ${escapeHtml(job.status)}">${escapeHtml(formatStatus(job.status))}</span></td>
-          <td><div class="pipeline-chip-row">${pipelineMarkup}</div></td>
+          <td class="pipeline-cell"><div class="pipeline-chip-row">${pipelineMarkup}</div></td>
+          <td class="status-cell"><span class="status-pill job-status-pill ${escapeHtml(job.status)}">${escapeHtml(formatStatus(job.status))}</span></td>
         </tr>
       `;
     })
@@ -3706,9 +3770,25 @@ function bindEvents() {
     renderJobsTable();
   });
 
+  $("#hrJobStatusFilter").addEventListener("change", (event) => {
+    state.hrJobFilters.status = event.target.value;
+    renderJobsTable();
+  });
+
+  $("#hrJobDepartmentFilter").addEventListener("change", (event) => {
+    state.hrJobFilters.department = event.target.value;
+    renderJobsTable();
+  });
+
+  $("#hrJobWorkTypeFilter").addEventListener("change", (event) => {
+    state.hrJobFilters.workType = event.target.value;
+    renderJobsTable();
+  });
+
   $("#showJobCreate").addEventListener("click", () => {
     state.jobCreateOpen = true;
     state.jobCreateTab = "description";
+    renderHrSubheader();
     renderJobsToolbar();
     renderJobCreateTabs();
     populateJobDepartmentControls();
@@ -3740,6 +3820,7 @@ function bindEvents() {
   $("#cancelJobCreate").addEventListener("click", () => {
     state.jobCreateOpen = false;
     $("#jobPreviewPanel").hidden = true;
+    renderHrSubheader();
     renderJobsToolbar();
   });
 

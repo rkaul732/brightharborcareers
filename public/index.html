@@ -80,7 +80,7 @@
           </span>
         </a>
 
-        <nav class="main-tabs" aria-label="Main workspace">
+        <nav class="main-tabs public-tabs" aria-label="Main workspace">
           <button class="tab is-active" type="button" data-view="landing">
             <svg><use href="#icon-anchor"></use></svg>
             Start
@@ -95,9 +95,41 @@
           </button>
         </nav>
 
-        <div class="connection" id="connectionStatus">
-          <span class="status-dot"></span>
-          <span>Demo data</span>
+        <nav class="main-tabs hr-header-menu" aria-label="HR main menu">
+          <button class="hr-menu-button is-active" type="button" data-hr-section="home">
+            <svg><use href="#icon-anchor"></use></svg>
+            Home
+          </button>
+          <button class="hr-menu-button" type="button" data-hr-section="jobs">
+            <svg><use href="#icon-briefcase"></use></svg>
+            Jobs
+          </button>
+          <button class="hr-menu-button" type="button" data-hr-section="candidates">
+            <svg><use href="#icon-users"></use></svg>
+            Candidates
+          </button>
+          <button class="hr-menu-button" type="button" data-hr-section="reports">
+            <svg><use href="#icon-chart"></use></svg>
+            Reports
+          </button>
+        </nav>
+
+        <div class="topbar-actions">
+          <div class="connection" id="connectionStatus">
+            <span class="status-dot"></span>
+            <span>Demo data</span>
+          </div>
+
+          <div class="profile-menu topbar-profile-menu">
+            <button class="profile-button" type="button" id="profileMenuButton" aria-expanded="false" aria-controls="profileDropdown">
+              <span class="profile-avatar" id="profileAvatar">BH</span>
+            </button>
+            <div class="profile-dropdown" id="profileDropdown" hidden>
+              <button type="button" data-profile-destination="settings">Settings</button>
+              <button type="button" data-profile-destination="profile">Edit my profile</button>
+              <button type="button" id="profileSignOutButton">Log out</button>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -332,34 +364,9 @@
         <section class="view" id="hrView" aria-label="Hiring team workspace">
           <div class="hr-shell">
             <header class="hr-top-header">
-              <nav class="hr-top-menu" aria-label="HR main menu">
-                <button class="hr-menu-button is-active" type="button" data-hr-section="home">
-                  <svg><use href="#icon-anchor"></use></svg>
-                  Home
-                </button>
-                <button class="hr-menu-button" type="button" data-hr-section="jobs">
-                  <svg><use href="#icon-briefcase"></use></svg>
-                  Jobs
-                </button>
-                <button class="hr-menu-button" type="button" data-hr-section="candidates">
-                  <svg><use href="#icon-users"></use></svg>
-                  Candidates
-                </button>
-                <button class="hr-menu-button" type="button" data-hr-section="reports">
-                  <svg><use href="#icon-chart"></use></svg>
-                  Reports
-                </button>
-              </nav>
-
-              <div class="profile-menu">
-                <button class="profile-button" type="button" id="profileMenuButton" aria-expanded="false" aria-controls="profileDropdown">
-                  <span class="profile-avatar" id="profileAvatar">BH</span>
-                </button>
-                <div class="profile-dropdown" id="profileDropdown" hidden>
-                  <button type="button" data-profile-destination="settings">Settings</button>
-                  <button type="button" data-profile-destination="profile">Edit my profile</button>
-                  <button type="button" id="profileSignOutButton">Log out</button>
-                </div>
+              <div class="hr-subheader">
+                <p class="eyebrow" id="hrSubheaderEyebrow">Home</p>
+                <h2 id="hrSubheaderTitle">Today in hiring</h2>
               </div>
             </header>
 
@@ -408,9 +415,19 @@
               <section class="hr-section" id="hrJobsSection" hidden>
                 <section class="panel jobs-list-panel">
                   <div class="section-header jobs-toolbar" id="jobsToolbar">
-                    <div id="jobsListHeader">
-                      <p class="eyebrow">Jobs</p>
-                      <h2>All jobs</h2>
+                    <div class="jobs-filter-bar" id="jobsFilterBar">
+                      <label class="field compact-field">
+                        <span>Status</span>
+                        <select id="hrJobStatusFilter"></select>
+                      </label>
+                      <label class="field compact-field">
+                        <span>Department</span>
+                        <select id="hrJobDepartmentFilter"></select>
+                      </label>
+                      <label class="field compact-field">
+                        <span>Work status</span>
+                        <select id="hrJobWorkTypeFilter"></select>
+                      </label>
                     </div>
                     <div class="jobs-toolbar-actions">
                       <label class="field compact-field job-search-field">
@@ -709,8 +726,8 @@
                       <thead>
                         <tr>
                           <th scope="col">Role</th>
-                          <th scope="col">Status</th>
                           <th scope="col">Pipeline</th>
+                          <th scope="col">Status</th>
                         </tr>
                       </thead>
                       <tbody id="jobsTable"></tbody>
