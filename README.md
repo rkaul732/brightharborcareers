@@ -7,10 +7,12 @@ Bright Harbor Careers is a dual-sided applicant tracking system for applicants a
 - Recruiters can create focused job drafts with salary ranges, sectioned descriptions, SEO keywords, and pipeline tracking.
 - Hiring managers can review candidates and advance interview-stage applicants.
 - Admins can edit the public job board header, manage agency departments and subdepartments, and configure pipeline labels.
+- Admins can manage email templates, merge fields, sender accounts, and automated communication rules.
+- Recruiters can view candidate communication history, send manual emails, and resend previous messages.
 - HR users navigate Jobs, Candidates, and Reports from the top header, with Settings and profile editing in the profile menu.
 - Hiring-team users without accounts can request access for HR approval.
-- Supabase stores jobs, applications, notes, scorecards, activity, and role profiles.
-- Netlify hosts the site, and GitHub stores the source.
+- Supabase stores jobs, applications, notes, scorecards, communication logs, activity, and role profiles.
+- Netlify hosts the site, runs email functions, and GitHub stores the source.
 
 ## What You Need
 
@@ -42,7 +44,7 @@ docs/
   architecture.md     Product and data model overview
   supabase-setup.md   Supabase setup notes
 netlify.toml          Netlify build, redirects, and headers
-netlify/functions/    Account request and approval endpoints
+netlify/functions/    Account request, approval, and communication email endpoints
 ```
 
 ## 1. Run The App Locally
@@ -105,6 +107,7 @@ supabase/migrations/20260730183000_departments.sql
 supabase/migrations/20260730190000_profile_avatar.sql
 supabase/migrations/20260730200000_pipeline_settings.sql
 supabase/migrations/20260730210000_job_content_sections.sql
+supabase/migrations/20260731120000_communications.sql
 ```
 
 4. Paste and run each file in Supabase before moving to the next one.
@@ -123,6 +126,7 @@ This creates:
 - `pipeline_settings`
 - profile avatar URLs
 - salary ranges, job description sections, benefits, and SEO keywords for jobs
+- communication templates, sender accounts, automation rules, queued emails, and sent/failed communication logs
 - HR role types for `recruiter`, `hiring_manager`, and `admin`
 - row-level security policies
 
@@ -160,7 +164,7 @@ To test hiring-team account requests locally, also add the server-only values:
 ```text
 SUPABASE_SERVICE_ROLE_KEY=your-private-service-role-key
 RESEND_API_KEY=your-resend-api-key
-EMAIL_FROM=Bright Harbor Careers <no-reply@yourdomain.com>
+EMAIL_FROM=Bright Harbor Careers <hr@brightharbor.org>
 HR_APPROVAL_EMAIL=hr@brightharbor.org
 SITE_URL=http://localhost:5173
 ```
@@ -169,7 +173,7 @@ Important:
 
 - `SUPABASE_ANON_KEY` is safe for the browser.
 - `SUPABASE_SERVICE_ROLE_KEY` is private and must only be used in Netlify functions or local `.env`.
-- `RESEND_API_KEY` is used by the account-request function to email HR.
+- `RESEND_API_KEY` is used by account-request and candidate communication email functions.
 
 After adding or changing `.env`, stop the local preview and start it again:
 
@@ -213,7 +217,52 @@ The email contains two links:
 
 Approving a request marks it approved in Supabase and attempts to send the requester a Supabase invite so they can set a password.
 
-## 6. Create Your First HR User
+## 6. Set Up Communications
+
+After running the communications migration, sign in as an `admin` and open:
+
+```text
+Hiring Team -> profile icon -> Settings -> Communications
+```
+
+Admins can create templates, add merge fields such as `{{candidate_name}}` and `{{job_title}}`, preview messages, send test emails, and attach templates to automation rules.
+
+Built-in automation support includes:
+
+- candidate applies
+- candidate imported
+- candidate moved to a pipeline stage
+- candidate rejected, withdrawn, hired, or archived
+- interview scheduled, rescheduled, or canceled
+- offer created, sent, accepted, or declined
+
+The current app automatically fires rules when:
+
+- an applicant submits an application
+- a hiring-team user moves a candidate into another pipeline stage
+
+The Netlify function `run-communication-automations` finds matching rules and writes each automated email to the candidate communication history.
+
+Delayed emails are stored in `communication_events` with a `queued` status and a `send_after` time. The Netlify scheduled function `process-communication-queue` checks that queue every 15 minutes and sends due emails.
+
+### Outlook And DNS
+
+The app is ready to send from Bright Harbor email addresses once your domain is verified with the email provider.
+
+For the current Resend setup:
+
+1. Create or open your Resend account.
+2. Add the sending domain, such as `brightharbor.org`.
+3. Ask IT to add the DNS records Resend provides. These usually include DKIM records and may include SPF or return-path records.
+4. After the domain is verified, set `EMAIL_FROM` in Netlify, for example:
+
+```text
+Bright Harbor Careers <hr@brightharbor.org>
+```
+
+If your company later wants direct Microsoft Outlook / Microsoft 365 sending instead of Resend, the modular sending function can be updated to use Microsoft Graph without redesigning the template, automation, or candidate history screens.
+
+## 7. Create Your First HR User
 
 1. In Supabase, go to Authentication, then Users.
 2. Add your first HR user with their work email.
@@ -243,7 +292,7 @@ admin
 
 After that, sign in from the Hiring Team login screen with the work email as the username and the password for that Supabase user. Admin and recruiter users can create jobs and publish roles. Hiring managers can review candidates.
 
-## 7. Run Locally With Supabase
+## 8. Run Locally With Supabase
 
 If you already created `.env`, start the app normally:
 
@@ -267,7 +316,7 @@ http://localhost:5173
 
 The applicant side will read published jobs from Supabase. The HR side can write to Supabase after an HR user signs in and has the right role in `public.profiles`.
 
-## 8. Push To GitHub
+## 9. Push To GitHub
 
 If this folder is not already a Git repository:
 
@@ -292,7 +341,7 @@ git push -u origin main
 
 Run `npm run validate` and `npm run build` locally before pushing changes.
 
-## 9. Deploy With Netlify
+## 10. Deploy With Netlify
 
 In Netlify:
 
@@ -326,7 +375,7 @@ Use `hr@brightharbor.org` for `HR_APPROVAL_EMAIL`. Use your deployed Netlify URL
 
 After deployment, applicants can use the public careers site and HR users can sign in through the HR workspace.
 
-## 10. Add Your First Live Job
+## 11. Add Your First Live Job
 
 Once your HR user is an `admin` or `recruiter`:
 
@@ -388,6 +437,14 @@ If a Supabase invite or account-request email does not arrive:
 - In Supabase, go to Authentication, then Providers, and confirm Email is enabled.
 - Confirm `RESEND_API_KEY`, `EMAIL_FROM`, and `HR_APPROVAL_EMAIL` are also set if the missing email is an account request to HR.
 - Wait a few minutes before retrying; email sending can be rate-limited.
+
+If candidate emails do not send:
+
+- Confirm `RESEND_API_KEY`, `EMAIL_FROM`, `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY` are set in Netlify.
+- Confirm your Resend sending domain has been verified through DNS.
+- Confirm the user sending the email is signed in as `recruiter`, `hiring_manager`, or `admin`.
+- Open the candidate profile Communications tab and check whether the message is `queued`, `sent`, or `failed`.
+- For delayed emails, wait for the Netlify scheduled function to run or trigger `/.netlify/functions/process-communication-queue` manually while testing.
 
 ## Useful Commands
 

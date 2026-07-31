@@ -42,6 +42,10 @@
         <path d="M21 3L10 14"/>
         <path d="M21 3l-7 18l-4-7l-7-4l18-7Z"/>
       </symbol>
+      <symbol id="icon-mail" viewBox="0 0 24 24">
+        <path d="M4 6h16v12H4z"/>
+        <path d="M4 7l8 6l8-6"/>
+      </symbol>
       <symbol id="icon-filter" viewBox="0 0 24 24">
         <path d="M4 6h16M7 12h10M10 18h4"/>
       </symbol>
@@ -545,11 +549,29 @@
                           <th scope="col">Stage</th>
                           <th scope="col">Source</th>
                           <th scope="col">Applied</th>
+                          <th scope="col">Actions</th>
                         </tr>
                       </thead>
                       <tbody id="candidatesTable"></tbody>
                     </table>
                   </div>
+                  <section class="candidate-profile-panel" id="candidateProfilePanel" hidden>
+                    <div class="section-header compact">
+                      <div>
+                        <p class="eyebrow">Candidate profile</p>
+                        <h2 id="candidateProfileName">Candidate</h2>
+                        <p class="summary" id="candidateProfileMeta"></p>
+                      </div>
+                      <button class="secondary-action small" type="button" id="closeCandidateProfile">
+                        Close
+                      </button>
+                    </div>
+                    <div class="candidate-tabs" role="tablist" aria-label="Candidate profile sections">
+                      <button class="candidate-tab" type="button" data-candidate-tab="overview">Overview</button>
+                      <button class="candidate-tab is-active" type="button" data-candidate-tab="communications">Communications</button>
+                    </div>
+                    <div id="candidateProfileBody"></div>
+                  </section>
                 </section>
               </section>
 
@@ -588,6 +610,13 @@
                       <span>
                         <strong>Pipeline configuration</strong>
                         <small>Manage the visible hiring stages.</small>
+                      </span>
+                    </button>
+                    <button class="settings-tile" type="button" id="communicationsSettingsButton" data-settings-section="communications">
+                      <svg><use href="#icon-mail"></use></svg>
+                      <span>
+                        <strong>Communications</strong>
+                        <small>Manage email templates and automation rules.</small>
                       </span>
                     </button>
                   </div>
@@ -652,6 +681,216 @@
                       <p class="form-message" id="pipelineSettingsMessage" role="status"></p>
                     </form>
                     <div class="pipeline-settings-preview" id="pipelineSettingsPreview"></div>
+                    <div class="pipeline-automation-preview" id="pipelineAutomationPreview"></div>
+                  </section>
+
+                  <section class="settings-detail communications-settings" id="communicationsSettingsPanel" data-settings-panel="communications" hidden>
+                    <div class="section-header compact">
+                      <div>
+                        <p class="eyebrow">Communications</p>
+                        <h2>Templates and automation</h2>
+                      </div>
+                    </div>
+
+                    <div class="communications-admin-grid">
+                      <section class="communications-card">
+                        <div class="section-header compact">
+                          <div>
+                            <p class="eyebrow">Template library</p>
+                            <h2>Email templates</h2>
+                          </div>
+                          <button class="secondary-action small" type="button" id="newTemplateButton">
+                            New template
+                          </button>
+                        </div>
+                        <div class="table-wrap compact-table-wrap">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th scope="col">Template</th>
+                                <th scope="col">Subject</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody id="templatesTable"></tbody>
+                          </table>
+                        </div>
+
+                        <form class="communication-form" id="communicationTemplateForm">
+                          <input type="hidden" name="template_id">
+                          <div class="form-grid">
+                            <label class="field">
+                              <span>Template name</span>
+                              <input name="name" required placeholder="Application received">
+                            </label>
+                            <label class="field">
+                              <span>Category</span>
+                              <select name="category">
+                                <option>Application</option>
+                                <option>Interview</option>
+                                <option>Offer</option>
+                                <option>Status update</option>
+                                <option>General</option>
+                              </select>
+                            </label>
+                            <label class="field">
+                              <span>Status</span>
+                              <select name="status">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                              </select>
+                            </label>
+                            <label class="field">
+                              <span>Test email</span>
+                              <input name="test_email" type="email" placeholder="you@brightharbor.org">
+                            </label>
+                            <label class="field wide">
+                              <span>Subject line</span>
+                              <input name="subject" required placeholder="We received your application for {{job_title}}">
+                            </label>
+                            <label class="field wide">
+                              <span>Message body</span>
+                              <textarea name="body" required rows="8" placeholder="Hello {{candidate_name}},"></textarea>
+                            </label>
+                          </div>
+
+                          <div class="merge-field-panel">
+                            <p class="eyebrow">Merge fields</p>
+                            <div class="merge-field-grid" id="mergeFieldChips"></div>
+                          </div>
+
+                          <div class="template-preview" id="templatePreview"></div>
+
+                          <div class="communication-action-row">
+                            <button class="primary-action small" type="submit">
+                              <svg><use href="#icon-database"></use></svg>
+                              Save template
+                            </button>
+                            <button class="secondary-action small" type="button" id="duplicateTemplateButton">
+                              Duplicate
+                            </button>
+                            <button class="secondary-action small" type="button" id="archiveTemplateButton">
+                              Archive
+                            </button>
+                            <button class="secondary-action small" type="button" id="deleteTemplateButton">
+                              Delete
+                            </button>
+                            <button class="secondary-action small" type="button" id="sendTemplateTestButton">
+                              <svg><use href="#icon-send"></use></svg>
+                              Send test
+                            </button>
+                          </div>
+                          <p class="form-message" id="templateMessage" role="status"></p>
+                        </form>
+                      </section>
+
+                      <section class="communications-card">
+                        <div class="section-header compact">
+                          <div>
+                            <p class="eyebrow">Automation rules</p>
+                            <h2>Workflow triggers</h2>
+                          </div>
+                          <button class="secondary-action small" type="button" id="newAutomationRuleButton">
+                            New rule
+                          </button>
+                        </div>
+                        <div class="table-wrap compact-table-wrap">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th scope="col">Rule</th>
+                                <th scope="col">Trigger</th>
+                                <th scope="col">Stage</th>
+                                <th scope="col">Template</th>
+                                <th scope="col">Delay</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody id="automationRulesTable"></tbody>
+                          </table>
+                        </div>
+
+                        <form class="communication-form" id="automationRuleForm">
+                          <input type="hidden" name="rule_id">
+                          <div class="form-grid">
+                            <label class="field">
+                              <span>Rule name</span>
+                              <input name="name" required placeholder="Interview stage message">
+                            </label>
+                            <label class="field">
+                              <span>Trigger event</span>
+                              <select name="trigger_event"></select>
+                            </label>
+                            <label class="field">
+                              <span>Pipeline stage</span>
+                              <select name="pipeline_stage"></select>
+                            </label>
+                            <label class="field">
+                              <span>Email template</span>
+                              <select name="template_id" required></select>
+                            </label>
+                            <label class="field">
+                              <span>Delay</span>
+                              <select name="delay_minutes"></select>
+                            </label>
+                            <label class="field">
+                              <span>Status</span>
+                              <select name="status">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                              </select>
+                            </label>
+                            <label class="field">
+                              <span>Sender account</span>
+                              <select name="sender_account_id"></select>
+                            </label>
+                            <label class="field">
+                              <span>Sender email</span>
+                              <input name="sender_email" type="email" required>
+                            </label>
+                            <label class="field wide">
+                              <span>Reply-to address</span>
+                              <input name="reply_to" type="email" required>
+                            </label>
+                          </div>
+                          <div class="communication-action-row">
+                            <button class="primary-action small" type="submit">
+                              <svg><use href="#icon-database"></use></svg>
+                              Save rule
+                            </button>
+                            <button class="secondary-action small" type="button" id="duplicateAutomationRuleButton">
+                              Duplicate
+                            </button>
+                            <button class="secondary-action small" type="button" id="deleteAutomationRuleButton">
+                              Delete
+                            </button>
+                          </div>
+                          <p class="form-message" id="automationRuleMessage" role="status"></p>
+                        </form>
+                      </section>
+                    </div>
+
+                    <section class="communications-card">
+                      <div class="section-header compact">
+                        <div>
+                          <p class="eyebrow">Pipeline stage automations</p>
+                          <h2>Attached stage messages</h2>
+                        </div>
+                      </div>
+                      <div class="stage-automation-grid" id="stageAutomationMatrix"></div>
+                    </section>
+
+                    <section class="communications-card">
+                      <div class="section-header compact">
+                        <div>
+                          <p class="eyebrow">Sending accounts</p>
+                          <h2>Outlook-ready email senders</h2>
+                        </div>
+                      </div>
+                      <div class="sender-account-list" id="senderAccountList"></div>
+                    </section>
                   </section>
                 </section>
 

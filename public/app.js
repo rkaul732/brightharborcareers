@@ -43,6 +43,133 @@ const defaultBoardSettings = {
   overlay_opacity: 55
 };
 
+const communicationMergeFields = [
+  { key: "candidate_name", label: "Candidate name" },
+  { key: "candidate_email", label: "Candidate email" },
+  { key: "job_title", label: "Job title" },
+  { key: "department", label: "Department" },
+  { key: "job_location", label: "Job location" },
+  { key: "company_name", label: "Company name" },
+  { key: "recruiter_name", label: "Recruiter name" },
+  { key: "hiring_manager", label: "Hiring manager" },
+  { key: "application_stage", label: "Pipeline stage" },
+  { key: "interview_date_time", label: "Interview date/time" },
+  { key: "offer_details", label: "Offer details" },
+  { key: "sender_email", label: "Sender email" },
+  { key: "reply_to", label: "Reply-to email" }
+];
+
+const communicationTriggerEvents = [
+  { id: "candidate_applies", label: "Candidate applies" },
+  { id: "candidate_imported", label: "Candidate imported" },
+  { id: "candidate_stage_changed", label: "Candidate moved to pipeline stage", usesStage: true },
+  { id: "candidate_rejected", label: "Candidate rejected" },
+  { id: "candidate_withdrawn", label: "Candidate withdrawn" },
+  { id: "interview_scheduled", label: "Interview scheduled" },
+  { id: "interview_rescheduled", label: "Interview rescheduled" },
+  { id: "interview_canceled", label: "Interview canceled" },
+  { id: "offer_created", label: "Offer created" },
+  { id: "offer_sent", label: "Offer sent" },
+  { id: "offer_accepted", label: "Offer accepted" },
+  { id: "offer_declined", label: "Offer declined" },
+  { id: "candidate_hired", label: "Candidate hired" },
+  { id: "candidate_archived", label: "Candidate archived" }
+];
+
+const communicationDelayOptions = [
+  { value: 0, label: "Immediately" },
+  { value: 15, label: "15 minutes" },
+  { value: 60, label: "1 hour" },
+  { value: 1440, label: "1 day" },
+  { value: 4320, label: "3 days" }
+];
+
+const defaultSenderAccounts = [
+  {
+    id: "sender-bright-harbor-hr",
+    name: "Bright Harbor HR",
+    email: "hr@brightharbor.org",
+    reply_to: "hr@brightharbor.org",
+    provider: "outlook_dns",
+    status: "active",
+    dns_status: "pending"
+  }
+];
+
+const defaultCommunicationTemplates = [
+  {
+    id: "tmpl-application-received",
+    name: "Application received",
+    subject: "We received your application for {{job_title}}",
+    body:
+      "Hello {{candidate_name}},\n\nThank you for applying for {{job_title}} at {{company_name}}. Our hiring team has received your application and will review your experience soon.\n\nIf your background aligns with the role, {{recruiter_name}} will contact you with next steps.\n\nThank you,\n{{company_name}} Careers",
+    category: "Application",
+    status: "active",
+    archived_at: ""
+  },
+  {
+    id: "tmpl-interview-stage",
+    name: "Interview stage follow-up",
+    subject: "Next steps for {{job_title}}",
+    body:
+      "Hello {{candidate_name}},\n\nWe are glad to move you forward for {{job_title}}. The next step is an interview with our team.\n\nInterview timing: {{interview_date_time}}\n\nPlease reply to {{reply_to}} with any scheduling questions.\n\nThank you,\n{{recruiter_name}}",
+    category: "Interview",
+    status: "active",
+    archived_at: ""
+  },
+  {
+    id: "tmpl-offer-sent",
+    name: "Offer sent",
+    subject: "Offer details for {{job_title}}",
+    body:
+      "Hello {{candidate_name}},\n\nWe are excited to share offer details for {{job_title}} with {{company_name}}.\n\n{{offer_details}}\n\nPlease review and reply to {{reply_to}} with any questions.\n\nWarmly,\n{{recruiter_name}}",
+    category: "Offer",
+    status: "active",
+    archived_at: ""
+  },
+  {
+    id: "tmpl-status-update",
+    name: "Candidate status update",
+    subject: "Update from {{company_name}} Careers",
+    body:
+      "Hello {{candidate_name}},\n\nThank you for your interest in {{job_title}}. We wanted to share that your current application stage is {{application_stage}}.\n\nWe appreciate your time and interest in {{company_name}}.\n\nThank you,\n{{company_name}} Careers",
+    category: "Status update",
+    status: "active",
+    archived_at: ""
+  }
+];
+
+const defaultAutomationRules = [
+  {
+    id: "rule-application-received",
+    name: "Application confirmation",
+    trigger_event: "candidate_applies",
+    pipeline_stage: "",
+    template_id: "tmpl-application-received",
+    sender_account_id: "sender-bright-harbor-hr",
+    sender_email: "hr@brightharbor.org",
+    reply_to: "hr@brightharbor.org",
+    delay_minutes: 0,
+    status: "active",
+    action_type: "send_email",
+    action_config: { actions: ["send_email"] }
+  },
+  {
+    id: "rule-interview-stage",
+    name: "Interview stage message",
+    trigger_event: "candidate_stage_changed",
+    pipeline_stage: "interview",
+    template_id: "tmpl-interview-stage",
+    sender_account_id: "sender-bright-harbor-hr",
+    sender_email: "hr@brightharbor.org",
+    reply_to: "hr@brightharbor.org",
+    delay_minutes: 15,
+    status: "active",
+    action_type: "send_email",
+    action_config: { actions: ["send_email"] }
+  }
+];
+
 const demoDepartments = [
   { id: "dept-people", name: "People Operations", parent_id: null, status: "active" },
   { id: "dept-recruiting", name: "Recruiting", parent_id: "dept-people", status: "active" },
@@ -218,6 +345,57 @@ const demoApplications = [
   }
 ];
 
+const demoCommunications = [
+  {
+    id: "comm-301",
+    application_id: "app-201",
+    job_id: "job-101",
+    candidate_name: "Jordan Ellis",
+    candidate_email: "jordan.ellis@example.com",
+    template_id: "tmpl-application-received",
+    automation_rule_id: "rule-application-received",
+    trigger_event: "candidate_applies",
+    direction: "outbound",
+    send_type: "automated",
+    subject: "We received your application for Senior Talent Partner",
+    body:
+      "Hello Jordan Ellis,\n\nThank you for applying for Senior Talent Partner at Bright Harbor. Our hiring team has received your application and will review your experience soon.\n\nIf your background aligns with the role, Sam Lee will contact you with next steps.\n\nThank you,\nBright Harbor Careers",
+    sender_email: "hr@brightharbor.org",
+    reply_to: "hr@brightharbor.org",
+    status: "sent",
+    delivery_status: "sent",
+    created_at: "2026-07-22T14:30:00.000Z",
+    queued_at: "2026-07-22T14:30:00.000Z",
+    sent_at: "2026-07-22T14:31:00.000Z",
+    send_after: "2026-07-22T14:30:00.000Z",
+    error_message: ""
+  },
+  {
+    id: "comm-302",
+    application_id: "app-202",
+    job_id: "job-102",
+    candidate_name: "Amara Okafor",
+    candidate_email: "amara.okafor@example.com",
+    template_id: "tmpl-interview-stage",
+    automation_rule_id: "rule-interview-stage",
+    trigger_event: "candidate_stage_changed",
+    direction: "outbound",
+    send_type: "automated",
+    subject: "Next steps for Client Success Manager",
+    body:
+      "Hello Amara Okafor,\n\nWe are glad to move you forward for Client Success Manager. The next step is an interview with our team.\n\nInterview timing: Scheduling to be confirmed\n\nPlease reply to hr@brightharbor.org with any scheduling questions.\n\nThank you,\nSam Lee",
+    sender_email: "hr@brightharbor.org",
+    reply_to: "hr@brightharbor.org",
+    status: "queued",
+    delivery_status: "queued",
+    created_at: "2026-07-20T16:20:00.000Z",
+    queued_at: "2026-07-20T16:20:00.000Z",
+    sent_at: "",
+    send_after: "2026-07-20T16:35:00.000Z",
+    error_message: ""
+  }
+];
+
 const initialProfile = readLocalProfile();
 
 const state = {
@@ -235,6 +413,18 @@ const state = {
   boardSettings: readLocalBoardSettings(),
   departments: readLocalDepartments(),
   pipelineSettings: readLocalPipelineSettings(),
+  communicationTemplates: readLocalCommunicationTemplates(),
+  automationRules: readLocalAutomationRules(),
+  senderAccounts: readLocalSenderAccounts(),
+  communications: readLocalCommunications(),
+  selectedTemplateId: "",
+  selectedAutomationRuleId: "",
+  selectedCandidateId: demoApplications[0]?.id || "",
+  candidateProfileTab: "communications",
+  communicationQuery: "",
+  manualTemplateId: "",
+  manualSubject: "",
+  manualBody: "",
   jobDetailOpen: false,
   applicationOpen: false,
   filters: {
@@ -281,6 +471,15 @@ async function supabasePatch(table, query, payload, useAuth = false) {
     method: "PATCH",
     headers: supabaseHeaders("return=representation", useAuth),
     body: JSON.stringify(payload)
+  });
+  if (!response.ok) throw new Error(await response.text());
+  return response.json();
+}
+
+async function supabaseDelete(table, query, useAuth = false) {
+  const response = await fetch(`${env.supabaseUrl}/rest/v1/${table}?${query}`, {
+    method: "DELETE",
+    headers: supabaseHeaders("return=representation", useAuth)
   });
   if (!response.ok) throw new Error(await response.text());
   return response.json();
@@ -434,6 +633,190 @@ function saveLocalProfile(profile) {
   }
 }
 
+function newClientId(prefix) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function normalizeCommunicationTemplate(template = {}) {
+  return {
+    id: String(template.id || newClientId("tmpl")),
+    name: String(template.name || "").trim(),
+    subject: String(template.subject || "").trim(),
+    body: String(template.body || "").trim(),
+    category: String(template.category || "General").trim() || "General",
+    status: template.status === "inactive" ? "inactive" : "active",
+    archived_at: template.archived_at || "",
+    created_at: template.created_at || "",
+    updated_at: template.updated_at || ""
+  };
+}
+
+function normalizeCommunicationTemplates(templates = []) {
+  return templates
+    .map(normalizeCommunicationTemplate)
+    .filter((template) => template.id && template.name)
+    .sort((a, b) => {
+      if (Boolean(a.archived_at) !== Boolean(b.archived_at)) return a.archived_at ? 1 : -1;
+      return a.name.localeCompare(b.name);
+    });
+}
+
+function readLocalCommunicationTemplates() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("bhc-communication-templates") || "null");
+    return normalizeCommunicationTemplates(Array.isArray(saved) && saved.length ? saved : defaultCommunicationTemplates);
+  } catch (error) {
+    return normalizeCommunicationTemplates(defaultCommunicationTemplates);
+  }
+}
+
+function saveLocalCommunicationTemplates(templates) {
+  try {
+    localStorage.setItem("bhc-communication-templates", JSON.stringify(templates));
+  } catch (error) {
+    return;
+  }
+}
+
+function normalizeSenderAccount(account = {}) {
+  return {
+    id: String(account.id || newClientId("sender")),
+    name: String(account.name || "Company email").trim(),
+    email: String(account.email || "hr@brightharbor.org").trim(),
+    reply_to: String(account.reply_to || account.email || "hr@brightharbor.org").trim(),
+    provider: String(account.provider || "outlook_dns").trim(),
+    status: account.status === "inactive" ? "inactive" : "active",
+    dns_status: String(account.dns_status || "pending").trim(),
+    created_at: account.created_at || "",
+    updated_at: account.updated_at || ""
+  };
+}
+
+function normalizeSenderAccounts(accounts = []) {
+  return accounts
+    .map(normalizeSenderAccount)
+    .filter((account) => account.id && account.email)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function readLocalSenderAccounts() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("bhc-sender-accounts") || "null");
+    return normalizeSenderAccounts(Array.isArray(saved) && saved.length ? saved : defaultSenderAccounts);
+  } catch (error) {
+    return normalizeSenderAccounts(defaultSenderAccounts);
+  }
+}
+
+function saveLocalSenderAccounts(accounts) {
+  try {
+    localStorage.setItem("bhc-sender-accounts", JSON.stringify(accounts));
+  } catch (error) {
+    return;
+  }
+}
+
+function normalizeAutomationRule(rule = {}) {
+  const trigger = communicationTriggerEvents.some((event) => event.id === rule.trigger_event)
+    ? rule.trigger_event
+    : "candidate_applies";
+  const delay = Number(rule.delay_minutes || 0);
+  return {
+    id: String(rule.id || newClientId("rule")),
+    name: String(rule.name || "").trim(),
+    trigger_event: trigger,
+    pipeline_stage: pipelineStages.includes(rule.pipeline_stage || rule.stage) ? rule.pipeline_stage || rule.stage : "",
+    template_id: String(rule.template_id || ""),
+    sender_account_id: String(rule.sender_account_id || defaultSenderAccounts[0].id),
+    sender_email: String(rule.sender_email || defaultSenderAccounts[0].email).trim(),
+    reply_to: String(rule.reply_to || rule.sender_email || defaultSenderAccounts[0].reply_to).trim(),
+    delay_minutes: Number.isFinite(delay) && delay > 0 ? delay : 0,
+    status: rule.status === "inactive" ? "inactive" : "active",
+    action_type: String(rule.action_type || "send_email").trim(),
+    action_config: rule.action_config || { actions: ["send_email"] },
+    created_at: rule.created_at || "",
+    updated_at: rule.updated_at || ""
+  };
+}
+
+function normalizeAutomationRules(rules = []) {
+  return rules
+    .map(normalizeAutomationRule)
+    .filter((rule) => rule.id && rule.name)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function readLocalAutomationRules() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("bhc-automation-rules") || "null");
+    return normalizeAutomationRules(Array.isArray(saved) && saved.length ? saved : defaultAutomationRules);
+  } catch (error) {
+    return normalizeAutomationRules(defaultAutomationRules);
+  }
+}
+
+function saveLocalAutomationRules(rules) {
+  try {
+    localStorage.setItem("bhc-automation-rules", JSON.stringify(rules));
+  } catch (error) {
+    return;
+  }
+}
+
+function normalizeCommunication(record = {}) {
+  const createdAt = record.created_at || new Date().toISOString();
+  return {
+    id: String(record.id || newClientId("comm")),
+    application_id: String(record.application_id || ""),
+    job_id: String(record.job_id || ""),
+    candidate_name: String(record.candidate_name || "").trim(),
+    candidate_email: String(record.candidate_email || record.to || "").trim(),
+    template_id: String(record.template_id || ""),
+    automation_rule_id: String(record.automation_rule_id || ""),
+    trigger_event: String(record.trigger_event || "manual_send").trim(),
+    direction: String(record.direction || "outbound").trim(),
+    send_type: String(record.send_type || "manual").trim(),
+    subject: String(record.subject || "").trim(),
+    body: String(record.body || "").trim(),
+    sender_email: String(record.sender_email || record.from || defaultSenderAccounts[0].email).trim(),
+    reply_to: String(record.reply_to || defaultSenderAccounts[0].reply_to).trim(),
+    status: String(record.status || "queued").trim(),
+    delivery_status: String(record.delivery_status || record.status || "queued").trim(),
+    provider: String(record.provider || "resend").trim(),
+    provider_message_id: String(record.provider_message_id || "").trim(),
+    error_message: String(record.error_message || "").trim(),
+    queued_at: record.queued_at || createdAt,
+    send_after: record.send_after || record.queued_at || createdAt,
+    sent_at: record.sent_at || "",
+    delay_minutes: Number(record.delay_minutes || 0),
+    created_at: createdAt
+  };
+}
+
+function normalizeCommunications(records = []) {
+  return records
+    .map(normalizeCommunication)
+    .filter((record) => record.id && record.subject)
+    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+}
+
+function readLocalCommunications() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("bhc-communications") || "null");
+    return normalizeCommunications(Array.isArray(saved) && saved.length ? saved : demoCommunications);
+  } catch (error) {
+    return normalizeCommunications(demoCommunications);
+  }
+}
+
+function saveLocalCommunications(records) {
+  try {
+    localStorage.setItem("bhc-communications", JSON.stringify(records));
+  } catch (error) {
+    return;
+  }
+}
+
 function numberOrNull(value) {
   const number = Number(String(value || "").replace(/[^0-9.]/g, ""));
   return Number.isFinite(number) && number > 0 ? number : null;
@@ -485,6 +868,76 @@ function renderTextBlock(value, fallback) {
 
   if (!lines.length) return `<p class="summary">${escapeHtml(fallback)}</p>`;
   return lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("");
+}
+
+function renderEmailBody(value) {
+  return renderTextBlock(value, "No message content recorded.");
+}
+
+function formatDateTime(value) {
+  if (!value) return "Not recorded";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(date);
+}
+
+function communicationTriggerLabel(trigger) {
+  return communicationTriggerEvents.find((event) => event.id === trigger)?.label || formatStatus(trigger);
+}
+
+function communicationDelayLabel(minutes) {
+  const option = communicationDelayOptions.find((item) => item.value === Number(minutes));
+  if (option) return option.label;
+  return minutes ? `${minutes} minutes` : "Immediately";
+}
+
+function activeCommunicationTemplates() {
+  return state.communicationTemplates.filter((template) => !template.archived_at);
+}
+
+function communicationTemplateById(id) {
+  return state.communicationTemplates.find((template) => template.id === id) || null;
+}
+
+function senderAccountById(id) {
+  return state.senderAccounts.find((account) => account.id === id) || state.senderAccounts[0] || defaultSenderAccounts[0];
+}
+
+function applicationById(id) {
+  return state.applications.find((application) => application.id === id) || null;
+}
+
+function jobById(id) {
+  return state.jobs.find((job) => job.id === id) || null;
+}
+
+function communicationContext(application = {}, details = {}) {
+  const job = jobById(application.job_id) || {};
+  const sender = details.sender || senderAccountById(details.sender_account_id);
+  return {
+    candidate_name: application.full_name || details.candidate_name || "Candidate",
+    candidate_email: application.email || details.candidate_email || "",
+    job_title: job.title || details.job_title || "the role",
+    department: job.department || details.department || "Bright Harbor",
+    job_location: job.location || details.job_location || "Location to be confirmed",
+    company_name: details.company_name || "Bright Harbor",
+    recruiter_name: application.recruiter || state.profile.full_name || profileDisplayName(),
+    hiring_manager: job.hiring_manager || details.hiring_manager || "Hiring team",
+    application_stage: pipelineLabel(application.status || details.application_stage || "new"),
+    interview_date_time: details.interview_date_time || "Scheduling to be confirmed",
+    offer_details: details.offer_details || job.salary_range || "Offer details will be shared by the hiring team.",
+    sender_email: details.sender_email || sender.email,
+    reply_to: details.reply_to || sender.reply_to || sender.email
+  };
+}
+
+function renderTemplateString(value, context) {
+  return String(value || "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (match, key) =>
+    Object.prototype.hasOwnProperty.call(context, key) ? context[key] : match
+  );
 }
 
 function profileDisplayName() {
@@ -597,6 +1050,7 @@ async function loadSupabaseData() {
         }));
         setConnection(true, "Supabase HR connected");
       }
+      await loadCommunicationData();
       await loadCurrentProfile();
     }
   } catch (error) {
@@ -673,6 +1127,54 @@ async function loadPipelineSettings() {
     if (settings) {
       state.pipelineSettings = normalizePipelineSettings(settings);
       saveLocalPipelineSettings(state.pipelineSettings);
+    }
+  } catch (error) {
+    return;
+  }
+}
+
+async function loadCommunicationData() {
+  if (!hasSupabase || !state.session?.accessToken) return;
+
+  try {
+    const [templates, rules, accounts, communications] = await Promise.all([
+      supabaseSelect(
+        "communication_templates",
+        "select=id,name,subject,body,category,status,archived_at,created_at,updated_at&order=name.asc",
+        true
+      ),
+      supabaseSelect(
+        "automation_rules",
+        "select=id,name,trigger_event,pipeline_stage,template_id,sender_account_id,sender_email,reply_to,delay_minutes,status,action_type,action_config,created_at,updated_at&order=name.asc",
+        true
+      ),
+      supabaseSelect(
+        "sender_accounts",
+        "select=id,name,email,reply_to,provider,status,dns_status,created_at,updated_at&order=name.asc",
+        true
+      ),
+      supabaseSelect(
+        "communication_events",
+        "select=id,application_id,job_id,candidate_name,candidate_email,template_id,automation_rule_id,trigger_event,direction,send_type,subject,body,sender_email,reply_to,status,delivery_status,provider,provider_message_id,error_message,queued_at,send_after,sent_at,created_at&order=created_at.desc&limit=500",
+        true
+      )
+    ]);
+
+    if (Array.isArray(templates) && templates.length) {
+      state.communicationTemplates = normalizeCommunicationTemplates(templates);
+      saveLocalCommunicationTemplates(state.communicationTemplates);
+    }
+    if (Array.isArray(rules) && rules.length) {
+      state.automationRules = normalizeAutomationRules(rules);
+      saveLocalAutomationRules(state.automationRules);
+    }
+    if (Array.isArray(accounts) && accounts.length) {
+      state.senderAccounts = normalizeSenderAccounts(accounts);
+      saveLocalSenderAccounts(state.senderAccounts);
+    }
+    if (Array.isArray(communications)) {
+      state.communications = normalizeCommunications(communications);
+      saveLocalCommunications(state.communications);
     }
   } catch (error) {
     return;
@@ -982,12 +1484,15 @@ function renderHrWorkspace() {
   renderMetrics();
   renderJobsTable();
   renderCandidatesTable();
+  renderCandidateProfile();
   renderPipeline();
   renderBoardSettingsForm();
   renderDepartmentSettings();
   renderPipelineSettingsForm();
+  renderCommunicationSettings();
   renderProfileForm();
   renderPermissions();
+  syncRoleControls();
 }
 
 function renderHrSections() {
@@ -1040,6 +1545,8 @@ function renderAuthPanel() {
 function syncRoleControls() {
   const canManageJobs = state.role === "recruiter" || state.role === "admin";
   const canManageBoard = state.role === "admin";
+  const canManageCommunications = state.role === "admin";
+  const canSendCandidateEmail = state.role === "recruiter" || state.role === "admin";
   $("#showJobCreate").disabled = !canManageJobs;
   $$("#jobForm input, #jobForm select, #jobForm textarea, #jobForm button").forEach((control) => {
     control.disabled = !canManageJobs;
@@ -1052,6 +1559,12 @@ function syncRoleControls() {
   });
   $$("#pipelineSettingsForm input, #pipelineSettingsForm button").forEach((control) => {
     control.disabled = !canManageBoard;
+  });
+  $$("#communicationTemplateForm input, #communicationTemplateForm select, #communicationTemplateForm textarea, #communicationTemplateForm button, #automationRuleForm input, #automationRuleForm select, #automationRuleForm button").forEach((control) => {
+    control.disabled = !canManageCommunications;
+  });
+  $$("#manualCommunicationForm input, #manualCommunicationForm select, #manualCommunicationForm textarea, #manualCommunicationForm button").forEach((control) => {
+    control.disabled = !canSendCandidateEmail;
   });
   $("#adminPanel").hidden = state.role !== "admin";
 }
@@ -1291,13 +1804,27 @@ function renderJobsTable() {
 }
 
 function renderCandidatesTable() {
-  $("#candidatesTable").innerHTML = state.applications
+  const candidates = state.applications
     .slice()
-    .sort((a, b) => a.full_name.localeCompare(b.full_name))
+    .sort((a, b) => a.full_name.localeCompare(b.full_name));
+
+  if (!candidates.length) {
+    $("#candidatesTable").innerHTML = `
+      <tr>
+        <td colspan="6">
+          <div class="empty-state compact">No candidates have applied yet.</div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  $("#candidatesTable").innerHTML = candidates
     .map((application) => {
       const job = state.jobs.find((item) => item.id === application.job_id);
+      const selected = state.selectedCandidateId === application.id ? " is-selected" : "";
       return `
-        <tr>
+        <tr class="${selected}">
           <td>
             <strong>${escapeHtml(application.full_name)}</strong>
             <div class="table-meta">
@@ -1308,9 +1835,448 @@ function renderCandidatesTable() {
           <td><span class="stage-pill">${escapeHtml(pipelineLabel(application.status))}</span></td>
           <td>${escapeHtml(application.source || "Career site")}</td>
           <td>${escapeHtml(application.applied_at || "Not recorded")}</td>
+          <td>
+            <button class="table-action" type="button" data-view-candidate="${escapeHtml(application.id)}">
+              View profile
+            </button>
+          </td>
         </tr>
       `;
     })
+    .join("");
+}
+
+function renderCandidateProfile() {
+  const panel = $("#candidateProfilePanel");
+  if (!panel) return;
+
+  const application = applicationById(state.selectedCandidateId);
+  if (!application) {
+    panel.hidden = true;
+    return;
+  }
+
+  const job = jobById(application.job_id);
+  panel.hidden = false;
+  $("#candidateProfileName").textContent = application.full_name;
+  $("#candidateProfileMeta").textContent = `${job?.title || "General application"} · ${pipelineLabel(application.status)}`;
+  $$("#candidateProfilePanel [data-candidate-tab]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.candidateTab === state.candidateProfileTab);
+  });
+
+  $("#candidateProfileBody").innerHTML =
+    state.candidateProfileTab === "communications"
+      ? renderCandidateCommunications(application)
+      : renderCandidateOverview(application, job);
+}
+
+function renderCandidateOverview(application, job) {
+  return `
+    <div class="candidate-overview-grid">
+      <article class="candidate-detail-card">
+        <span>Candidate</span>
+        <strong>${escapeHtml(application.full_name)}</strong>
+        <p>${escapeHtml(application.email || "No email recorded")}</p>
+      </article>
+      <article class="candidate-detail-card">
+        <span>Role</span>
+        <strong>${escapeHtml(job?.title || "General application")}</strong>
+        <p>${escapeHtml(job?.department || "Department pending")}</p>
+      </article>
+      <article class="candidate-detail-card">
+        <span>Pipeline</span>
+        <strong>${escapeHtml(pipelineLabel(application.status))}</strong>
+        <p>${escapeHtml(application.source || "Career site")}</p>
+      </article>
+      <article class="candidate-detail-card">
+        <span>Applied</span>
+        <strong>${escapeHtml(application.applied_at || "Not recorded")}</strong>
+        <p>${escapeHtml(application.recruiter || "Unassigned")}</p>
+      </article>
+    </div>
+  `;
+}
+
+function ensureManualMessage(application) {
+  const templates = activeCommunicationTemplates().filter((template) => template.status === "active");
+  const selectedTemplate =
+    communicationTemplateById(state.manualTemplateId) ||
+    templates[0] ||
+    activeCommunicationTemplates()[0];
+  if (!selectedTemplate) return;
+
+  if (!state.manualTemplateId || !state.manualSubject || !state.manualBody) {
+    setManualMessageFromTemplate(application, selectedTemplate.id);
+  }
+}
+
+function setManualMessageFromTemplate(application, templateId) {
+  const template = communicationTemplateById(templateId);
+  if (!template) return;
+  const sender = senderAccountById(state.senderAccounts[0]?.id);
+  const context = communicationContext(application, {
+    sender,
+    sender_email: sender.email,
+    reply_to: sender.reply_to
+  });
+  state.manualTemplateId = template.id;
+  state.manualSubject = renderTemplateString(template.subject, context);
+  state.manualBody = renderTemplateString(template.body, context);
+}
+
+function renderCandidateCommunications(application) {
+  ensureManualMessage(application);
+  const templates = activeCommunicationTemplates().filter((template) => template.status === "active");
+  const sender = senderAccountById(state.senderAccounts[0]?.id);
+  const templateOptions = templates.length
+    ? templates
+        .map(
+          (template) => `<option value="${escapeHtml(template.id)}"${template.id === state.manualTemplateId ? " selected" : ""}>${escapeHtml(template.name)}</option>`
+        )
+        .join("")
+    : `<option value="">No active templates</option>`;
+  const senderOptions = state.senderAccounts
+    .map(
+      (account) => `<option value="${escapeHtml(account.id)}">${escapeHtml(account.name)} · ${escapeHtml(account.email)}</option>`
+    )
+    .join("");
+
+  return `
+    <div class="communications-workspace">
+      <section class="manual-email-panel">
+        <div class="section-header compact">
+          <div>
+            <p class="eyebrow">Manual email</p>
+            <h2>Send message</h2>
+          </div>
+        </div>
+        <form class="manual-message-form" id="manualCommunicationForm">
+          <div class="form-grid">
+            <label class="field">
+              <span>Template</span>
+              <select name="template_id" id="manualTemplateSelect">${templateOptions}</select>
+            </label>
+            <label class="field">
+              <span>Sender account</span>
+              <select name="sender_account_id" id="manualSenderAccountSelect">${senderOptions}</select>
+            </label>
+            <label class="field">
+              <span>Reply-to</span>
+              <input name="reply_to" value="${escapeHtml(sender.reply_to)}">
+            </label>
+            <label class="field wide">
+              <span>Subject</span>
+              <input name="subject" id="manualCommunicationSubject" required value="${escapeHtml(state.manualSubject)}">
+            </label>
+            <label class="field wide">
+              <span>Message</span>
+              <textarea name="body" id="manualCommunicationBody" required rows="7">${escapeHtml(state.manualBody)}</textarea>
+            </label>
+          </div>
+          <button class="primary-action small" type="submit">
+            <svg><use href="#icon-send"></use></svg>
+            Send email
+          </button>
+          <p class="form-message" id="manualCommunicationMessage" role="status"></p>
+        </form>
+      </section>
+
+      <section class="communication-history-panel">
+        <div class="section-header compact">
+          <div>
+            <p class="eyebrow">Communications</p>
+            <h2>Email history</h2>
+          </div>
+          <label class="field compact-field communication-search">
+            <span>Search history</span>
+            <input id="communicationSearch" type="search" value="${escapeHtml(state.communicationQuery)}" placeholder="Subject or message">
+          </label>
+        </div>
+        <div class="communication-history" id="communicationHistory">
+          ${renderCommunicationHistory(application)}
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+function renderCommunicationHistory(application) {
+  const query = state.communicationQuery.trim().toLowerCase();
+  const records = state.communications
+    .filter((record) => record.application_id === application.id)
+    .filter((record) => {
+      if (!query) return true;
+      return [record.subject, record.body, record.sender_email, record.reply_to, record.status, record.delivery_status]
+        .join(" ")
+        .toLowerCase()
+        .includes(query);
+    });
+
+  if (!records.length) {
+    return `<div class="empty-state compact">No matching communications yet.</div>`;
+  }
+
+  return records
+    .map(
+      (record) => `
+        <article class="communication-card">
+          <div class="communication-card-header">
+            <div>
+              <strong>${escapeHtml(record.subject)}</strong>
+              <span>${escapeHtml(formatDateTime(record.created_at))} · ${escapeHtml(record.send_type)}</span>
+            </div>
+            <span class="status-pill ${escapeHtml(record.status)}">${escapeHtml(formatStatus(record.delivery_status || record.status))}</span>
+          </div>
+          <div class="communication-meta-row">
+            <span>From ${escapeHtml(record.sender_email)}</span>
+            <span>Reply-to ${escapeHtml(record.reply_to || record.sender_email)}</span>
+          </div>
+          ${
+            record.error_message
+              ? `<p class="form-message is-error">${escapeHtml(record.error_message)}</p>`
+              : ""
+          }
+          <details>
+            <summary>View email content</summary>
+            <div class="email-preview-body">${renderEmailBody(record.body)}</div>
+          </details>
+          <button class="table-action" type="button" data-resend-communication="${escapeHtml(record.id)}">
+            Resend
+          </button>
+        </article>
+      `
+    )
+    .join("");
+}
+
+function renderCommunicationSettings() {
+  renderTemplateLibrary();
+  renderAutomationRules();
+  renderSenderAccounts();
+}
+
+function renderTemplateLibrary() {
+  const table = $("#templatesTable");
+  const form = $("#communicationTemplateForm");
+  if (!table || !form) return;
+
+  const templates = activeCommunicationTemplates();
+  const selected =
+    communicationTemplateById(state.selectedTemplateId) ||
+    templates[0] ||
+    normalizeCommunicationTemplate({
+      id: "",
+      name: "",
+      subject: "",
+      body: "",
+      category: "General",
+      status: "active"
+    });
+  if (!state.selectedTemplateId && selected.id) state.selectedTemplateId = selected.id;
+
+  table.innerHTML = templates.length
+    ? templates
+        .map(
+          (template) => `
+            <tr class="${template.id === state.selectedTemplateId ? "is-selected" : ""}">
+              <td>
+                <strong>${escapeHtml(template.name)}</strong>
+                <div class="table-meta">
+                  <span>${escapeHtml(template.category)}</span>
+                </div>
+              </td>
+              <td>${escapeHtml(template.subject)}</td>
+              <td><span class="status-pill ${escapeHtml(template.status)}">${escapeHtml(formatStatus(template.status))}</span></td>
+              <td>
+                <button class="table-action" type="button" data-select-template="${escapeHtml(template.id)}">
+                  Edit
+                </button>
+              </td>
+            </tr>
+          `
+        )
+        .join("")
+    : `
+      <tr>
+        <td colspan="4">
+          <div class="empty-state compact">No active templates.</div>
+        </td>
+      </tr>
+    `;
+
+  form.elements.template_id.value = selected.id || "";
+  form.elements.name.value = selected.name || "";
+  form.elements.category.value = selected.category || "General";
+  form.elements.status.value = selected.status || "active";
+  form.elements.subject.value = selected.subject || "";
+  form.elements.body.value = selected.body || "";
+
+  $("#mergeFieldChips").innerHTML = communicationMergeFields
+    .map(
+      (field) => `
+        <button class="merge-field-chip" type="button" data-merge-field="${escapeHtml(field.key)}" title="${escapeHtml(field.label)}">
+          {{${escapeHtml(field.key)}}}
+        </button>
+      `
+    )
+    .join("");
+
+  renderTemplatePreview();
+}
+
+function renderTemplatePreview() {
+  const preview = $("#templatePreview");
+  const form = $("#communicationTemplateForm");
+  if (!preview || !form) return;
+
+  const data = Object.fromEntries(new FormData(form));
+  const context = communicationContext(state.applications[0] || {}, {
+    interview_date_time: "Tuesday, August 18 at 10:00 AM",
+    offer_details: "Base compensation, benefits, and start date will be confirmed in the written offer."
+  });
+  const subject = renderTemplateString(data.subject, context);
+  const body = renderTemplateString(data.body, context);
+
+  preview.innerHTML = `
+    <div class="preview-subject">
+      <span>Subject</span>
+      <strong>${escapeHtml(subject || "Template subject preview")}</strong>
+    </div>
+    <div class="email-preview-body">
+      ${renderEmailBody(body || "Template message preview")}
+    </div>
+  `;
+}
+
+function renderAutomationRules() {
+  const table = $("#automationRulesTable");
+  const form = $("#automationRuleForm");
+  if (!table || !form) return;
+
+  const selected =
+    state.automationRules.find((rule) => rule.id === state.selectedAutomationRuleId) ||
+    state.automationRules[0] ||
+    normalizeAutomationRule({
+      id: "",
+      name: "",
+      trigger_event: "candidate_applies",
+      template_id: activeCommunicationTemplates()[0]?.id || "",
+      status: "active"
+    });
+  if (!state.selectedAutomationRuleId && selected.id) state.selectedAutomationRuleId = selected.id;
+
+  table.innerHTML = state.automationRules.length
+    ? state.automationRules
+        .map((rule) => {
+          const template = communicationTemplateById(rule.template_id);
+          return `
+            <tr class="${rule.id === state.selectedAutomationRuleId ? "is-selected" : ""}">
+              <td>
+                <strong>${escapeHtml(rule.name)}</strong>
+                <div class="table-meta">
+                  <span>${escapeHtml(rule.action_type || "send_email")}</span>
+                </div>
+              </td>
+              <td>${escapeHtml(communicationTriggerLabel(rule.trigger_event))}</td>
+              <td>${escapeHtml(rule.pipeline_stage ? pipelineLabel(rule.pipeline_stage) : "Any")}</td>
+              <td>${escapeHtml(template?.name || "Template missing")}</td>
+              <td>${escapeHtml(communicationDelayLabel(rule.delay_minutes))}</td>
+              <td><span class="status-pill ${escapeHtml(rule.status)}">${escapeHtml(formatStatus(rule.status))}</span></td>
+              <td>
+                <button class="table-action" type="button" data-select-automation-rule="${escapeHtml(rule.id)}">
+                  Edit
+                </button>
+              </td>
+            </tr>
+          `;
+        })
+        .join("")
+    : `
+      <tr>
+        <td colspan="7">
+          <div class="empty-state compact">No automation rules yet.</div>
+        </td>
+      </tr>
+    `;
+
+  form.elements.rule_id.value = selected.id || "";
+  form.elements.name.value = selected.name || "";
+  form.elements.trigger_event.innerHTML = communicationTriggerEvents
+    .map(
+      (event) => `<option value="${escapeHtml(event.id)}"${event.id === selected.trigger_event ? " selected" : ""}>${escapeHtml(event.label)}</option>`
+    )
+    .join("");
+  form.elements.pipeline_stage.innerHTML = [
+    `<option value="">Any stage or not applicable</option>`,
+    ...pipelineEntries().map(
+      ([stage, label]) => `<option value="${escapeHtml(stage)}"${stage === selected.pipeline_stage ? " selected" : ""}>${escapeHtml(label)}</option>`
+    )
+  ].join("");
+  form.elements.template_id.innerHTML = activeCommunicationTemplates()
+    .map(
+      (template) => `<option value="${escapeHtml(template.id)}"${template.id === selected.template_id ? " selected" : ""}>${escapeHtml(template.name)}</option>`
+    )
+    .join("");
+  form.elements.sender_account_id.innerHTML = state.senderAccounts
+    .map(
+      (account) => `<option value="${escapeHtml(account.id)}"${account.id === selected.sender_account_id ? " selected" : ""}>${escapeHtml(account.name)} · ${escapeHtml(account.email)}</option>`
+    )
+    .join("");
+  form.elements.delay_minutes.innerHTML = communicationDelayOptions
+    .map(
+      (option) => `<option value="${option.value}"${option.value === selected.delay_minutes ? " selected" : ""}>${escapeHtml(option.label)}</option>`
+    )
+    .join("");
+  form.elements.sender_email.value = selected.sender_email || senderAccountById(selected.sender_account_id).email;
+  form.elements.reply_to.value = selected.reply_to || senderAccountById(selected.sender_account_id).reply_to;
+  form.elements.status.value = selected.status || "active";
+
+  renderStageAutomationMatrix();
+  renderPipelineAutomationPreview();
+}
+
+function renderStageAutomationMatrix() {
+  const matrix = $("#stageAutomationMatrix");
+  if (!matrix) return;
+
+  matrix.innerHTML = pipelineEntries()
+    .map(([stage, label]) => {
+      const rules = state.automationRules.filter(
+        (rule) => rule.trigger_event === "candidate_stage_changed" && rule.pipeline_stage === stage
+      );
+      return `
+        <article class="stage-automation-card">
+          <div>
+            <strong>${escapeHtml(label)}</strong>
+            <span>${rules.length} ${rules.length === 1 ? "rule" : "rules"}</span>
+          </div>
+          ${
+            rules.length
+              ? `<ul>${rules.map((rule) => `<li>${escapeHtml(rule.name)}</li>`).join("")}</ul>`
+              : `<p class="summary">No stage automations attached.</p>`
+          }
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function renderSenderAccounts() {
+  const list = $("#senderAccountList");
+  if (!list) return;
+
+  list.innerHTML = state.senderAccounts
+    .map(
+      (account) => `
+        <article class="sender-account-card">
+          <div>
+            <strong>${escapeHtml(account.name)}</strong>
+            <span>${escapeHtml(account.email)}</span>
+          </div>
+          <span class="status-pill ${escapeHtml(account.dns_status)}">${escapeHtml(formatStatus(account.dns_status))}</span>
+        </article>
+      `
+    )
     .join("");
 }
 
@@ -1409,6 +2375,26 @@ function renderPipelineSettingsForm() {
         </span>
       `
     )
+    .join("");
+  renderPipelineAutomationPreview();
+}
+
+function renderPipelineAutomationPreview() {
+  const preview = $("#pipelineAutomationPreview");
+  if (!preview) return;
+
+  preview.innerHTML = pipelineEntries()
+    .map(([stage, label]) => {
+      const rules = state.automationRules.filter(
+        (rule) => rule.trigger_event === "candidate_stage_changed" && rule.pipeline_stage === stage
+      );
+      return `
+        <article>
+          <strong>${escapeHtml(label)}</strong>
+          <span>${rules.length ? rules.map((rule) => rule.name).join(", ") : "No communication rules"}</span>
+        </article>
+      `;
+    })
     .join("");
 }
 
@@ -1519,6 +2505,7 @@ function escapeHtml(value) {
 
 function showMessage(selector, message) {
   const element = $(selector);
+  if (!element) return;
   element.textContent = message;
   window.setTimeout(() => {
     if (element.textContent === message) element.textContent = "";
@@ -1536,6 +2523,462 @@ function accountRequestErrorMessage(message = "") {
     return "Account requests are not fully set up yet. Check the server environment variables in Netlify.";
   }
   return message || "Request could not be sent.";
+}
+
+function communicationErrorMessage(message = "") {
+  if (message.includes("RESEND_API_KEY")) {
+    return "Email sending needs RESEND_API_KEY in Netlify environment variables.";
+  }
+  if (message.includes("SUPABASE_SERVICE_ROLE_KEY")) {
+    return "Email logging needs SUPABASE_SERVICE_ROLE_KEY in Netlify environment variables.";
+  }
+  if (message.includes("Sign in")) {
+    return "Sign in as a hiring-team user before sending email.";
+  }
+  return message || "Email could not be sent.";
+}
+
+function replaceCommunication(record) {
+  const normalized = normalizeCommunication(record);
+  const index = state.communications.findIndex((item) => item.id === normalized.id);
+  if (index >= 0) state.communications[index] = normalized;
+  else state.communications.unshift(normalized);
+  state.communications = normalizeCommunications(state.communications);
+  saveLocalCommunications(state.communications);
+  return normalized;
+}
+
+async function postCommunication(record) {
+  const response = await fetch("/.netlify/functions/send-communication", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(state.session?.accessToken ? { Authorization: `Bearer ${state.session.accessToken}` } : {})
+    },
+    body: JSON.stringify(record)
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(result.error || "Email could not be sent.");
+    error.record = result.record;
+    throw error;
+  }
+  return result;
+}
+
+async function sendCommunicationRecord(record) {
+  const pending = replaceCommunication({
+    ...record,
+    status: record.delay_minutes > 0 ? "queued" : "queued",
+    delivery_status: "queued"
+  });
+
+  const isDemoRecord = pending.application_id.startsWith("app-");
+  if (!hasSupabase || !state.session?.accessToken || isDemoRecord) {
+    const localStatus = record.delay_minutes > 0 ? "queued" : "sent";
+    return replaceCommunication({
+      ...pending,
+      status: localStatus,
+      delivery_status: localStatus,
+      sent_at: localStatus === "sent" ? new Date().toISOString() : pending.sent_at
+    });
+  }
+
+  try {
+    const result = await postCommunication(pending);
+    return replaceCommunication(result.record || { ...pending, status: result.status, delivery_status: result.delivery_status });
+  } catch (error) {
+    return replaceCommunication({
+      ...(error.record || pending),
+      status: "failed",
+      delivery_status: "failed",
+      error_message: communicationErrorMessage(error.message)
+    });
+  }
+}
+
+async function runServerAutomationEvent(triggerEvent, application, details = {}) {
+  try {
+    const response = await fetch("/.netlify/functions/run-communication-automations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(state.session?.accessToken ? { Authorization: `Bearer ${state.session.accessToken}` } : {})
+      },
+      body: JSON.stringify({
+        trigger_event: triggerEvent,
+        application_id: application.id,
+        details
+      })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) return null;
+    return Array.isArray(result.records) ? result.records.map(normalizeCommunication) : [];
+  } catch (error) {
+    return null;
+  }
+}
+
+function matchingAutomationRules(triggerEvent, application, details = {}) {
+  return state.automationRules.filter((rule) => {
+    if (rule.status !== "active") return false;
+    if (rule.trigger_event !== triggerEvent) return false;
+    if (rule.action_type !== "send_email") return false;
+    if (triggerEvent === "candidate_stage_changed" && rule.pipeline_stage && rule.pipeline_stage !== application.status) {
+      return false;
+    }
+    if (details.pipeline_stage && rule.pipeline_stage && rule.pipeline_stage !== details.pipeline_stage) {
+      return false;
+    }
+    const template = communicationTemplateById(rule.template_id);
+    return template && template.status === "active" && !template.archived_at;
+  });
+}
+
+async function dispatchAutomationEvent(triggerEvent, application, details = {}) {
+  const isDemoApplication = application.id.startsWith("app-");
+  if (hasSupabase && !isDemoApplication) {
+    const serverRecords = await runServerAutomationEvent(triggerEvent, application, details);
+    if (serverRecords) {
+      serverRecords.forEach(replaceCommunication);
+      renderCandidateProfile();
+      return serverRecords;
+    }
+    if (!state.session?.accessToken) return [];
+  }
+
+  const rules = matchingAutomationRules(triggerEvent, application, details);
+  if (!rules.length) return [];
+
+  const sentRecords = [];
+  for (const rule of rules) {
+    const template = communicationTemplateById(rule.template_id);
+    const sender = senderAccountById(rule.sender_account_id);
+    const context = communicationContext(application, {
+      ...details,
+      sender,
+      sender_email: rule.sender_email || sender.email,
+      reply_to: rule.reply_to || sender.reply_to
+    });
+    const now = new Date();
+    const sendAfter = new Date(now.getTime() + Number(rule.delay_minutes || 0) * 60 * 1000);
+    const record = normalizeCommunication({
+      id: newClientId("comm"),
+      application_id: application.id,
+      job_id: application.job_id,
+      candidate_name: application.full_name,
+      candidate_email: application.email,
+      template_id: template.id,
+      automation_rule_id: rule.id,
+      trigger_event: triggerEvent,
+      direction: "outbound",
+      send_type: "automated",
+      subject: renderTemplateString(template.subject, context),
+      body: renderTemplateString(template.body, context),
+      sender_email: rule.sender_email || sender.email,
+      reply_to: rule.reply_to || sender.reply_to,
+      status: "queued",
+      delivery_status: "queued",
+      queued_at: now.toISOString(),
+      send_after: sendAfter.toISOString(),
+      created_at: now.toISOString()
+    });
+    record.delay_minutes = Number(rule.delay_minutes || 0);
+    sentRecords.push(await sendCommunicationRecord(record));
+  }
+
+  renderCandidateProfile();
+  return sentRecords;
+}
+
+async function handleCommunicationTemplateSubmit(event) {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(event.currentTarget));
+  const template = normalizeCommunicationTemplate({
+    id: data.template_id || newClientId("tmpl"),
+    name: data.name,
+    category: data.category,
+    status: data.status,
+    subject: data.subject,
+    body: data.body,
+    archived_at: ""
+  });
+
+  const index = state.communicationTemplates.findIndex((item) => item.id === template.id);
+  if (index >= 0) state.communicationTemplates[index] = template;
+  else state.communicationTemplates.push(template);
+  state.communicationTemplates = normalizeCommunicationTemplates(state.communicationTemplates);
+  state.selectedTemplateId = template.id;
+  saveLocalCommunicationTemplates(state.communicationTemplates);
+  renderCommunicationSettings();
+
+  try {
+    if (hasSupabase && state.session?.accessToken) {
+      const [saved] = await supabaseUpsert("communication_templates", template, true);
+      if (saved) {
+        state.communicationTemplates = normalizeCommunicationTemplates(
+          state.communicationTemplates.map((item) => (item.id === template.id ? saved : item))
+        );
+        saveLocalCommunicationTemplates(state.communicationTemplates);
+        renderCommunicationSettings();
+      }
+      showMessage("#templateMessage", "Template saved.");
+      return;
+    }
+    showMessage("#templateMessage", "Template saved for this preview.");
+  } catch (error) {
+    showMessage("#templateMessage", "Template saved locally. Supabase save needs admin access.");
+  }
+}
+
+async function archiveSelectedTemplate() {
+  const template = communicationTemplateById(state.selectedTemplateId);
+  if (!template) return;
+  const archived = normalizeCommunicationTemplate({ ...template, archived_at: new Date().toISOString(), status: "inactive" });
+  state.communicationTemplates = normalizeCommunicationTemplates(
+    state.communicationTemplates.map((item) => (item.id === template.id ? archived : item))
+  );
+  state.selectedTemplateId = activeCommunicationTemplates()[0]?.id || "";
+  saveLocalCommunicationTemplates(state.communicationTemplates);
+  renderCommunicationSettings();
+
+  try {
+    if (hasSupabase && state.session?.accessToken) {
+      await supabasePatch(
+        "communication_templates",
+        `id=eq.${encodeURIComponent(template.id)}`,
+        { archived_at: archived.archived_at, status: "inactive" },
+        true
+      );
+      showMessage("#templateMessage", "Template archived.");
+    } else {
+      showMessage("#templateMessage", "Template archived for this preview.");
+    }
+  } catch (error) {
+    showMessage("#templateMessage", "Template archived locally. Supabase archive needs admin access.");
+  }
+}
+
+async function deleteSelectedTemplate() {
+  const template = communicationTemplateById(state.selectedTemplateId);
+  if (!template) return;
+  state.communicationTemplates = state.communicationTemplates.filter((item) => item.id !== template.id);
+  state.selectedTemplateId = activeCommunicationTemplates()[0]?.id || "";
+  saveLocalCommunicationTemplates(state.communicationTemplates);
+  renderCommunicationSettings();
+
+  try {
+    if (hasSupabase && state.session?.accessToken) {
+      await supabaseDelete("communication_templates", `id=eq.${encodeURIComponent(template.id)}`, true);
+      showMessage("#templateMessage", "Template deleted.");
+    } else {
+      showMessage("#templateMessage", "Template deleted for this preview.");
+    }
+  } catch (error) {
+    showMessage("#templateMessage", "Template deleted locally. Supabase delete needs admin access.");
+  }
+}
+
+function duplicateSelectedTemplate() {
+  const template = communicationTemplateById(state.selectedTemplateId);
+  if (!template) return;
+  const copy = normalizeCommunicationTemplate({
+    ...template,
+    id: newClientId("tmpl"),
+    name: `Copy of ${template.name}`,
+    archived_at: ""
+  });
+  state.communicationTemplates.push(copy);
+  state.communicationTemplates = normalizeCommunicationTemplates(state.communicationTemplates);
+  state.selectedTemplateId = copy.id;
+  saveLocalCommunicationTemplates(state.communicationTemplates);
+  renderCommunicationSettings();
+  showMessage("#templateMessage", "Template duplicated.");
+}
+
+async function sendTemplateTestEmail() {
+  const form = $("#communicationTemplateForm");
+  const data = Object.fromEntries(new FormData(form));
+  const to = String(data.test_email || state.profile.email || state.session?.email || "").trim();
+  if (!to) {
+    showMessage("#templateMessage", "Add a test email address first.");
+    return;
+  }
+
+  const sender = senderAccountById(state.senderAccounts[0]?.id);
+  const context = communicationContext(state.applications[0] || {}, {
+    sender,
+    sender_email: sender.email,
+    reply_to: sender.reply_to,
+    interview_date_time: "Tuesday, August 18 at 10:00 AM"
+  });
+  const record = {
+    id: newClientId("comm"),
+    mode: "test",
+    to,
+    candidate_email: to,
+    candidate_name: profileDisplayName(),
+    subject: renderTemplateString(data.subject, context),
+    body: renderTemplateString(data.body, context),
+    sender_email: sender.email,
+    reply_to: sender.reply_to,
+    template_id: data.template_id || "",
+    trigger_event: "test_email",
+    send_type: "test",
+    status: "queued",
+    delivery_status: "queued",
+    delay_minutes: 0
+  };
+
+  try {
+    const result = await postCommunication(record);
+    showMessage("#templateMessage", result.message || "Test email sent.");
+  } catch (error) {
+    showMessage("#templateMessage", communicationErrorMessage(error.message));
+  }
+}
+
+async function handleAutomationRuleSubmit(event) {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(event.currentTarget));
+  const rule = normalizeAutomationRule({
+    id: data.rule_id || newClientId("rule"),
+    name: data.name,
+    trigger_event: data.trigger_event,
+    pipeline_stage: data.pipeline_stage,
+    template_id: data.template_id,
+    sender_account_id: data.sender_account_id,
+    sender_email: data.sender_email,
+    reply_to: data.reply_to,
+    delay_minutes: data.delay_minutes,
+    status: data.status,
+    action_type: "send_email",
+    action_config: { actions: ["send_email"] }
+  });
+
+  const index = state.automationRules.findIndex((item) => item.id === rule.id);
+  if (index >= 0) state.automationRules[index] = rule;
+  else state.automationRules.push(rule);
+  state.automationRules = normalizeAutomationRules(state.automationRules);
+  state.selectedAutomationRuleId = rule.id;
+  saveLocalAutomationRules(state.automationRules);
+  renderCommunicationSettings();
+
+  try {
+    if (hasSupabase && state.session?.accessToken) {
+      const [saved] = await supabaseUpsert("automation_rules", rule, true);
+      if (saved) {
+        state.automationRules = normalizeAutomationRules(
+          state.automationRules.map((item) => (item.id === rule.id ? saved : item))
+        );
+        saveLocalAutomationRules(state.automationRules);
+        renderCommunicationSettings();
+      }
+      showMessage("#automationRuleMessage", "Automation rule saved.");
+      return;
+    }
+    showMessage("#automationRuleMessage", "Automation rule saved for this preview.");
+  } catch (error) {
+    showMessage("#automationRuleMessage", "Rule saved locally. Supabase save needs admin access.");
+  }
+}
+
+function duplicateSelectedAutomationRule() {
+  const rule = state.automationRules.find((item) => item.id === state.selectedAutomationRuleId);
+  if (!rule) return;
+  const copy = normalizeAutomationRule({
+    ...rule,
+    id: newClientId("rule"),
+    name: `Copy of ${rule.name}`
+  });
+  state.automationRules.push(copy);
+  state.automationRules = normalizeAutomationRules(state.automationRules);
+  state.selectedAutomationRuleId = copy.id;
+  saveLocalAutomationRules(state.automationRules);
+  renderCommunicationSettings();
+  showMessage("#automationRuleMessage", "Automation rule duplicated.");
+}
+
+async function deleteSelectedAutomationRule() {
+  const rule = state.automationRules.find((item) => item.id === state.selectedAutomationRuleId);
+  if (!rule) return;
+  state.automationRules = state.automationRules.filter((item) => item.id !== rule.id);
+  state.selectedAutomationRuleId = state.automationRules[0]?.id || "";
+  saveLocalAutomationRules(state.automationRules);
+  renderCommunicationSettings();
+
+  try {
+    if (hasSupabase && state.session?.accessToken) {
+      await supabaseDelete("automation_rules", `id=eq.${encodeURIComponent(rule.id)}`, true);
+      showMessage("#automationRuleMessage", "Automation rule deleted.");
+    } else {
+      showMessage("#automationRuleMessage", "Automation rule deleted for this preview.");
+    }
+  } catch (error) {
+    showMessage("#automationRuleMessage", "Rule deleted locally. Supabase delete needs admin access.");
+  }
+}
+
+async function handleManualCommunicationSubmit(event) {
+  event.preventDefault();
+  const application = applicationById(state.selectedCandidateId);
+  if (!application) return;
+  const data = Object.fromEntries(new FormData(event.currentTarget));
+  const sender = senderAccountById(data.sender_account_id);
+  const now = new Date().toISOString();
+  const record = normalizeCommunication({
+    id: newClientId("comm"),
+    application_id: application.id,
+    job_id: application.job_id,
+    candidate_name: application.full_name,
+    candidate_email: application.email,
+    template_id: data.template_id,
+    trigger_event: "manual_send",
+    direction: "outbound",
+    send_type: "manual",
+    subject: data.subject,
+    body: data.body,
+    sender_email: sender.email,
+    reply_to: data.reply_to || sender.reply_to,
+    status: "queued",
+    delivery_status: "queued",
+    queued_at: now,
+    send_after: now,
+    created_at: now
+  });
+  record.delay_minutes = 0;
+
+  const sent = await sendCommunicationRecord(record);
+  renderCandidateProfile();
+  showMessage(
+    "#manualCommunicationMessage",
+    sent.status === "failed" ? communicationErrorMessage(sent.error_message) : "Email recorded and sent."
+  );
+}
+
+async function resendCommunication(id) {
+  const original = state.communications.find((record) => record.id === id);
+  const application = original ? applicationById(original.application_id) : null;
+  if (!original || !application) return;
+
+  const now = new Date().toISOString();
+  const record = normalizeCommunication({
+    ...original,
+    id: newClientId("comm"),
+    send_type: "manual_resend",
+    trigger_event: "manual_resend",
+    status: "queued",
+    delivery_status: "queued",
+    provider_message_id: "",
+    error_message: "",
+    queued_at: now,
+    send_after: now,
+    sent_at: "",
+    created_at: now
+  });
+  record.delay_minutes = 0;
+  await sendCommunicationRecord(record);
+  renderCandidateProfile();
 }
 
 function bindEvents() {
@@ -1616,6 +3059,59 @@ function bindEvents() {
       renderHrWorkspace();
     });
   });
+
+  $("#communicationTemplateForm").addEventListener("submit", handleCommunicationTemplateSubmit);
+  $("#communicationTemplateForm").addEventListener("input", renderTemplatePreview);
+  $("#communicationTemplateForm").addEventListener("change", renderTemplatePreview);
+  $("#templatesTable").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-select-template]");
+    if (!button) return;
+    state.selectedTemplateId = button.dataset.selectTemplate;
+    renderCommunicationSettings();
+  });
+  $("#newTemplateButton").addEventListener("click", () => {
+    state.selectedTemplateId = "";
+    renderCommunicationSettings();
+    $("#communicationTemplateForm input[name='name']").focus();
+  });
+  $("#duplicateTemplateButton").addEventListener("click", duplicateSelectedTemplate);
+  $("#archiveTemplateButton").addEventListener("click", archiveSelectedTemplate);
+  $("#deleteTemplateButton").addEventListener("click", deleteSelectedTemplate);
+  $("#sendTemplateTestButton").addEventListener("click", sendTemplateTestEmail);
+  $("#mergeFieldChips").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-merge-field]");
+    if (!button) return;
+    const textarea = $("#communicationTemplateForm textarea[name='body']");
+    const token = `{{${button.dataset.mergeField}}}`;
+    const start = textarea.selectionStart || textarea.value.length;
+    const end = textarea.selectionEnd || textarea.value.length;
+    textarea.value = `${textarea.value.slice(0, start)}${token}${textarea.value.slice(end)}`;
+    textarea.focus();
+    textarea.setSelectionRange(start + token.length, start + token.length);
+    renderTemplatePreview();
+  });
+
+  $("#automationRuleForm").addEventListener("submit", handleAutomationRuleSubmit);
+  $("#automationRuleForm").addEventListener("change", (event) => {
+    if (event.target.name === "sender_account_id") {
+      const account = senderAccountById(event.target.value);
+      event.currentTarget.elements.sender_email.value = account.email;
+      event.currentTarget.elements.reply_to.value = account.reply_to;
+    }
+  });
+  $("#automationRulesTable").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-select-automation-rule]");
+    if (!button) return;
+    state.selectedAutomationRuleId = button.dataset.selectAutomationRule;
+    renderCommunicationSettings();
+  });
+  $("#newAutomationRuleButton").addEventListener("click", () => {
+    state.selectedAutomationRuleId = "";
+    renderCommunicationSettings();
+    $("#automationRuleForm input[name='name']").focus();
+  });
+  $("#duplicateAutomationRuleButton").addEventListener("click", duplicateSelectedAutomationRule);
+  $("#deleteAutomationRuleButton").addEventListener("click", deleteSelectedAutomationRule);
 
   $("#jobSearch").addEventListener("input", (event) => {
     state.filters.query = event.target.value;
@@ -1719,6 +3215,8 @@ function bindEvents() {
     if (!button) return;
     const id = button.dataset.candidateAction;
     let nextStatus = null;
+    let previousStatus = null;
+    let movedApplication = null;
     state.applications = state.applications.map((application) => {
       if (application.id !== id) return application;
       const next =
@@ -1726,7 +3224,9 @@ function bindEvents() {
           ? getManagerStage(application.status)
           : getNextStage(application.status);
       nextStatus = next;
-      return next ? { ...application, status: next } : application;
+      previousStatus = application.status;
+      movedApplication = next ? { ...application, status: next } : application;
+      return movedApplication;
     });
     renderHrWorkspace();
     if (hasSupabase && state.session?.accessToken && nextStatus && !id.startsWith("app-")) {
@@ -1734,6 +3234,77 @@ function bindEvents() {
         () => null
       );
     }
+    if (nextStatus && movedApplication) {
+      await dispatchAutomationEvent("candidate_stage_changed", movedApplication, {
+        previous_stage: previousStatus,
+        pipeline_stage: nextStatus
+      });
+      renderHrWorkspace();
+    }
+  });
+
+  $("#candidatesTable").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-view-candidate]");
+    if (!button) return;
+    state.selectedCandidateId = button.dataset.viewCandidate;
+    state.candidateProfileTab = "communications";
+    state.communicationQuery = "";
+    state.manualTemplateId = "";
+    state.manualSubject = "";
+    state.manualBody = "";
+    renderHrWorkspace();
+    $("#candidateProfilePanel").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  $("#candidateProfilePanel").addEventListener("click", async (event) => {
+    const closeButton = event.target.closest("#closeCandidateProfile");
+    if (closeButton) {
+      state.selectedCandidateId = "";
+      renderHrWorkspace();
+      return;
+    }
+
+    const tabButton = event.target.closest("[data-candidate-tab]");
+    if (tabButton) {
+      state.candidateProfileTab = tabButton.dataset.candidateTab;
+      renderCandidateProfile();
+      syncRoleControls();
+      return;
+    }
+
+    const resendButton = event.target.closest("[data-resend-communication]");
+    if (resendButton) {
+      await resendCommunication(resendButton.dataset.resendCommunication);
+    }
+  });
+
+  $("#candidateProfilePanel").addEventListener("change", (event) => {
+    const application = applicationById(state.selectedCandidateId);
+    if (!application) return;
+    if (event.target.id === "manualTemplateSelect") {
+      setManualMessageFromTemplate(application, event.target.value);
+      renderCandidateProfile();
+      syncRoleControls();
+    }
+    if (event.target.id === "manualSenderAccountSelect") {
+      const account = senderAccountById(event.target.value);
+      const form = $("#manualCommunicationForm");
+      form.elements.reply_to.value = account.reply_to;
+    }
+  });
+
+  $("#candidateProfilePanel").addEventListener("input", (event) => {
+    if (event.target.id === "communicationSearch") {
+      state.communicationQuery = event.target.value;
+      const application = applicationById(state.selectedCandidateId);
+      if (application) $("#communicationHistory").innerHTML = renderCommunicationHistory(application);
+    }
+    if (event.target.id === "manualCommunicationSubject") state.manualSubject = event.target.value;
+    if (event.target.id === "manualCommunicationBody") state.manualBody = event.target.value;
+  });
+
+  $("#candidateProfilePanel").addEventListener("submit", (event) => {
+    if (event.target.id === "manualCommunicationForm") handleManualCommunicationSubmit(event);
   });
 }
 
@@ -2055,10 +3626,12 @@ async function handleApplicationSubmit(event) {
     state.applications.unshift(application);
     event.currentTarget.reset();
     showMessage("#applicationMessage", "Application submitted.");
+    await dispatchAutomationEvent("candidate_applies", application);
     renderHrWorkspace();
   } catch (error) {
     showMessage("#applicationMessage", "Saved locally. Supabase write needs project permissions.");
     state.applications.unshift(application);
+    await dispatchAutomationEvent("candidate_applies", application);
     renderHrWorkspace();
   }
 }

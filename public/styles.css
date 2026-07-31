@@ -932,6 +932,24 @@ textarea:focus {
   color: var(--coral);
 }
 
+.status-pill.active,
+.status-pill.sent {
+  background: #e7f5ed;
+  color: #1f6b43;
+}
+
+.status-pill.inactive,
+.status-pill.queued,
+.status-pill.pending {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+.status-pill.failed {
+  background: #fdecec;
+  color: #a83a3a;
+}
+
 .stage-pill {
   background: #eef5fb;
   color: var(--blue);
@@ -1083,6 +1101,10 @@ button:disabled:hover {
   color: var(--blue);
   font-size: 13px;
   font-weight: 800;
+}
+
+.form-message.is-error {
+  color: #a83a3a;
 }
 
 .hr-menu-button {
@@ -1311,6 +1333,299 @@ button:disabled:hover {
 .settings-detail {
   border-top: 1px solid var(--line);
   padding-top: 16px;
+}
+
+tr.is-selected {
+  background: rgba(75, 160, 216, 0.08);
+}
+
+.candidate-profile-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+}
+
+.candidate-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+.candidate-tab {
+  min-height: 36px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.candidate-tab.is-active,
+.candidate-tab:hover {
+  border-bottom-color: var(--harbor);
+  color: var(--ink);
+}
+
+.candidate-overview-grid,
+.communications-workspace,
+.communications-admin-grid,
+.stage-automation-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.candidate-overview-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.candidate-detail-card,
+.communications-card,
+.manual-email-panel,
+.communication-history-panel,
+.communication-card,
+.stage-automation-card,
+.sender-account-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.candidate-detail-card {
+  padding: 12px;
+}
+
+.candidate-detail-card span,
+.preview-subject span,
+.sender-account-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.candidate-detail-card strong,
+.preview-subject strong,
+.sender-account-card strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--ink);
+}
+
+.candidate-detail-card p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.communications-workspace {
+  grid-template-columns: minmax(320px, 0.85fr) minmax(0, 1.15fr);
+  align-items: start;
+}
+
+.communications-admin-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.communications-card,
+.manual-email-panel,
+.communication-history-panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.communication-form,
+.manual-message-form {
+  display: grid;
+  gap: 12px;
+}
+
+.communication-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.compact-table-wrap table {
+  min-width: 760px;
+}
+
+.merge-field-panel {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 10px;
+}
+
+.merge-field-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.merge-field-chip {
+  min-height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--harbor-dark);
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.merge-field-chip:hover {
+  border-color: var(--harbor);
+  color: var(--harbor);
+}
+
+.template-preview,
+.email-preview-body {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.template-preview {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.email-preview-body {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.email-preview-body p {
+  margin: 0;
+}
+
+.communication-search {
+  width: min(260px, 100%);
+}
+
+.communication-history {
+  display: grid;
+  gap: 10px;
+}
+
+.communication-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.communication-card-header,
+.communication-meta-row,
+.sender-account-card,
+.stage-automation-card > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.communication-card-header strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.communication-card-header span,
+.communication-meta-row {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.communication-card details {
+  display: grid;
+  gap: 8px;
+}
+
+.communication-card summary {
+  color: var(--harbor-dark);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.stage-automation-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.stage-automation-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.stage-automation-card ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.sender-account-list {
+  display: grid;
+  gap: 8px;
+}
+
+.sender-account-card {
+  min-height: 58px;
+  padding: 10px 12px;
+}
+
+.sender-account-card span {
+  margin-top: 3px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.pipeline-automation-preview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pipeline-automation-preview article {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  padding: 10px;
+}
+
+.pipeline-automation-preview strong {
+  font-size: 13px;
+}
+
+.pipeline-automation-preview span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
 }
 
 .department-tree {
@@ -1561,12 +1876,20 @@ td strong {
   .landing-layout,
   .login-layout,
   .hr-grid,
-  .job-create-layout {
+  .job-create-layout,
+  .communications-workspace,
+  .communications-admin-grid {
     grid-template-columns: 1fr;
   }
 
   .search-panel {
     position: static;
+  }
+
+  .candidate-overview-grid,
+  .stage-automation-grid,
+  .pipeline-automation-preview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   h1 {
@@ -1618,7 +1941,10 @@ td strong {
   .portal-metrics,
   .metric-grid,
   .permissions-grid,
-  .pipeline-board {
+  .pipeline-board,
+  .candidate-overview-grid,
+  .stage-automation-grid,
+  .pipeline-automation-preview {
     grid-template-columns: 1fr;
   }
 

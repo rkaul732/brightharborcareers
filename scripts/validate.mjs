@@ -10,12 +10,16 @@ const requiredFiles = [
   "netlify.toml",
   "netlify/functions/request-account.mjs",
   "netlify/functions/review-account-request.mjs",
+  "netlify/functions/send-communication.mjs",
+  "netlify/functions/run-communication-automations.mjs",
+  "netlify/functions/process-communication-queue.mjs",
   "supabase/migrations/20260729160000_bright_harbor_careers.sql",
   "supabase/migrations/20260730170000_job_board_settings.sql",
   "supabase/migrations/20260730183000_departments.sql",
   "supabase/migrations/20260730190000_profile_avatar.sql",
   "supabase/migrations/20260730200000_pipeline_settings.sql",
-  "supabase/migrations/20260730210000_job_content_sections.sql"
+  "supabase/migrations/20260730210000_job_content_sections.sql",
+  "supabase/migrations/20260731120000_communications.sql"
 ];
 
 const root = process.cwd();
@@ -46,6 +50,10 @@ const jobContentSql = await readFile(
   path.join(root, "supabase/migrations/20260730210000_job_content_sections.sql"),
   "utf8"
 );
+const communicationsSql = await readFile(
+  path.join(root, "supabase/migrations/20260731120000_communications.sql"),
+  "utf8"
+);
 
 const checks = [
   [html.includes("Welcome to Bright Harbor Careers."), "Landing chooser"],
@@ -71,6 +79,13 @@ const checks = [
   [html.includes("profileMenuButton") && html.includes("profileDropdown"), "HR profile dropdown"],
   [html.includes("profileForm") && app.includes("handleProfileSubmit"), "HR profile editor"],
   [html.includes("pipelineSettingsForm") && app.includes("handlePipelineSettingsSubmit"), "Pipeline settings form"],
+  [html.includes("communicationsSettingsButton") && html.includes("communicationTemplateForm"), "Communications settings module"],
+  [html.includes("templatesTable") && app.includes("handleCommunicationTemplateSubmit"), "Communication template library"],
+  [html.includes("automationRulesTable") && app.includes("handleAutomationRuleSubmit"), "Communication automation rules"],
+  [html.includes("candidateProfilePanel") && app.includes("manualCommunicationForm"), "Candidate communications tab"],
+  [app.includes("dispatchAutomationEvent") && app.includes("run-communication-automations") && app.includes("candidate_stage_changed"), "Communication automation dispatch"],
+  [communicationsSql.includes("communication_templates") && communicationsSql.includes("automation_rules"), "Communication persistence tables"],
+  [communicationsSql.includes("communication_events") && communicationsSql.includes("send_after"), "Communication queue and audit log"],
   [app.includes("handleAccountRequestSubmit"), "Account request handler"],
   [app.includes("supabaseInsert"), "Supabase insert wiring"],
   [app.includes("job_board_settings") && settingsSql.includes("job_board_settings"), "Job board settings persistence"],

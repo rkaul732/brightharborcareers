@@ -137,14 +137,50 @@ export function publicSiteUrl(event) {
   return host ? `${protocol}://${host}` : "";
 }
 
+export function emailHtmlFromText(value) {
+  const paragraphs = String(value || "")
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+
+  return paragraphs.length
+    ? paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph).replaceAll("\n", "<br>")}</p>`).join("")
+    : "<p></p>";
+}
+
+export async function sendEmail({ to, from, replyTo, subject, text, html: htmlBody }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing RESEND_API_KEY for email sending.");
+  }
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      from: from || process.env.EMAIL_FROM || "Bright Harbor Careers <no-reply@brightharbor.org>",
+      to,
+      subject,
+      text,
+      html: htmlBody || emailHtmlFromText(text),
+      ...(replyTo ? { reply_to: replyTo } : {})
+    })
+  });
+
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.message || "Email provider could not send the message.");
+  }
+
+  return result;
+}
+
 export async function sendHrReviewEmail({ request, approveUrl, denyUrl }) {
   const to = process.env.HR_APPROVAL_EMAIL || "hr@brightharbor.org";
   const from = process.env.EMAIL_FROM || "Bright Harbor Careers <no-reply@brightharbor.org>";
-  const apiKey = process.env.RESEND_API_KEY;
-
-  if (!apiKey) {
-    throw new Error("Missing RESEND_API_KEY for account request email.");
-  }
 
   const text = [
     "A hiring-team account was requested.",
@@ -174,25 +210,11 @@ export async function sendHrReviewEmail({ request, approveUrl, denyUrl }) {
     </p>
   `;
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      from,
-      to,
-      subject: `Bright Harbor account request: ${request.full_name}`,
-      text,
-      html: htmlBody
-    })
+  return sendEmail({
+    from,
+    to,
+    subject: `Bright Harbor account request: ${request.full_name}`,
+    text,
+    html: htmlBody
   });
-
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(result.message || "Email provider could not send the request.");
-  }
-
-  return result;
 }
