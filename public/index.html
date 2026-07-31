@@ -304,7 +304,7 @@
                   <input name="password" type="password" required autocomplete="current-password">
                 </label>
                 <div class="auth-actions">
-                  <button class="primary-action" type="submit">
+                  <button class="primary-action" type="submit" id="authSubmitButton">
                     <svg><use href="#icon-database"></use></svg>
                     Submit
                   </button>
@@ -316,6 +316,12 @@
                   Request a Hiring Team Account
                 </button>
                 <p class="form-message" id="authMessage" role="status"></p>
+                <div class="login-progress" id="authLoadingPanel" role="status" aria-live="polite" hidden>
+                  <div class="login-progress-track" aria-hidden="true">
+                    <span></span>
+                  </div>
+                  <p id="authLoadingText">Signing in securely...</p>
+                </div>
               </form>
 
               <section class="request-panel" id="requestAccountPanel" hidden>

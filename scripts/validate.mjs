@@ -95,6 +95,14 @@ const checks = [
   [html.includes("boardSettingsForm") && app.includes("handleBoardSettingsSubmit"), "Admin job board editor"],
   [html.includes("Request a Hiring Team Account"), "Account request link"],
   [html.includes('name="username"') && html.includes('name="password"'), "Hiring-team credentials form"],
+  [
+    html.includes("authLoadingPanel") &&
+      app.includes("setAuthLoading") &&
+      app.includes("fetchWithTimeout") &&
+      app.includes("refreshHrDataAfterSignIn") &&
+      app.includes("Opening Hiring Team home"),
+    "Non-blocking hiring-team login"
+  ],
   [html.includes('data-hr-section="home"') && html.includes("hrHomeSection") && app.includes("renderHomeDashboard"), "HR home dashboard"],
   [
     html.includes("profileSignOutButton") &&

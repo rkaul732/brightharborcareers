@@ -615,6 +615,16 @@ async function supabaseDelete(table, query, useAuth = false) {
   return response.json();
 }
 
+async function fetchWithTimeout(url, options = {}, timeoutMs = 20000) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
 async function supabaseUpsert(table, payload, useAuth = false, onConflict = "id") {
   const response = await fetch(`${env.supabaseUrl}/rest/v1/${table}?on_conflict=${encodeURIComponent(onConflict)}`, {
     method: "POST",
@@ -3392,6 +3402,22 @@ function showMessage(selector, message) {
   }, 5000);
 }
 
+function setAuthLoading(isLoading, message = "Signing in securely...") {
+  const form = $("#authForm");
+  const panel = $("#authLoadingPanel");
+  const text = $("#authLoadingText");
+  const submitButton = $("#authSubmitButton");
+  const usernameInput = $("#authUsernameField input");
+  const passwordInput = $("#authPasswordField input");
+  form?.classList.toggle("is-loading", isLoading);
+  form?.setAttribute("aria-busy", String(isLoading));
+  if (panel) panel.hidden = !isLoading;
+  if (text) text.textContent = message;
+  if (submitButton) submitButton.disabled = isLoading;
+  if (usernameInput) usernameInput.disabled = isLoading;
+  if (passwordInput) passwordInput.disabled = isLoading;
+}
+
 function accountRequestErrorMessage(message = "") {
   if (message.includes("SUPABASE_SERVICE_ROLE_KEY")) {
     return "Account requests need one more setup step: add SUPABASE_SERVICE_ROLE_KEY to Netlify environment variables.";
@@ -4633,6 +4659,19 @@ async function deleteSelectedWorkflow() {
   }
 }
 
+async function refreshHrDataAfterSignIn() {
+  try {
+    setConnection(true, "Loading HR data");
+    await loadSupabaseData();
+    populateFilters();
+    renderApplicantPortal();
+    renderHrWorkspace();
+  } catch (error) {
+    setConnection(true, "HR session limited");
+    renderHrWorkspace();
+  }
+}
+
 async function handleAuthSubmit(event) {
   event.preventDefault();
   if (!hasSupabase) {
@@ -4645,48 +4684,62 @@ async function handleAuthSubmit(event) {
   const password = String(formData.get("password") || "");
   if (!username || !password) return;
 
+  setAuthLoading(true, "Checking your account...");
   showMessage("#authMessage", "Signing in...");
 
-  const response = await fetch(`${env.supabaseUrl}/auth/v1/token?grant_type=password`, {
-    method: "POST",
-    headers: {
-      apikey: env.supabaseAnonKey,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      email: username,
-      password
-    })
-  });
-
-  let responseBody = {};
   try {
-    responseBody = await response.json();
+    const response = await fetchWithTimeout(`${env.supabaseUrl}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: {
+        apikey: env.supabaseAnonKey,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email: username,
+        password
+      })
+    });
+
+    let responseBody = {};
+    try {
+      responseBody = await response.json();
+    } catch (error) {
+      responseBody = {};
+    }
+
+    if (!response.ok) {
+      showMessage(
+        "#authMessage",
+        `Supabase error: ${responseBody.error_description || responseBody.msg || responseBody.message || "invalid username or password"}`
+      );
+      setAuthLoading(false);
+      return;
+    }
+
+    setAuthLoading(true, "Opening Hiring Team home...");
+    saveSession({
+      accessToken: responseBody.access_token,
+      refreshToken: responseBody.refresh_token,
+      userId: responseBody.user?.id || "",
+      email: responseBody.user?.email || username,
+      expiresAt: responseBody.expires_at || ""
+    });
+    state.hrSection = "home";
+    state.jobCreateOpen = false;
+    event.currentTarget.reset();
+    setAuthLoading(false);
+    renderAuthPanel();
+    renderHrWorkspace();
+    showView("hr");
+    refreshHrDataAfterSignIn();
   } catch (error) {
-    responseBody = {};
+    const message =
+      error?.name === "AbortError"
+        ? "Sign-in is taking longer than expected. Please try again in a moment."
+        : "Unable to sign in right now. Please check your connection and try again.";
+    showMessage("#authMessage", message);
+    setAuthLoading(false);
   }
-
-  if (!response.ok) {
-    showMessage(
-      "#authMessage",
-      `Supabase error: ${responseBody.error_description || responseBody.msg || responseBody.message || "invalid username or password"}`
-    );
-    return;
-  }
-
-  saveSession({
-    accessToken: responseBody.access_token,
-    refreshToken: responseBody.refresh_token,
-    userId: responseBody.user?.id || "",
-    email: responseBody.user?.email || username,
-    expiresAt: responseBody.expires_at || ""
-  });
-  event.currentTarget.reset();
-  renderAuthPanel();
-  await loadSupabaseData();
-  renderApplicantPortal();
-  renderHrWorkspace();
-  showView("hr");
 }
 
 async function handleAccountRequestSubmit(event) {

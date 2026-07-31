@@ -1317,6 +1317,64 @@ button:disabled:hover {
   margin-top: 0;
 }
 
+.login-progress {
+  display: grid;
+  gap: 7px;
+  border: 1px solid rgba(75, 160, 216, 0.28);
+  border-radius: var(--radius);
+  background: var(--subtle);
+  padding: 10px 12px;
+}
+
+.login-progress[hidden] {
+  display: none;
+}
+
+.login-progress-track {
+  position: relative;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dbeaf6;
+}
+
+.login-progress-track span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 42%;
+  border-radius: inherit;
+  background: var(--harbor);
+  animation: login-progress-slide 1.15s ease-in-out infinite;
+}
+
+.login-progress p {
+  margin: 0;
+  color: var(--harbor-dark);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+@keyframes login-progress-slide {
+  0% {
+    transform: translateX(-115%);
+  }
+
+  50% {
+    transform: translateX(70%);
+  }
+
+  100% {
+    transform: translateX(240%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-progress-track span {
+    animation: none;
+    width: 100%;
+  }
+}
+
 .request-panel {
   display: grid;
   gap: 14px;
