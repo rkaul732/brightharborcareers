@@ -1765,6 +1765,64 @@ tr.is-selected {
   gap: 6px;
 }
 
+.jobs-list-panel #jobsTableWrap {
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 8px;
+}
+
+.jobs-list-panel table {
+  min-width: 720px;
+  border-collapse: separate;
+  border-spacing: 0 10px;
+}
+
+.jobs-list-panel thead th {
+  border-bottom: 0;
+  padding: 0 16px 2px;
+}
+
+.jobs-list-panel .hr-job-row td {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+  padding: 16px;
+  vertical-align: middle;
+}
+
+.jobs-list-panel .hr-job-row td:first-child {
+  width: 46%;
+  border-left: 1px solid var(--line);
+  border-radius: var(--radius) 0 0 var(--radius);
+}
+
+.jobs-list-panel .hr-job-row td:nth-child(2) {
+  width: 16%;
+}
+
+.jobs-list-panel .hr-job-row td:last-child {
+  width: 38%;
+  border-right: 1px solid var(--line);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.jobs-list-panel .hr-job-row:hover td {
+  border-color: rgba(75, 160, 216, 0.58);
+  box-shadow: 0 10px 22px rgba(28, 47, 67, 0.06);
+}
+
+.hr-job-title {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--ink);
+  font-family:
+    Inter, "Aptos", "Avenir Next", "Helvetica Neue", Arial, ui-sans-serif,
+    system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 18px;
+  font-weight: 600 !important;
+  line-height: 1.25;
+}
+
 .jobs-list-panel td:last-child .pipeline-chip-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(92px, 1fr));
@@ -2233,5 +2291,27 @@ td strong {
 
 body,
 body * {
+  font-weight: 400 !important;
+}
+
+button,
+.primary-action,
+.secondary-action,
+.icon-button,
+.table-action,
+.candidate-action,
+.hr-menu-button,
+.job-create-tab,
+.hr-job-title {
+  font-family:
+    Inter, "Aptos", "Avenir Next", "Helvetica Neue", Arial, ui-sans-serif,
+    system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 600 !important;
+}
+
+.job-status-pill {
+  font-family:
+    Inter, "Aptos", "Avenir Next", "Helvetica Neue", Arial, ui-sans-serif,
+    system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   font-weight: 400 !important;
 }

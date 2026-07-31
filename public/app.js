@@ -2149,7 +2149,7 @@ function renderJobsTable() {
   if (!jobs.length) {
     $("#jobsTable").innerHTML = `
       <tr>
-        <td colspan="4">
+        <td colspan="3">
           <div class="empty-state compact">No jobs match this search.</div>
         </td>
       </tr>
@@ -2168,9 +2168,9 @@ function renderJobsTable() {
         })
         .join("");
       return `
-        <tr>
+        <tr class="hr-job-row">
           <td>
-            <strong>${escapeHtml(job.title)}</strong>
+            <span class="hr-job-title">${escapeHtml(job.title)}</span>
             <div class="table-meta">
               <span>${escapeHtml(job.department)}</span>
               ${job.subdepartment ? `<span>${escapeHtml(job.subdepartment)}</span>` : ""}
@@ -2178,8 +2178,7 @@ function renderJobsTable() {
               <span>${escapeHtml(workflow.name)}</span>
             </div>
           </td>
-          <td>${escapeHtml(job.hiring_manager || "Unassigned")}</td>
-          <td><span class="status-pill ${escapeHtml(job.status)}">${escapeHtml(formatStatus(job.status))}</span></td>
+          <td><span class="status-pill job-status-pill ${escapeHtml(job.status)}">${escapeHtml(formatStatus(job.status))}</span></td>
           <td><div class="pipeline-chip-row">${pipelineMarkup}</div></td>
         </tr>
       `;

@@ -86,6 +86,19 @@ const checks = [
   [html.includes('name="username"') && html.includes('name="password"'), "Hiring-team credentials form"],
   [html.includes('data-hr-section="jobs"') && app.includes("pipeline-chip"), "HR jobs top navigation"],
   [html.includes("hrJobSearch") && html.includes("showJobCreate") && app.includes("hrJobQuery"), "HR jobs search and create control"],
+  [
+    !html.includes("<th scope=\"col\">Owner</th>") &&
+      app.includes('colspan="3"') &&
+      app.includes("hr-job-title") &&
+      app.includes("job-status-pill"),
+    "Ownerless framed jobs preview"
+  ],
+  [
+    css.includes(".jobs-list-panel .hr-job-row td") &&
+      css.includes(".hr-job-title") &&
+      css.includes(".job-status-pill"),
+    "Framed job preview styling"
+  ],
   [html.includes("showJobPreview") && html.includes("jobPreviewPanel") && app.includes("openJobPreview"), "On-demand job preview"],
   [html.includes('value="internal"') && html.includes('value="confidential"'), "Internal and confidential job status options"],
   [app.includes("normalizeJobStatus") && app.includes("jobStatusOptions"), "Job status normalization"],
