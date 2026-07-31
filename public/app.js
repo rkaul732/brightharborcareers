@@ -1864,6 +1864,7 @@ function renderProfileMenu() {
 
 function renderAuthPanel() {
   const signedIn = Boolean(state.session?.accessToken);
+  $(".app-shell")?.classList.toggle("is-hr-session", signedIn);
   const sessionMarkup = signedIn
     ? `
       <span class="status-pill">Signed in</span>
@@ -1882,7 +1883,6 @@ function renderAuthPanel() {
   $("#continueToWorkspace").hidden = !signedIn;
   $("#loginSessionPanel").hidden = !signedIn;
   $("#loginSessionPanel").innerHTML = sessionMarkup;
-  $("#signOutButton").hidden = !signedIn;
   $("#hrSessionPanel").innerHTML = signedIn
     ? sessionMarkup
     : `<p class="summary">Sign in from the Hiring Team page to open this workspace.</p>`;
@@ -2049,6 +2049,16 @@ function syncRoleControls() {
     control.disabled = !canSendCandidateEmail;
   });
   $("#adminPanel").hidden = state.role !== "admin";
+}
+
+function signOutHrUser() {
+  saveSession(null);
+  state.hrSection = "home";
+  $("#profileDropdown").hidden = true;
+  $("#profileMenuButton").setAttribute("aria-expanded", "false");
+  setConnection(false, "Demo data");
+  renderHrWorkspace();
+  showView("login");
 }
 
 function renderJobsToolbar() {
@@ -3679,6 +3689,10 @@ function bindEvents() {
   });
 
   $("#profileDropdown").addEventListener("click", (event) => {
+    if (event.target.closest("#profileSignOutButton")) {
+      signOutHrUser();
+      return;
+    }
     const button = event.target.closest("[data-profile-destination]");
     if (!button) return;
     state.hrSection = button.dataset.profileDestination;
@@ -3896,14 +3910,6 @@ function bindEvents() {
     }
   });
   $("#continueToWorkspace").addEventListener("click", () => showView("hr"));
-  $("#signOutButton").addEventListener("click", () => {
-    saveSession(null);
-    setConnection(false, "Demo data");
-    renderAuthPanel();
-    renderHrWorkspace();
-    showView("login");
-  });
-
   $("#pipelineBoard").addEventListener("click", async (event) => {
     const button = event.target.closest("[data-candidate-action]");
     if (!button) return;

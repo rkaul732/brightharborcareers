@@ -96,6 +96,14 @@ const checks = [
   [html.includes("Request a Hiring Team Account"), "Account request link"],
   [html.includes('name="username"') && html.includes('name="password"'), "Hiring-team credentials form"],
   [html.includes('data-hr-section="home"') && html.includes("hrHomeSection") && app.includes("renderHomeDashboard"), "HR home dashboard"],
+  [
+    html.includes("profileSignOutButton") &&
+      app.includes("signOutHrUser") &&
+      css.includes(".app-shell.is-hr-session .main-tabs") &&
+      !html.includes("HR backend") &&
+      !html.includes("hrHeading"),
+    "Signed-in HR navigation cleanup"
+  ],
   [html.includes('data-hr-section="jobs"') && app.includes("pipeline-chip"), "HR jobs top navigation"],
   [html.includes("hrJobSearch") && html.includes("showJobCreate") && app.includes("hrJobQuery"), "HR jobs search and create control"],
   [

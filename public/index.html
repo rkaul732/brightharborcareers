@@ -329,14 +329,9 @@
           </div>
         </section>
 
-        <section class="view" id="hrView" aria-labelledby="hrHeading">
+        <section class="view" id="hrView" aria-label="Hiring team workspace">
           <div class="hr-shell">
             <header class="hr-top-header">
-              <div class="hr-title">
-                <p class="eyebrow">HR backend</p>
-                <h1 id="hrHeading">Talent operations</h1>
-              </div>
-
               <nav class="hr-top-menu" aria-label="HR main menu">
                 <button class="hr-menu-button is-active" type="button" data-hr-section="home">
                   <svg><use href="#icon-anchor"></use></svg>
@@ -363,6 +358,7 @@
                 <div class="profile-dropdown" id="profileDropdown" hidden>
                   <button type="button" data-profile-destination="settings">Settings</button>
                   <button type="button" data-profile-destination="profile">Edit my profile</button>
+                  <button type="button" id="profileSignOutButton">Log out</button>
                 </div>
               </div>
             </header>
@@ -1252,9 +1248,6 @@
                     <p class="form-message" id="profileMessage" role="status"></p>
                   </form>
                   <div class="session-panel" id="hrSessionPanel"></div>
-                  <button class="secondary-action" type="button" id="signOutButton">
-                    Sign out
-                  </button>
                 </section>
               </section>
             </section>

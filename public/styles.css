@@ -74,6 +74,18 @@ svg {
   backdrop-filter: blur(14px);
 }
 
+.app-shell.is-hr-session .topbar {
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, auto);
+}
+
+.app-shell.is-hr-session .main-tabs {
+  display: none;
+}
+
+.app-shell.is-hr-session .connection {
+  justify-self: end;
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
@@ -368,6 +380,7 @@ main {
   display: flex;
   gap: 14px;
   align-items: center;
+  justify-content: space-between;
   flex-wrap: nowrap;
   overflow: visible;
   border: 1px solid var(--line);
@@ -377,20 +390,9 @@ main {
   padding: 14px 16px;
 }
 
-.hr-title {
-  min-width: 0;
-  flex: 1 1 auto;
-}
-
-.hr-title h1 {
-  max-width: none;
-  font-size: 24px;
-  white-space: nowrap;
-}
-
 .hr-top-menu {
   display: flex;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   gap: 6px;
   padding: 3px;
   border: 1px solid var(--line);
@@ -2382,14 +2384,6 @@ td strong {
     padding: 10px;
   }
 
-  .hr-title h1 {
-    font-size: 18px;
-  }
-
-  .hr-title .eyebrow {
-    display: none;
-  }
-
   .hr-menu-button {
     min-height: 34px;
     padding: 0 9px;
@@ -2452,10 +2446,6 @@ td strong {
 
   .tab {
     width: 100%;
-  }
-
-  .hr-title {
-    display: none;
   }
 
   .hr-top-menu {
