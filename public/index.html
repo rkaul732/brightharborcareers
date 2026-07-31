@@ -226,9 +226,13 @@
                     <span>Resume URL</span>
                     <input name="resume_url" type="url" placeholder="https://">
                   </label>
+                  <label class="field wide" id="summaryApplicationField">
+                    <span>Candidate summary</span>
+                    <textarea name="candidate_summary_response" rows="4" placeholder="Share a short summary of your fit for this role."></textarea>
+                  </label>
                   <label class="field wide" id="coverLetterApplicationField">
-                    <span>Cover letter / short note</span>
-                    <textarea name="cover_note" rows="4" placeholder="Share the strongest fit in a few lines."></textarea>
+                    <span>Cover letter</span>
+                    <textarea name="cover_note" rows="4" placeholder="Share your cover letter or a brief note."></textarea>
                   </label>
                   <label class="field wide" id="customQuestionApplicationField" hidden>
                     <span id="customQuestionLabel">Additional question</span>
@@ -526,27 +530,63 @@
                                 <span>Application summary</span>
                                 <textarea name="application_summary" rows="4" placeholder="Tell applicants what they should prepare before applying."></textarea>
                               </label>
-                              <label class="field">
-                                <span>Resume</span>
-                                <select name="require_resume">
-                                  <option value="required">Required</option>
-                                  <option value="optional">Optional</option>
-                                </select>
-                              </label>
-                              <label class="field">
-                                <span>Cover letter</span>
-                                <select name="require_cover_letter">
-                                  <option value="optional">Optional</option>
-                                  <option value="required">Required</option>
-                                </select>
-                              </label>
-                              <label class="field">
-                                <span>Phone number</span>
-                                <select name="require_phone">
-                                  <option value="required">Required</option>
-                                  <option value="optional">Optional</option>
-                                </select>
-                              </label>
+                              <div class="application-requirement-list wide">
+                                <div class="application-requirement-row">
+                                  <div>
+                                    <span>Candidate summary</span>
+                                    <small>Short statement of interest or fit.</small>
+                                  </div>
+                                  <div class="requirement-options" role="radiogroup" aria-label="Candidate summary requirement">
+                                    <label><input type="radio" name="summary_requirement" value="mandatory"><span>Mandatory</span></label>
+                                    <label><input type="radio" name="summary_requirement" value="optional" checked><span>Optional</span></label>
+                                    <label><input type="radio" name="summary_requirement" value="not_required"><span>Not required</span></label>
+                                  </div>
+                                </div>
+                                <div class="application-requirement-row">
+                                  <div>
+                                    <span>Resume</span>
+                                    <small>Resume link or uploaded resume reference.</small>
+                                  </div>
+                                  <div class="requirement-options" role="radiogroup" aria-label="Resume requirement">
+                                    <label><input type="radio" name="resume_requirement" value="mandatory" checked><span>Mandatory</span></label>
+                                    <label><input type="radio" name="resume_requirement" value="optional"><span>Optional</span></label>
+                                    <label><input type="radio" name="resume_requirement" value="not_required"><span>Not required</span></label>
+                                  </div>
+                                </div>
+                                <div class="application-requirement-row">
+                                  <div>
+                                    <span>Cover letter</span>
+                                    <small>Letter or short note from the applicant.</small>
+                                  </div>
+                                  <div class="requirement-options" role="radiogroup" aria-label="Cover letter requirement">
+                                    <label><input type="radio" name="cover_letter_requirement" value="mandatory"><span>Mandatory</span></label>
+                                    <label><input type="radio" name="cover_letter_requirement" value="optional" checked><span>Optional</span></label>
+                                    <label><input type="radio" name="cover_letter_requirement" value="not_required"><span>Not required</span></label>
+                                  </div>
+                                </div>
+                                <div class="application-requirement-row">
+                                  <div>
+                                    <span>Phone number</span>
+                                    <small>Best phone number for recruiting follow-up.</small>
+                                  </div>
+                                  <div class="requirement-options" role="radiogroup" aria-label="Phone number requirement">
+                                    <label><input type="radio" name="phone_requirement" value="mandatory" checked><span>Mandatory</span></label>
+                                    <label><input type="radio" name="phone_requirement" value="optional"><span>Optional</span></label>
+                                    <label><input type="radio" name="phone_requirement" value="not_required"><span>Not required</span></label>
+                                  </div>
+                                </div>
+                                <div class="application-requirement-row">
+                                  <div>
+                                    <span>Additional question</span>
+                                    <small>Role-specific question shown below.</small>
+                                  </div>
+                                  <div class="requirement-options" role="radiogroup" aria-label="Additional question requirement">
+                                    <label><input type="radio" name="custom_question_requirement" value="mandatory" checked><span>Mandatory</span></label>
+                                    <label><input type="radio" name="custom_question_requirement" value="optional"><span>Optional</span></label>
+                                    <label><input type="radio" name="custom_question_requirement" value="not_required"><span>Not required</span></label>
+                                  </div>
+                                </div>
+                              </div>
                               <label class="field wide">
                                 <span>Additional application question</span>
                                 <textarea name="application_question" rows="4" placeholder="Add one role-specific question for applicants."></textarea>

@@ -6,6 +6,7 @@ Bright Harbor Careers is a dual-sided applicant tracking system for applicants a
 - Visitors first choose between Applicant and Hiring Team.
 - Recruiters can create focused job drafts with salary ranges, sectioned descriptions, SEO keywords, and pipeline tracking.
 - Job creation is split into Description, Application, Team Members, and Workflow sections.
+- Application fields can be marked Mandatory, Optional, or Not required.
 - Hiring managers can review candidates and advance interview-stage applicants.
 - Admins can edit the public job board header, manage agency departments and subdepartments, and configure reusable workflows.
 - Admins can manage email templates, merge fields, sender accounts, and automated communication rules.
@@ -110,6 +111,7 @@ supabase/migrations/20260730200000_pipeline_settings.sql
 supabase/migrations/20260730210000_job_content_sections.sql
 supabase/migrations/20260731120000_communications.sql
 supabase/migrations/20260731130000_workflows.sql
+supabase/migrations/20260731133000_application_requirement_levels.sql
 ```
 
 4. Paste and run each file in Supabase before moving to the next one.
@@ -129,7 +131,7 @@ This creates:
 - `workflows`
 - profile avatar URLs
 - salary ranges, job description sections, benefits, and SEO keywords for jobs
-- application requirement fields and team assignments for jobs
+- application requirement levels and team assignments for jobs
 - communication templates, sender accounts, automation rules, queued emails, and sent/failed communication logs
 - HR role types for `recruiter`, `hiring_manager`, and `admin`
 - row-level security policies
@@ -237,6 +239,14 @@ The Create Job screen is divided into:
 - Application
 - Team Members
 - Workflow
+
+In the Application section, each category can be set to:
+
+- Mandatory
+- Optional
+- Not required
+
+Mandatory fields appear on the applicant form and must be completed. Optional fields appear but are not required. Not required fields are hidden from applicants.
 
 ## 7. Set Up Communications
 

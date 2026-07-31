@@ -70,6 +70,12 @@ const defaultWorkflows = [
   }
 ];
 
+const requirementOptions = [
+  { value: "mandatory", label: "Mandatory" },
+  { value: "optional", label: "Optional" },
+  { value: "not_required", label: "Not required" }
+];
+
 const defaultBoardSettings = {
   id: "default",
   hero_image_url: "/assets/job-board-hero.png",
@@ -232,6 +238,11 @@ const demoJobs = [
     review_lead: "Maya Rivera",
     team_members: "Maya Rivera, Sam Lee",
     application_summary: "Resume and contact information are required for this role.",
+    summary_requirement: "optional",
+    resume_requirement: "mandatory",
+    cover_letter_requirement: "optional",
+    phone_requirement: "mandatory",
+    custom_question_requirement: "mandatory",
     require_resume: true,
     require_cover_letter: false,
     require_phone: true,
@@ -262,6 +273,11 @@ const demoJobs = [
     review_lead: "Noah Chen",
     team_members: "Noah Chen, Sam Lee",
     application_summary: "Resume and phone number are required. Cover letters are optional.",
+    summary_requirement: "optional",
+    resume_requirement: "mandatory",
+    cover_letter_requirement: "optional",
+    phone_requirement: "mandatory",
+    custom_question_requirement: "mandatory",
     require_resume: true,
     require_cover_letter: false,
     require_phone: true,
@@ -292,6 +308,11 @@ const demoJobs = [
     review_lead: "Priya Shah",
     team_members: "Priya Shah, Rina Patel",
     application_summary: "Resume is required. Include links to dashboards or analytics samples if available.",
+    summary_requirement: "not_required",
+    resume_requirement: "mandatory",
+    cover_letter_requirement: "not_required",
+    phone_requirement: "optional",
+    custom_question_requirement: "mandatory",
     require_resume: true,
     require_cover_letter: false,
     require_phone: false,
@@ -322,6 +343,11 @@ const demoJobs = [
     review_lead: "Elena Brooks",
     team_members: "Elena Brooks, Sam Lee",
     application_summary: "Resume, phone number, and licensure details are required for clinical review.",
+    summary_requirement: "optional",
+    resume_requirement: "mandatory",
+    cover_letter_requirement: "optional",
+    phone_requirement: "mandatory",
+    custom_question_requirement: "mandatory",
     require_resume: true,
     require_cover_letter: false,
     require_phone: true,
@@ -352,6 +378,11 @@ const demoJobs = [
     review_lead: "Avery Stone",
     team_members: "Avery Stone, Rina Patel",
     application_summary: "Resume and systems experience summary are required.",
+    summary_requirement: "mandatory",
+    resume_requirement: "mandatory",
+    cover_letter_requirement: "mandatory",
+    phone_requirement: "mandatory",
+    custom_question_requirement: "mandatory",
     require_resume: true,
     require_cover_letter: true,
     require_phone: true,
@@ -728,6 +759,30 @@ function workflowEntries(workflow = defaultWorkflow()) {
 function workflowLabelForApplication(application = {}) {
   const job = jobById(application.job_id);
   return workflowForJob(job).stages?.[application.status] || pipelineLabel(application.status);
+}
+
+function normalizeRequirement(value, fallback = "optional") {
+  if (value === true || value === "required") return "mandatory";
+  if (value === false) return fallback === "not_required" ? "not_required" : "optional";
+  const normalized = String(value || "").trim().toLowerCase().replaceAll("-", "_").replaceAll(" ", "_");
+  return requirementOptions.some((option) => option.value === normalized) ? normalized : fallback;
+}
+
+function requirementLabel(value) {
+  const normalized = normalizeRequirement(value);
+  return requirementOptions.find((option) => option.value === normalized)?.label || "Optional";
+}
+
+function isMandatoryRequirement(value) {
+  return normalizeRequirement(value) === "mandatory";
+}
+
+function isVisibleRequirement(value) {
+  return normalizeRequirement(value) !== "not_required";
+}
+
+function requirementForJob(job = {}, field, legacyBoolean, fallback = "optional") {
+  return normalizeRequirement(job[field], job[legacyBoolean] === true ? "mandatory" : job[legacyBoolean] === false ? fallback : fallback);
 }
 
 function normalizeDepartment(department = {}) {
@@ -1163,7 +1218,7 @@ async function loadSupabaseData() {
     try {
       jobs = await supabaseSelect(
         "jobs",
-        "select=id,title,department,department_id,subdepartment,subdepartment_id,location,work_type,status,hiring_manager,workflow_id,recruiter_name,review_lead,team_members,application_summary,require_resume,require_cover_letter,require_phone,application_question,summary,salary_range,salary_min,salary_max,job_description,requirements,benefits,seo_title,seo_description,seo_keywords,review_days,remote,skills,posted_at&order=posted_at.desc"
+        "select=id,title,department,department_id,subdepartment,subdepartment_id,location,work_type,status,hiring_manager,workflow_id,recruiter_name,review_lead,team_members,application_summary,summary_requirement,resume_requirement,cover_letter_requirement,phone_requirement,custom_question_requirement,require_resume,require_cover_letter,require_phone,application_question,summary,salary_range,salary_min,salary_max,job_description,requirements,benefits,seo_title,seo_description,seo_keywords,review_days,remote,skills,posted_at&order=posted_at.desc"
       );
     } catch (error) {
       try {
@@ -1188,6 +1243,14 @@ async function loadSupabaseData() {
         review_lead: job.review_lead || "",
         team_members: job.team_members || "",
         application_summary: job.application_summary || "Resume and contact information are requested for this role.",
+        summary_requirement: normalizeRequirement(job.summary_requirement, "optional"),
+        resume_requirement: normalizeRequirement(job.resume_requirement, job.require_resume === false ? "optional" : "mandatory"),
+        cover_letter_requirement: normalizeRequirement(
+          job.cover_letter_requirement,
+          job.require_cover_letter ? "mandatory" : "optional"
+        ),
+        phone_requirement: normalizeRequirement(job.phone_requirement, job.require_phone === false ? "optional" : "mandatory"),
+        custom_question_requirement: normalizeRequirement(job.custom_question_requirement, "mandatory"),
         require_resume: job.require_resume !== false,
         require_cover_letter: Boolean(job.require_cover_letter),
         require_phone: job.require_phone !== false,
@@ -1664,28 +1727,45 @@ function renderApplicationRequirements(job) {
   const note = $("#applicationRequirementsNote");
   const phoneField = $("#phoneApplicationField");
   const resumeField = $("#resumeApplicationField");
+  const summaryField = $("#summaryApplicationField");
   const coverField = $("#coverLetterApplicationField");
   const questionField = $("#customQuestionApplicationField");
-  if (!note || !phoneField || !resumeField || !coverField || !questionField) return;
+  if (!note || !phoneField || !resumeField || !summaryField || !coverField || !questionField) return;
 
   const phoneInput = $("input[name='phone']");
   const resumeInput = $("input[name='resume_url']");
+  const summaryInput = $("textarea[name='candidate_summary_response']");
   const coverInput = $("textarea[name='cover_note']");
   const questionInput = $("textarea[name='custom_question_response']");
+  const summaryRequirement = requirementForJob(job, "summary_requirement", "require_summary", "optional");
+  const resumeRequirement = requirementForJob(job, "resume_requirement", "require_resume", "mandatory");
+  const coverRequirement = requirementForJob(job, "cover_letter_requirement", "require_cover_letter", "optional");
+  const phoneRequirement = requirementForJob(job, "phone_requirement", "require_phone", "mandatory");
+  const questionRequirement = requirementForJob(job, "custom_question_requirement", "require_custom_question", "mandatory");
 
   note.textContent = job.application_summary || "Complete the requested fields below to apply.";
-  phoneInput.required = Boolean(job.require_phone);
-  resumeInput.required = Boolean(job.require_resume);
-  coverInput.required = Boolean(job.require_cover_letter);
-  $("span", phoneField).textContent = `Phone ${job.require_phone ? "" : "(optional)"}`.trim();
-  $("span", resumeField).textContent = `Resume URL ${job.require_resume ? "" : "(optional)"}`.trim();
-  $("span", coverField).textContent = `Cover letter / short note ${job.require_cover_letter ? "" : "(optional)"}`.trim();
+  phoneField.hidden = !isVisibleRequirement(phoneRequirement);
+  resumeField.hidden = !isVisibleRequirement(resumeRequirement);
+  summaryField.hidden = !isVisibleRequirement(summaryRequirement);
+  coverField.hidden = !isVisibleRequirement(coverRequirement);
+  phoneInput.required = isMandatoryRequirement(phoneRequirement);
+  resumeInput.required = isMandatoryRequirement(resumeRequirement);
+  summaryInput.required = isMandatoryRequirement(summaryRequirement);
+  coverInput.required = isMandatoryRequirement(coverRequirement);
+  $("span", phoneField).textContent = `Phone ${isMandatoryRequirement(phoneRequirement) ? "" : "(optional)"}`.trim();
+  $("span", resumeField).textContent = `Resume URL ${isMandatoryRequirement(resumeRequirement) ? "" : "(optional)"}`.trim();
+  $("span", summaryField).textContent = `Candidate summary ${isMandatoryRequirement(summaryRequirement) ? "" : "(optional)"}`.trim();
+  $("span", coverField).textContent = `Cover letter ${isMandatoryRequirement(coverRequirement) ? "" : "(optional)"}`.trim();
+  if (!isVisibleRequirement(phoneRequirement)) phoneInput.value = "";
+  if (!isVisibleRequirement(resumeRequirement)) resumeInput.value = "";
+  if (!isVisibleRequirement(summaryRequirement)) summaryInput.value = "";
+  if (!isVisibleRequirement(coverRequirement)) coverInput.value = "";
 
   const question = String(job.application_question || "").trim();
-  questionField.hidden = !question;
-  if (question) {
+  questionField.hidden = !question || !isVisibleRequirement(questionRequirement);
+  if (question && isVisibleRequirement(questionRequirement)) {
     $("#customQuestionLabel").textContent = question;
-    questionInput.required = true;
+    questionInput.required = isMandatoryRequirement(questionRequirement);
   } else {
     questionInput.required = false;
     questionInput.value = "";
@@ -1848,6 +1928,11 @@ function currentJobDraft() {
       team_members: "",
       workflow_id: defaultWorkflow().id,
       application_summary: "",
+      summary_requirement: "optional",
+      resume_requirement: "mandatory",
+      cover_letter_requirement: "optional",
+      phone_requirement: "mandatory",
+      custom_question_requirement: "mandatory",
       require_resume: true,
       require_cover_letter: false,
       require_phone: true,
@@ -1885,9 +1970,14 @@ function currentJobDraft() {
     workflow_id: workflow.id,
     workflow_name: workflow.name,
     application_summary: String(data.application_summary || "").trim(),
-    require_resume: data.require_resume === "required",
-    require_cover_letter: data.require_cover_letter === "required",
-    require_phone: data.require_phone === "required",
+    summary_requirement: normalizeRequirement(data.summary_requirement, "optional"),
+    resume_requirement: normalizeRequirement(data.resume_requirement, "mandatory"),
+    cover_letter_requirement: normalizeRequirement(data.cover_letter_requirement, "optional"),
+    phone_requirement: normalizeRequirement(data.phone_requirement, "mandatory"),
+    custom_question_requirement: normalizeRequirement(data.custom_question_requirement, "mandatory"),
+    require_resume: isMandatoryRequirement(data.resume_requirement),
+    require_cover_letter: isMandatoryRequirement(data.cover_letter_requirement),
+    require_phone: isMandatoryRequirement(data.phone_requirement),
     application_question: String(data.application_question || "").trim(),
     salary_min: salaryMin,
     salary_max: salaryMax,
@@ -1958,9 +2048,11 @@ function renderJobDraftPreview() {
         <h4>Application</h4>
         ${renderTextBlock(draft.application_summary, "Application requirements will appear here.")}
         <div class="tag-row">
-          <span class="tag">Resume ${draft.require_resume ? "required" : "optional"}</span>
-          <span class="tag">Cover letter ${draft.require_cover_letter ? "required" : "optional"}</span>
-          <span class="tag">Phone ${draft.require_phone ? "required" : "optional"}</span>
+          <span class="tag">Summary: ${escapeHtml(requirementLabel(draft.summary_requirement))}</span>
+          <span class="tag">Resume: ${escapeHtml(requirementLabel(draft.resume_requirement))}</span>
+          <span class="tag">Cover letter: ${escapeHtml(requirementLabel(draft.cover_letter_requirement))}</span>
+          <span class="tag">Phone: ${escapeHtml(requirementLabel(draft.phone_requirement))}</span>
+          <span class="tag">Custom question: ${escapeHtml(requirementLabel(draft.custom_question_requirement))}</span>
         </div>
       </section>
       <section class="description-block">
@@ -4099,6 +4191,7 @@ async function handleApplicationSubmit(event) {
     email: data.email.trim(),
     phone: data.phone.trim(),
     resume_url: data.resume_url.trim(),
+    candidate_summary_response: String(data.candidate_summary_response || "").trim(),
     cover_note: data.cover_note.trim(),
     custom_question_response: String(data.custom_question_response || "").trim(),
     status: "new",
@@ -4124,9 +4217,14 @@ async function handleApplicationSubmit(event) {
       try {
         createdRows = await supabaseInsert("applications", {
           ...baseApplicationPayload,
-          application_answers: selectedJob.application_question
-            ? { [selectedJob.application_question]: application.custom_question_response }
-            : {}
+          application_answers: {
+            ...(application.candidate_summary_response
+              ? { "Candidate summary": application.candidate_summary_response }
+              : {}),
+            ...(selectedJob.application_question && application.custom_question_response
+              ? { [selectedJob.application_question]: application.custom_question_response }
+              : {})
+          }
         });
       } catch (error) {
         createdRows = await supabaseInsert("applications", baseApplicationPayload);
@@ -4172,9 +4270,14 @@ async function handleJobSubmit(event) {
     review_lead: String(data.review_lead || "").trim(),
     team_members: String(data.team_members || "").trim(),
     application_summary: String(data.application_summary || "").trim(),
-    require_resume: data.require_resume === "required",
-    require_cover_letter: data.require_cover_letter === "required",
-    require_phone: data.require_phone === "required",
+    summary_requirement: normalizeRequirement(data.summary_requirement, "optional"),
+    resume_requirement: normalizeRequirement(data.resume_requirement, "mandatory"),
+    cover_letter_requirement: normalizeRequirement(data.cover_letter_requirement, "optional"),
+    phone_requirement: normalizeRequirement(data.phone_requirement, "mandatory"),
+    custom_question_requirement: normalizeRequirement(data.custom_question_requirement, "mandatory"),
+    require_resume: isMandatoryRequirement(data.resume_requirement),
+    require_cover_letter: isMandatoryRequirement(data.cover_letter_requirement),
+    require_phone: isMandatoryRequirement(data.phone_requirement),
     application_question: String(data.application_question || "").trim(),
     summary: summarizeText(jobDescription) || "Details will be shared during screening.",
     salary_min: salaryMin,
@@ -4216,6 +4319,11 @@ async function handleJobSubmit(event) {
         review_lead: job.review_lead || null,
         team_members: job.team_members || null,
         application_summary: job.application_summary || null,
+        summary_requirement: job.summary_requirement,
+        resume_requirement: job.resume_requirement,
+        cover_letter_requirement: job.cover_letter_requirement,
+        phone_requirement: job.phone_requirement,
+        custom_question_requirement: job.custom_question_requirement,
         require_resume: job.require_resume,
         require_cover_letter: job.require_cover_letter,
         require_phone: job.require_phone,

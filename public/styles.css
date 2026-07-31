@@ -533,6 +533,70 @@ main {
   gap: 16px;
 }
 
+.application-requirement-list {
+  display: grid;
+  gap: 10px;
+}
+
+.application-requirement-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.78fr) minmax(320px, 1.22fr);
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  padding: 12px;
+}
+
+.application-requirement-row span,
+.application-requirement-row small {
+  display: block;
+}
+
+.application-requirement-row small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.requirement-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.requirement-options label {
+  display: block;
+  min-width: 0;
+}
+
+.requirement-options input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.requirement-options span {
+  display: grid;
+  place-items: center;
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f1f4f6;
+  color: #6f7f89;
+  padding: 0 8px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.requirement-options input:checked + span {
+  border-color: #6da77d;
+  background: #e7f5ed;
+  color: #1f6b43;
+}
+
 .form-section {
   display: grid;
   gap: 12px;
@@ -1696,9 +1760,15 @@ tr.is-selected {
   gap: 6px;
 }
 
+.jobs-list-panel td:last-child .pipeline-chip-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(92px, 1fr));
+}
+
 .pipeline-chip {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   min-height: 28px;
   border-radius: 999px;
@@ -2001,7 +2071,13 @@ td strong {
   .pipeline-board,
   .candidate-overview-grid,
   .stage-automation-grid,
-  .pipeline-automation-preview {
+  .pipeline-automation-preview,
+  .application-requirement-row {
+    grid-template-columns: 1fr;
+  }
+
+  .requirement-options,
+  .jobs-list-panel td:last-child .pipeline-chip-row {
     grid-template-columns: 1fr;
   }
 

@@ -20,7 +20,8 @@ const requiredFiles = [
   "supabase/migrations/20260730200000_pipeline_settings.sql",
   "supabase/migrations/20260730210000_job_content_sections.sql",
   "supabase/migrations/20260731120000_communications.sql",
-  "supabase/migrations/20260731130000_workflows.sql"
+  "supabase/migrations/20260731130000_workflows.sql",
+  "supabase/migrations/20260731133000_application_requirement_levels.sql"
 ];
 
 const root = process.cwd();
@@ -31,6 +32,7 @@ for (const file of requiredFiles) {
 
 const html = await readFile(path.join(root, "public/index.html"), "utf8");
 const app = await readFile(path.join(root, "public/app.js"), "utf8");
+const css = await readFile(path.join(root, "public/styles.css"), "utf8");
 const settingsSql = await readFile(
   path.join(root, "supabase/migrations/20260730170000_job_board_settings.sql"),
   "utf8"
@@ -59,6 +61,10 @@ const workflowsSql = await readFile(
   path.join(root, "supabase/migrations/20260731130000_workflows.sql"),
   "utf8"
 );
+const requirementLevelsSql = await readFile(
+  path.join(root, "supabase/migrations/20260731133000_application_requirement_levels.sql"),
+  "utf8"
+);
 
 const checks = [
   [html.includes("Welcome to Bright Harbor Careers."), "Landing chooser"],
@@ -77,9 +83,11 @@ const checks = [
   [html.includes("hrJobSearch") && html.includes("showJobCreate") && app.includes("hrJobQuery"), "HR jobs search and create control"],
   [html.includes("showJobPreview") && html.includes("jobPreviewPanel") && app.includes("openJobPreview"), "On-demand job preview"],
   [html.includes("job-create-subnav") && html.includes('data-job-create-tab="description"'), "Create-job section navigation"],
-  [html.includes('data-job-create-tab="application"') && html.includes('name="application_summary"'), "Create-job application settings"],
+  [html.includes('data-job-create-tab="application"') && html.includes("application-requirement-list"), "Create-job application settings"],
+  [html.includes('value="mandatory"') && html.includes('value="not_required"'), "Three-state application requirements"],
   [html.includes('data-job-create-tab="team"') && html.includes('name="team_members"'), "Create-job team members settings"],
   [html.includes('data-job-create-tab="workflow"') && html.includes("jobWorkflowSelect"), "Create-job workflow selection"],
+  [css.includes(".jobs-list-panel td:last-child .pipeline-chip-row") && css.includes("repeat(4, minmax"), "Equal-width job pipeline preview"],
   [html.includes('name="salary_min"') && html.includes('name="salary_max"'), "Salary range fields"],
   [html.includes('name="job_description"') && html.includes('name="requirements"') && html.includes('name="benefits"'), "Sectioned job content fields"],
   [html.includes('name="seo_keywords"') && app.includes("parseKeywords"), "SEO keyword entry"],
@@ -90,6 +98,7 @@ const checks = [
   [html.includes("pipelineSettingsForm") && app.includes("handlePipelineSettingsSubmit"), "Pipeline settings form"],
   [html.includes("workflowSettingsButton") && app.includes("handleWorkflowSubmit"), "Admin workflow settings"],
   [workflowsSql.includes("create table if not exists public.workflows") && workflowsSql.includes("workflow_id"), "Workflow persistence"],
+  [requirementLevelsSql.includes("resume_requirement") && app.includes("normalizeRequirement"), "Application requirement level persistence"],
   [html.includes("communicationsSettingsButton") && html.includes("communicationTemplateForm"), "Communications settings module"],
   [html.includes("templatesTable") && app.includes("handleCommunicationTemplateSubmit"), "Communication template library"],
   [html.includes("automationRulesTable") && app.includes("handleAutomationRuleSubmit"), "Communication automation rules"],
