@@ -34,6 +34,42 @@ const defaultPipelineLabels = {
   offer: "Offer"
 };
 
+const defaultWorkflows = [
+  {
+    id: "workflow-standard",
+    name: "Standard hiring",
+    status: "active",
+    stages: {
+      new: "New",
+      screening: "Screening",
+      interview: "Interview",
+      offer: "Offer"
+    }
+  },
+  {
+    id: "workflow-clinical",
+    name: "Clinical hiring",
+    status: "active",
+    stages: {
+      new: "Applied",
+      screening: "Credential review",
+      interview: "Clinical interview",
+      offer: "Offer"
+    }
+  },
+  {
+    id: "workflow-high-volume",
+    name: "High-volume hiring",
+    status: "active",
+    stages: {
+      new: "Applied",
+      screening: "Phone screen",
+      interview: "Team interview",
+      offer: "Ready to offer"
+    }
+  }
+];
+
 const defaultBoardSettings = {
   id: "default",
   hero_image_url: "/assets/job-board-hero.png",
@@ -191,6 +227,15 @@ const demoJobs = [
     work_type: "Full Time",
     status: "published",
     hiring_manager: "Maya Rivera",
+    workflow_id: "workflow-standard",
+    recruiter_name: "Sam Lee",
+    review_lead: "Maya Rivera",
+    team_members: "Maya Rivera, Sam Lee",
+    application_summary: "Resume and contact information are required for this role.",
+    require_resume: true,
+    require_cover_letter: false,
+    require_phone: true,
+    application_question: "Share one recruiting process improvement you have led.",
     summary:
       "Lead recruiting strategy for clinical and operations roles while building a thoughtful candidate experience across every touchpoint.",
     salary_range: "$96k - $118k",
@@ -212,6 +257,15 @@ const demoJobs = [
     work_type: "Full Time",
     status: "published",
     hiring_manager: "Noah Chen",
+    workflow_id: "workflow-standard",
+    recruiter_name: "Sam Lee",
+    review_lead: "Noah Chen",
+    team_members: "Noah Chen, Sam Lee",
+    application_summary: "Resume and phone number are required. Cover letters are optional.",
+    require_resume: true,
+    require_cover_letter: false,
+    require_phone: true,
+    application_question: "What client partnership experience is most relevant to this role?",
     summary:
       "Support employer partners, track service quality, and turn hiring insights into smoother client operations.",
     salary_range: "$74k - $88k",
@@ -233,6 +287,15 @@ const demoJobs = [
     work_type: "Full Time",
     status: "published",
     hiring_manager: "Priya Shah",
+    workflow_id: "workflow-high-volume",
+    recruiter_name: "Rina Patel",
+    review_lead: "Priya Shah",
+    team_members: "Priya Shah, Rina Patel",
+    application_summary: "Resume is required. Include links to dashboards or analytics samples if available.",
+    require_resume: true,
+    require_cover_letter: false,
+    require_phone: false,
+    application_question: "Which analytics tools have you used most recently?",
     summary:
       "Build dashboards for recruiting funnels, capacity planning, and equitable hiring outcomes across the organization.",
     salary_range: "$90k - $110k",
@@ -254,6 +317,15 @@ const demoJobs = [
     work_type: "Part Time",
     status: "published",
     hiring_manager: "Elena Brooks",
+    workflow_id: "workflow-clinical",
+    recruiter_name: "Sam Lee",
+    review_lead: "Elena Brooks",
+    team_members: "Elena Brooks, Sam Lee",
+    application_summary: "Resume, phone number, and licensure details are required for clinical review.",
+    require_resume: true,
+    require_cover_letter: false,
+    require_phone: true,
+    application_question: "List any relevant licenses, certifications, or scheduling constraints.",
     summary:
       "Coordinate candidate onboarding, licensing milestones, and program staffing for a growing clinical team.",
     salary_range: "$38 - $44/hr",
@@ -275,6 +347,15 @@ const demoJobs = [
     work_type: "Full Time",
     status: "draft",
     hiring_manager: "Avery Stone",
+    workflow_id: "workflow-standard",
+    recruiter_name: "Rina Patel",
+    review_lead: "Avery Stone",
+    team_members: "Avery Stone, Rina Patel",
+    application_summary: "Resume and systems experience summary are required.",
+    require_resume: true,
+    require_cover_letter: true,
+    require_phone: true,
+    application_question: "Which HR systems have you administered?",
     summary:
       "Configure HR systems, maintain permissions, and keep recruiting data clean across integrations.",
     salary_range: "$86k - $103k",
@@ -413,18 +494,21 @@ const state = {
   boardSettings: readLocalBoardSettings(),
   departments: readLocalDepartments(),
   pipelineSettings: readLocalPipelineSettings(),
+  workflows: readLocalWorkflows(),
   communicationTemplates: readLocalCommunicationTemplates(),
   automationRules: readLocalAutomationRules(),
   senderAccounts: readLocalSenderAccounts(),
   communications: readLocalCommunications(),
   selectedTemplateId: "",
   selectedAutomationRuleId: "",
+  selectedWorkflowId: "",
   selectedCandidateId: demoApplications[0]?.id || "",
   candidateProfileTab: "communications",
   communicationQuery: "",
   manualTemplateId: "",
   manualSubject: "",
   manualBody: "",
+  jobCreateTab: "description",
   jobDetailOpen: false,
   applicationOpen: false,
   filters: {
@@ -570,6 +654,80 @@ function pipelineEntries() {
 
 function pipelineLabel(stage) {
   return pipelineLabels()[stage] || formatStatus(stage);
+}
+
+function normalizeWorkflow(workflow = {}) {
+  const sourceStages = workflow.stages || workflow;
+  const stages = pipelineStages.reduce((labels, stage) => {
+    const value = String(sourceStages?.[stage] || "").trim();
+    return {
+      ...labels,
+      [stage]: value || defaultPipelineLabels[stage]
+    };
+  }, {});
+
+  return {
+    id: String(workflow.id || newClientId("workflow")),
+    name: String(workflow.name || "Custom workflow").trim(),
+    status: workflow.status === "inactive" ? "inactive" : "active",
+    stages,
+    created_at: workflow.created_at || "",
+    updated_at: workflow.updated_at || ""
+  };
+}
+
+function normalizeWorkflows(workflows = []) {
+  return workflows
+    .map(normalizeWorkflow)
+    .filter((workflow) => workflow.id && workflow.name)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function readLocalWorkflows() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("bhc-workflows") || "null");
+    return normalizeWorkflows(Array.isArray(saved) && saved.length ? saved : defaultWorkflows);
+  } catch (error) {
+    return normalizeWorkflows(defaultWorkflows);
+  }
+}
+
+function saveLocalWorkflows(workflows) {
+  try {
+    localStorage.setItem("bhc-workflows", JSON.stringify(workflows));
+  } catch (error) {
+    return;
+  }
+}
+
+function activeWorkflows() {
+  return state.workflows.filter((workflow) => workflow.status === "active");
+}
+
+function defaultWorkflow() {
+  return (
+    activeWorkflows().find((workflow) => workflow.id === "workflow-standard") ||
+    activeWorkflows()[0] ||
+    normalizeWorkflow(defaultWorkflows[0])
+  );
+}
+
+function workflowById(id) {
+  return state.workflows.find((workflow) => workflow.id === id) || null;
+}
+
+function workflowForJob(job = {}) {
+  return workflowById(job.workflow_id) || defaultWorkflow();
+}
+
+function workflowEntries(workflow = defaultWorkflow()) {
+  const labels = workflow?.stages || defaultPipelineLabels;
+  return pipelineStages.map((stage) => [stage, labels[stage] || defaultPipelineLabels[stage]]);
+}
+
+function workflowLabelForApplication(application = {}) {
+  const job = jobById(application.job_id);
+  return workflowForJob(job).stages?.[application.status] || pipelineLabel(application.status);
 }
 
 function normalizeDepartment(department = {}) {
@@ -996,13 +1154,16 @@ async function loadSupabaseData() {
   try {
     await loadJobBoardSettings();
     await loadDepartments();
-    if (state.session?.accessToken) await loadPipelineSettings();
+    if (state.session?.accessToken) {
+      await loadPipelineSettings();
+      await loadWorkflows();
+    }
 
     let jobs = [];
     try {
       jobs = await supabaseSelect(
         "jobs",
-        "select=id,title,department,department_id,subdepartment,subdepartment_id,location,work_type,status,hiring_manager,summary,salary_range,salary_min,salary_max,job_description,requirements,benefits,seo_title,seo_description,seo_keywords,review_days,remote,skills,posted_at&order=posted_at.desc"
+        "select=id,title,department,department_id,subdepartment,subdepartment_id,location,work_type,status,hiring_manager,workflow_id,recruiter_name,review_lead,team_members,application_summary,require_resume,require_cover_letter,require_phone,application_question,summary,salary_range,salary_min,salary_max,job_description,requirements,benefits,seo_title,seo_description,seo_keywords,review_days,remote,skills,posted_at&order=posted_at.desc"
       );
     } catch (error) {
       try {
@@ -1022,6 +1183,15 @@ async function loadSupabaseData() {
     if (Array.isArray(jobs) && jobs.length) {
       state.jobs = jobs.map((job) => ({
         ...job,
+        workflow_id: job.workflow_id || defaultWorkflow().id,
+        recruiter_name: job.recruiter_name || "",
+        review_lead: job.review_lead || "",
+        team_members: job.team_members || "",
+        application_summary: job.application_summary || "Resume and contact information are requested for this role.",
+        require_resume: job.require_resume !== false,
+        require_cover_letter: Boolean(job.require_cover_letter),
+        require_phone: job.require_phone !== false,
+        application_question: job.application_question || "",
         job_description: job.job_description || job.summary || "",
         requirements: job.requirements || "",
         benefits: job.benefits || "",
@@ -1127,6 +1297,22 @@ async function loadPipelineSettings() {
     if (settings) {
       state.pipelineSettings = normalizePipelineSettings(settings);
       saveLocalPipelineSettings(state.pipelineSettings);
+    }
+  } catch (error) {
+    return;
+  }
+}
+
+async function loadWorkflows() {
+  try {
+    const workflows = await supabaseSelect(
+      "workflows",
+      "select=id,name,status,stages,created_at,updated_at&order=name.asc",
+      true
+    );
+    if (Array.isArray(workflows) && workflows.length) {
+      state.workflows = normalizeWorkflows(workflows);
+      saveLocalWorkflows(state.workflows);
     }
   } catch (error) {
     return;
@@ -1386,6 +1572,7 @@ function renderApplicantPortal() {
   $("#jobDetail").innerHTML = selectedJob ? renderJobDetail(selectedJob) : renderNoJobDetail();
   $("#jobDetailPage").hidden = !state.jobDetailOpen || !selectedJob;
   $("#applicationPanel").hidden = !state.applicationOpen || !selectedJob;
+  renderApplicationRequirements(selectedJob);
 }
 
 function renderJobCard(job) {
@@ -1471,10 +1658,45 @@ function renderNoJobDetail() {
   return `<div class="empty-state">Select a published role to view details.</div>`;
 }
 
+function renderApplicationRequirements(job) {
+  if (!job) return;
+
+  const note = $("#applicationRequirementsNote");
+  const phoneField = $("#phoneApplicationField");
+  const resumeField = $("#resumeApplicationField");
+  const coverField = $("#coverLetterApplicationField");
+  const questionField = $("#customQuestionApplicationField");
+  if (!note || !phoneField || !resumeField || !coverField || !questionField) return;
+
+  const phoneInput = $("input[name='phone']");
+  const resumeInput = $("input[name='resume_url']");
+  const coverInput = $("textarea[name='cover_note']");
+  const questionInput = $("textarea[name='custom_question_response']");
+
+  note.textContent = job.application_summary || "Complete the requested fields below to apply.";
+  phoneInput.required = Boolean(job.require_phone);
+  resumeInput.required = Boolean(job.require_resume);
+  coverInput.required = Boolean(job.require_cover_letter);
+  $("span", phoneField).textContent = `Phone ${job.require_phone ? "" : "(optional)"}`.trim();
+  $("span", resumeField).textContent = `Resume URL ${job.require_resume ? "" : "(optional)"}`.trim();
+  $("span", coverField).textContent = `Cover letter / short note ${job.require_cover_letter ? "" : "(optional)"}`.trim();
+
+  const question = String(job.application_question || "").trim();
+  questionField.hidden = !question;
+  if (question) {
+    $("#customQuestionLabel").textContent = question;
+    questionInput.required = true;
+  } else {
+    questionInput.required = false;
+    questionInput.value = "";
+  }
+}
+
 function renderHrWorkspace() {
   renderHrSections();
   renderProfileMenu();
   renderJobsToolbar();
+  renderJobCreateTabs();
   renderSettingsSections();
   renderRoleCard();
   renderAuthPanel();
@@ -1489,6 +1711,7 @@ function renderHrWorkspace() {
   renderBoardSettingsForm();
   renderDepartmentSettings();
   renderPipelineSettingsForm();
+  renderWorkflowSettings();
   renderCommunicationSettings();
   renderProfileForm();
   renderPermissions();
@@ -1560,6 +1783,9 @@ function syncRoleControls() {
   $$("#pipelineSettingsForm input, #pipelineSettingsForm button").forEach((control) => {
     control.disabled = !canManageBoard;
   });
+  $$("#workflowSettingsForm input, #workflowSettingsForm select, #workflowSettingsForm button").forEach((control) => {
+    control.disabled = !canManageBoard;
+  });
   $$("#communicationTemplateForm input, #communicationTemplateForm select, #communicationTemplateForm textarea, #communicationTemplateForm button, #automationRuleForm input, #automationRuleForm select, #automationRuleForm button").forEach((control) => {
     control.disabled = !canManageCommunications;
   });
@@ -1574,13 +1800,27 @@ function renderJobsToolbar() {
   const createPanel = $("#jobCreatePanel");
   const tableWrap = $("#jobsTableWrap");
   const createButton = $("#showJobCreate");
+  const toolbar = $("#jobsToolbar");
+  const jobsListHeader = $("#jobsListHeader");
   const searchField = search?.closest(".job-search-field");
   if (search && document.activeElement !== search) search.value = state.hrJobQuery;
   createPanel.hidden = !state.jobCreateOpen;
   tableWrap.hidden = state.jobCreateOpen;
+  if (toolbar) toolbar.hidden = state.jobCreateOpen;
+  if (jobsListHeader) jobsListHeader.hidden = state.jobCreateOpen;
   if (searchField) searchField.hidden = state.jobCreateOpen;
   createButton.hidden = state.jobCreateOpen;
   createButton.setAttribute("aria-expanded", String(state.jobCreateOpen));
+}
+
+function renderJobCreateTabs() {
+  $$("[data-job-create-tab]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.jobCreateTab === state.jobCreateTab);
+  });
+  $$("[data-job-create-panel]").forEach((panel) => {
+    panel.hidden = panel.dataset.jobCreatePanel !== state.jobCreateTab;
+  });
+  renderJobWorkflowPreview();
 }
 
 function renderSettingsSections() {
@@ -1603,6 +1843,15 @@ function currentJobDraft() {
       work_type: "Full Time",
       status: "draft",
       hiring_manager: "Hiring manager pending",
+      recruiter_name: "",
+      review_lead: "",
+      team_members: "",
+      workflow_id: defaultWorkflow().id,
+      application_summary: "",
+      require_resume: true,
+      require_cover_letter: false,
+      require_phone: true,
+      application_question: "",
       salary_min: null,
       salary_max: null,
       salary_range: "Shared during screening",
@@ -1618,6 +1867,7 @@ function currentJobDraft() {
   const data = Object.fromEntries(new FormData(form));
   const department = getDepartmentById(data.department_id);
   const subdepartment = getDepartmentById(data.subdepartment_id);
+  const workflow = workflowById(data.workflow_id) || defaultWorkflow();
   const [salaryMin, salaryMax] = normalizeSalaryValues(numberOrNull(data.salary_min), numberOrNull(data.salary_max));
   const jobDescription = String(data.job_description || "").trim();
 
@@ -1629,6 +1879,16 @@ function currentJobDraft() {
     work_type: data.work_type || "Full Time",
     status: data.status || "draft",
     hiring_manager: String(data.hiring_manager || "").trim() || "Hiring manager pending",
+    recruiter_name: String(data.recruiter_name || "").trim(),
+    review_lead: String(data.review_lead || "").trim(),
+    team_members: String(data.team_members || "").trim(),
+    workflow_id: workflow.id,
+    workflow_name: workflow.name,
+    application_summary: String(data.application_summary || "").trim(),
+    require_resume: data.require_resume === "required",
+    require_cover_letter: data.require_cover_letter === "required",
+    require_phone: data.require_phone === "required",
+    application_question: String(data.application_question || "").trim(),
     salary_min: salaryMin,
     salary_max: salaryMax,
     salary_range: buildSalaryRange(salaryMin, salaryMax),
@@ -1673,6 +1933,10 @@ function renderJobDraftPreview() {
           <dt>Hiring manager</dt>
           <dd>${escapeHtml(draft.hiring_manager)}</dd>
         </div>
+        <div>
+          <dt>Workflow</dt>
+          <dd>${escapeHtml(draft.workflow_name || workflowForJob(draft).name)}</dd>
+        </div>
       </dl>
       <section class="description-block">
         <h4>Job Description</h4>
@@ -1689,6 +1953,29 @@ function renderJobDraftPreview() {
       <section class="description-block">
         <h4>SEO keywords</h4>
         <div class="tag-row">${keywordMarkup}</div>
+      </section>
+      <section class="description-block">
+        <h4>Application</h4>
+        ${renderTextBlock(draft.application_summary, "Application requirements will appear here.")}
+        <div class="tag-row">
+          <span class="tag">Resume ${draft.require_resume ? "required" : "optional"}</span>
+          <span class="tag">Cover letter ${draft.require_cover_letter ? "required" : "optional"}</span>
+          <span class="tag">Phone ${draft.require_phone ? "required" : "optional"}</span>
+        </div>
+      </section>
+      <section class="description-block">
+        <h4>Team Members</h4>
+        <p>${escapeHtml(draft.recruiter_name || "Primary recruiter pending")}</p>
+        ${draft.team_members ? renderTextBlock(draft.team_members, "") : `<p class="summary">Additional review team members can be assigned.</p>`}
+        ${draft.review_lead ? `<p>${escapeHtml(draft.review_lead)}</p>` : ""}
+      </section>
+      <section class="description-block">
+        <h4>Workflow</h4>
+        <div class="pipeline-chip-row">
+          ${workflowEntries(workflowById(draft.workflow_id) || defaultWorkflow())
+            .map(([stage, label]) => `<span class="pipeline-chip">${escapeHtml(label)}</span>`)
+            .join("")}
+        </div>
       </section>
     </div>
   `;
@@ -1778,7 +2065,8 @@ function renderJobsTable() {
   $("#jobsTable").innerHTML = jobs
     .map((job) => {
       const applications = state.applications.filter((application) => application.job_id === job.id);
-      const pipelineMarkup = pipelineEntries()
+      const workflow = workflowForJob(job);
+      const pipelineMarkup = workflowEntries(workflow)
         .map(([stage, label]) => {
           const count = applications.filter((application) => application.status === stage).length;
           return `<span class="pipeline-chip">${escapeHtml(label)} <b>${count}</b></span>`;
@@ -1792,6 +2080,7 @@ function renderJobsTable() {
               <span>${escapeHtml(job.department)}</span>
               ${job.subdepartment ? `<span>${escapeHtml(job.subdepartment)}</span>` : ""}
               <span>${escapeHtml(job.location)}</span>
+              <span>${escapeHtml(workflow.name)}</span>
             </div>
           </td>
           <td>${escapeHtml(job.hiring_manager || "Unassigned")}</td>
@@ -1832,7 +2121,7 @@ function renderCandidatesTable() {
             </div>
           </td>
           <td>${escapeHtml(job?.title || "General application")}</td>
-          <td><span class="stage-pill">${escapeHtml(pipelineLabel(application.status))}</span></td>
+          <td><span class="stage-pill">${escapeHtml(workflowLabelForApplication(application))}</span></td>
           <td>${escapeHtml(application.source || "Career site")}</td>
           <td>${escapeHtml(application.applied_at || "Not recorded")}</td>
           <td>
@@ -1859,7 +2148,7 @@ function renderCandidateProfile() {
   const job = jobById(application.job_id);
   panel.hidden = false;
   $("#candidateProfileName").textContent = application.full_name;
-  $("#candidateProfileMeta").textContent = `${job?.title || "General application"} · ${pipelineLabel(application.status)}`;
+  $("#candidateProfileMeta").textContent = `${job?.title || "General application"} · ${workflowLabelForApplication(application)}`;
   $$("#candidateProfilePanel [data-candidate-tab]").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.candidateTab === state.candidateProfileTab);
   });
@@ -1885,7 +2174,7 @@ function renderCandidateOverview(application, job) {
       </article>
       <article class="candidate-detail-card">
         <span>Pipeline</span>
-        <strong>${escapeHtml(pipelineLabel(application.status))}</strong>
+        <strong>${escapeHtml(workflowLabelForApplication(application))}</strong>
         <p>${escapeHtml(application.source || "Career site")}</p>
       </article>
       <article class="candidate-detail-card">
@@ -2303,7 +2592,7 @@ function renderCandidateCard(application) {
         ? "Submit scorecard"
         : "View profile"
       : nextStage
-        ? `Move to ${pipelineLabel(nextStage)}`
+        ? `Move to ${workflowForJob(job).stages?.[nextStage] || pipelineLabel(nextStage)}`
         : "Keep warm";
   return `
     <article class="candidate-card">
@@ -2315,7 +2604,7 @@ function renderCandidateCard(application) {
         </div>
       </div>
       <div class="tag-row">
-        <span class="stage-pill">${escapeHtml(pipelineLabel(application.status))}</span>
+        <span class="stage-pill">${escapeHtml(workflowLabelForApplication(application))}</span>
         <span class="tag">${escapeHtml(String(application.score || 72))} match</span>
       </div>
       <div class="candidate-actions">
@@ -2398,6 +2687,79 @@ function renderPipelineAutomationPreview() {
     .join("");
 }
 
+function renderJobWorkflowPreview() {
+  const preview = $("#jobWorkflowPreview");
+  const select = $("#jobWorkflowSelect");
+  if (!preview || !select) return;
+
+  const workflow = workflowById(select.value) || defaultWorkflow();
+  preview.innerHTML = `
+    <article class="workflow-preview-card">
+      <div>
+        <span>Selected workflow</span>
+        <strong>${escapeHtml(workflow.name)}</strong>
+      </div>
+      <div class="pipeline-chip-row">
+        ${workflowEntries(workflow)
+          .map(([, label]) => `<span class="pipeline-chip">${escapeHtml(label)}</span>`)
+          .join("")}
+      </div>
+    </article>
+  `;
+}
+
+function renderWorkflowSettings() {
+  const form = $("#workflowSettingsForm");
+  const table = $("#workflowTable");
+  if (!form || !table) return;
+
+  const selected =
+    state.selectedWorkflowId === "new-workflow"
+      ? normalizeWorkflow({ id: "", name: "", status: "active", stages: defaultPipelineLabels })
+      : workflowById(state.selectedWorkflowId) ||
+        state.workflows[0] ||
+        normalizeWorkflow(defaultWorkflows[0]);
+  if (!state.selectedWorkflowId && selected.id) state.selectedWorkflowId = selected.id;
+
+  table.innerHTML = state.workflows.length
+    ? state.workflows
+        .map(
+          (workflow) => `
+            <tr class="${workflow.id === state.selectedWorkflowId ? "is-selected" : ""}">
+              <td>
+                <strong>${escapeHtml(workflow.name)}</strong>
+                <div class="table-meta">
+                  ${workflowEntries(workflow)
+                    .map(([, label]) => `<span>${escapeHtml(label)}</span>`)
+                    .join("")}
+                </div>
+              </td>
+              <td><span class="status-pill ${escapeHtml(workflow.status)}">${escapeHtml(formatStatus(workflow.status))}</span></td>
+              <td>
+                <button class="table-action" type="button" data-select-workflow="${escapeHtml(workflow.id)}">
+                  Edit
+                </button>
+              </td>
+            </tr>
+          `
+        )
+        .join("")
+    : `
+      <tr>
+        <td colspan="3">
+          <div class="empty-state compact">No workflows have been created yet.</div>
+        </td>
+      </tr>
+    `;
+
+  form.elements.workflow_id.value = selected.id || "";
+  form.elements.name.value = selected.name || "";
+  form.elements.status.value = selected.status || "active";
+  pipelineStages.forEach((stage) => {
+    form.elements[stage].value = selected.stages?.[stage] || defaultPipelineLabels[stage];
+  });
+}
+
 function renderProfileForm() {
   const form = $("#profileForm");
   if (!form) return;
@@ -2426,6 +2788,7 @@ function populateJobDepartmentControls() {
   departmentSelect.value = selectedDepartment;
   subdepartmentSelect.disabled = !selectedDepartment || departmentSelect.disabled;
   populateSubdepartmentControls(selectedDepartment, subdepartmentSelect.value);
+  populateWorkflowControls();
 }
 
 function populateSubdepartmentControls(parentId, selectedChildId = "") {
@@ -2448,6 +2811,20 @@ function populateParentDepartmentSelect() {
   ].join("");
   select.value = parents.some((department) => department.id === selected) ? selected : "";
 }
+
+function populateWorkflowControls() {
+  const select = $("#jobWorkflowSelect");
+  if (!select) return;
+
+  const workflows = activeWorkflows();
+  const selected = workflows.some((workflow) => workflow.id === select.value) ? select.value : defaultWorkflow().id;
+  select.innerHTML = workflows.length
+    ? workflows.map((workflow) => `<option value="${escapeHtml(workflow.id)}">${escapeHtml(workflow.name)}</option>`).join("")
+    : `<option value="">Create a workflow in Settings first</option>`;
+  select.value = selected;
+  renderJobWorkflowPreview();
+}
+
 
 function renderDepartmentSettings() {
   populateParentDepartmentSelect();
@@ -3027,10 +3404,19 @@ function bindEvents() {
 
   $("#showJobCreate").addEventListener("click", () => {
     state.jobCreateOpen = true;
+    state.jobCreateTab = "description";
     renderJobsToolbar();
+    renderJobCreateTabs();
     populateJobDepartmentControls();
     renderJobDraftPreview();
     $("#jobForm input[name='title']").focus();
+  });
+
+  $$(".job-create-tab").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.jobCreateTab = button.dataset.jobCreateTab;
+      renderJobCreateTabs();
+    });
   });
 
   $("#showJobPreview").addEventListener("click", openJobPreview);
@@ -3179,9 +3565,27 @@ function bindEvents() {
     populateSubdepartmentControls(event.target.value);
     renderJobDraftPreview();
   });
+  $("#jobWorkflowSelect").addEventListener("change", () => {
+    renderJobWorkflowPreview();
+    renderJobDraftPreview();
+  });
   $("#departmentForm").addEventListener("submit", handleDepartmentSubmit);
   $("#boardSettingsForm").addEventListener("submit", handleBoardSettingsSubmit);
   $("#pipelineSettingsForm").addEventListener("submit", handlePipelineSettingsSubmit);
+  $("#workflowSettingsForm").addEventListener("submit", handleWorkflowSubmit);
+  $("#workflowTable").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-select-workflow]");
+    if (!button) return;
+    state.selectedWorkflowId = button.dataset.selectWorkflow;
+    renderWorkflowSettings();
+  });
+  $("#newWorkflowButton").addEventListener("click", () => {
+    state.selectedWorkflowId = "new-workflow";
+    renderWorkflowSettings();
+    $("#workflowSettingsForm input[name='name']").focus();
+  });
+  $("#duplicateWorkflowButton").addEventListener("click", duplicateSelectedWorkflow);
+  $("#deleteWorkflowButton").addEventListener("click", deleteSelectedWorkflow);
   $("#profileForm").addEventListener("submit", handleProfileSubmit);
   $("#showApplicationButton").addEventListener("click", () => {
     state.applicationOpen = true;
@@ -3495,6 +3899,100 @@ async function handlePipelineSettingsSubmit(event) {
   }
 }
 
+async function handleWorkflowSubmit(event) {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(event.currentTarget));
+  const workflow = normalizeWorkflow({
+    id: data.workflow_id || newClientId("workflow"),
+    name: data.name,
+    status: data.status,
+    stages: pipelineStages.reduce(
+      (labels, stage) => ({
+        ...labels,
+        [stage]: data[stage]
+      }),
+      {}
+    )
+  });
+
+  const index = state.workflows.findIndex((item) => item.id === workflow.id);
+  if (index >= 0) state.workflows[index] = workflow;
+  else state.workflows.push(workflow);
+  state.workflows = normalizeWorkflows(state.workflows);
+  state.selectedWorkflowId = workflow.id;
+  saveLocalWorkflows(state.workflows);
+  populateWorkflowControls();
+  renderWorkflowSettings();
+  renderJobsTable();
+
+  try {
+    if (hasSupabase && state.session?.accessToken) {
+      const [saved] = await supabaseUpsert("workflows", workflow, true);
+      if (saved) {
+        state.workflows = normalizeWorkflows(
+          state.workflows.map((item) => (item.id === workflow.id ? saved : item))
+        );
+        saveLocalWorkflows(state.workflows);
+        populateWorkflowControls();
+        renderWorkflowSettings();
+        renderJobsTable();
+      }
+      showMessage("#workflowSettingsMessage", "Workflow saved.");
+      return;
+    }
+
+    showMessage("#workflowSettingsMessage", "Workflow saved for this preview.");
+  } catch (error) {
+    showMessage("#workflowSettingsMessage", "Workflow saved locally. Supabase save needs admin access.");
+  }
+}
+
+function duplicateSelectedWorkflow() {
+  const workflow = workflowById(state.selectedWorkflowId);
+  if (!workflow) return;
+  const copy = normalizeWorkflow({
+    ...workflow,
+    id: newClientId("workflow"),
+    name: `Copy of ${workflow.name}`
+  });
+  state.workflows.push(copy);
+  state.workflows = normalizeWorkflows(state.workflows);
+  state.selectedWorkflowId = copy.id;
+  saveLocalWorkflows(state.workflows);
+  populateWorkflowControls();
+  renderWorkflowSettings();
+  showMessage("#workflowSettingsMessage", "Workflow duplicated.");
+}
+
+async function deleteSelectedWorkflow() {
+  const workflow = workflowById(state.selectedWorkflowId);
+  if (!workflow) return;
+  if (state.workflows.length <= 1) {
+    showMessage("#workflowSettingsMessage", "Keep at least one workflow available.");
+    return;
+  }
+
+  const fallback = state.workflows.find((item) => item.id !== workflow.id) || defaultWorkflow();
+  state.workflows = state.workflows.filter((item) => item.id !== workflow.id);
+  state.jobs = state.jobs.map((job) => (job.workflow_id === workflow.id ? { ...job, workflow_id: fallback.id } : job));
+  state.selectedWorkflowId = fallback.id;
+  saveLocalWorkflows(state.workflows);
+  populateWorkflowControls();
+  renderWorkflowSettings();
+  renderJobsTable();
+
+  try {
+    if (hasSupabase && state.session?.accessToken) {
+      await supabaseDelete("workflows", `id=eq.${encodeURIComponent(workflow.id)}`, true);
+      showMessage("#workflowSettingsMessage", "Workflow deleted.");
+    } else {
+      showMessage("#workflowSettingsMessage", "Workflow deleted for this preview.");
+    }
+  } catch (error) {
+    showMessage("#workflowSettingsMessage", "Workflow deleted locally. Supabase delete needs admin access.");
+  }
+}
+
 async function handleAuthSubmit(event) {
   event.preventDefault();
   if (!hasSupabase) {
@@ -3602,6 +4100,7 @@ async function handleApplicationSubmit(event) {
     phone: data.phone.trim(),
     resume_url: data.resume_url.trim(),
     cover_note: data.cover_note.trim(),
+    custom_question_response: String(data.custom_question_response || "").trim(),
     status: "new",
     source: "Career site",
     score: 74,
@@ -3611,7 +4110,8 @@ async function handleApplicationSubmit(event) {
 
   try {
     if (hasSupabase) {
-      const [created] = await supabaseInsert("applications", {
+      let createdRows = [];
+      const baseApplicationPayload = {
         job_id: application.job_id,
         full_name: application.full_name,
         email: application.email,
@@ -3620,7 +4120,18 @@ async function handleApplicationSubmit(event) {
         cover_note: application.cover_note,
         status: application.status,
         source: application.source
-      });
+      };
+      try {
+        createdRows = await supabaseInsert("applications", {
+          ...baseApplicationPayload,
+          application_answers: selectedJob.application_question
+            ? { [selectedJob.application_question]: application.custom_question_response }
+            : {}
+        });
+      } catch (error) {
+        createdRows = await supabaseInsert("applications", baseApplicationPayload);
+      }
+      const [created] = createdRows;
       if (created?.id) application.id = created.id;
     }
     state.applications.unshift(application);
@@ -3641,6 +4152,7 @@ async function handleJobSubmit(event) {
   const data = Object.fromEntries(new FormData(event.currentTarget));
   const department = getDepartmentById(data.department_id);
   const subdepartment = getDepartmentById(data.subdepartment_id);
+  const workflow = workflowById(data.workflow_id) || defaultWorkflow();
   const [salaryMin, salaryMax] = normalizeSalaryValues(numberOrNull(data.salary_min), numberOrNull(data.salary_max));
   const jobDescription = String(data.job_description || "").trim();
   const seoKeywords = parseKeywords(data.seo_keywords);
@@ -3655,6 +4167,15 @@ async function handleJobSubmit(event) {
     work_type: data.work_type,
     status: data.status,
     hiring_manager: data.hiring_manager.trim(),
+    workflow_id: workflow.id,
+    recruiter_name: String(data.recruiter_name || "").trim(),
+    review_lead: String(data.review_lead || "").trim(),
+    team_members: String(data.team_members || "").trim(),
+    application_summary: String(data.application_summary || "").trim(),
+    require_resume: data.require_resume === "required",
+    require_cover_letter: data.require_cover_letter === "required",
+    require_phone: data.require_phone === "required",
+    application_question: String(data.application_question || "").trim(),
     summary: summarizeText(jobDescription) || "Details will be shared during screening.",
     salary_min: salaryMin,
     salary_max: salaryMax,
@@ -3690,6 +4211,15 @@ async function handleJobSubmit(event) {
       };
       const expandedJobPayload = {
         ...baseJobPayload,
+        workflow_id: job.workflow_id,
+        recruiter_name: job.recruiter_name || null,
+        review_lead: job.review_lead || null,
+        team_members: job.team_members || null,
+        application_summary: job.application_summary || null,
+        require_resume: job.require_resume,
+        require_cover_letter: job.require_cover_letter,
+        require_phone: job.require_phone,
+        application_question: job.application_question || null,
         salary_min: job.salary_min,
         salary_max: job.salary_max,
         job_description: job.job_description,

@@ -5,8 +5,9 @@ Bright Harbor Careers is a dual-sided applicant tracking system for applicants a
 - Applicants can browse an image-led job board, filter roles, view full job descriptions, and submit applications.
 - Visitors first choose between Applicant and Hiring Team.
 - Recruiters can create focused job drafts with salary ranges, sectioned descriptions, SEO keywords, and pipeline tracking.
+- Job creation is split into Description, Application, Team Members, and Workflow sections.
 - Hiring managers can review candidates and advance interview-stage applicants.
-- Admins can edit the public job board header, manage agency departments and subdepartments, and configure pipeline labels.
+- Admins can edit the public job board header, manage agency departments and subdepartments, and configure reusable workflows.
 - Admins can manage email templates, merge fields, sender accounts, and automated communication rules.
 - Recruiters can view candidate communication history, send manual emails, and resend previous messages.
 - HR users navigate Jobs, Candidates, and Reports from the top header, with Settings and profile editing in the profile menu.
@@ -108,6 +109,7 @@ supabase/migrations/20260730190000_profile_avatar.sql
 supabase/migrations/20260730200000_pipeline_settings.sql
 supabase/migrations/20260730210000_job_content_sections.sql
 supabase/migrations/20260731120000_communications.sql
+supabase/migrations/20260731130000_workflows.sql
 ```
 
 4. Paste and run each file in Supabase before moving to the next one.
@@ -124,8 +126,10 @@ This creates:
 - `job_board_settings`
 - `departments`
 - `pipeline_settings`
+- `workflows`
 - profile avatar URLs
 - salary ranges, job description sections, benefits, and SEO keywords for jobs
+- application requirement fields and team assignments for jobs
 - communication templates, sender accounts, automation rules, queued emails, and sent/failed communication logs
 - HR role types for `recruiter`, `hiring_manager`, and `admin`
 - row-level security policies
@@ -217,7 +221,24 @@ The email contains two links:
 
 Approving a request marks it approved in Supabase and attempts to send the requester a Supabase invite so they can set a password.
 
-## 6. Set Up Communications
+## 6. Set Up Workflows
+
+After running the workflows migration, sign in as an `admin` and open:
+
+```text
+Hiring Team -> profile icon -> Settings -> Workflows
+```
+
+Admins can create reusable workflows with custom labels for the four hiring stages. Job creators select one of those workflows from the Workflow section while creating a job.
+
+The Create Job screen is divided into:
+
+- Description
+- Application
+- Team Members
+- Workflow
+
+## 7. Set Up Communications
 
 After running the communications migration, sign in as an `admin` and open:
 
@@ -262,7 +283,7 @@ Bright Harbor Careers <hr@brightharbor.org>
 
 If your company later wants direct Microsoft Outlook / Microsoft 365 sending instead of Resend, the modular sending function can be updated to use Microsoft Graph without redesigning the template, automation, or candidate history screens.
 
-## 7. Create Your First HR User
+## 8. Create Your First HR User
 
 1. In Supabase, go to Authentication, then Users.
 2. Add your first HR user with their work email.
@@ -292,7 +313,7 @@ admin
 
 After that, sign in from the Hiring Team login screen with the work email as the username and the password for that Supabase user. Admin and recruiter users can create jobs and publish roles. Hiring managers can review candidates.
 
-## 8. Run Locally With Supabase
+## 9. Run Locally With Supabase
 
 If you already created `.env`, start the app normally:
 
@@ -316,7 +337,7 @@ http://localhost:5173
 
 The applicant side will read published jobs from Supabase. The HR side can write to Supabase after an HR user signs in and has the right role in `public.profiles`.
 
-## 9. Push To GitHub
+## 10. Push To GitHub
 
 If this folder is not already a Git repository:
 
@@ -341,7 +362,7 @@ git push -u origin main
 
 Run `npm run validate` and `npm run build` locally before pushing changes.
 
-## 10. Deploy With Netlify
+## 11. Deploy With Netlify
 
 In Netlify:
 
@@ -375,7 +396,7 @@ Use `hr@brightharbor.org` for `HR_APPROVAL_EMAIL`. Use your deployed Netlify URL
 
 After deployment, applicants can use the public careers site and HR users can sign in through the HR workspace.
 
-## 11. Add Your First Live Job
+## 12. Add Your First Live Job
 
 Once your HR user is an `admin` or `recruiter`:
 

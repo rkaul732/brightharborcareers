@@ -28,8 +28,8 @@ body {
   background: var(--surface);
   color: var(--ink);
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+    "Aptos", "Avenir Next", "Helvetica Neue", Arial, ui-sans-serif,
+    system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   letter-spacing: 0;
 }
 
@@ -498,10 +498,39 @@ main {
   gap: 8px;
 }
 
+.job-create-subnav {
+  display: flex;
+  justify-content: flex-start;
+  gap: 6px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.job-create-tab {
+  min-height: 38px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  padding: 0 12px;
+  font-size: 14px;
+}
+
+.job-create-tab.is-active,
+.job-create-tab:hover {
+  border-bottom-color: var(--harbor);
+  color: var(--ink);
+}
+
 .job-create-layout {
   display: grid;
   gap: 16px;
   align-items: start;
+}
+
+.job-create-tab-panel {
+  display: grid;
+  gap: 16px;
 }
 
 .form-section {
@@ -546,6 +575,32 @@ main {
 .job-preview-content {
   display: grid;
   gap: 14px;
+}
+
+.job-workflow-preview,
+.workflow-preview-card {
+  display: grid;
+  gap: 10px;
+}
+
+.workflow-preview-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 12px;
+}
+
+.workflow-preview-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.workflow-preview-card strong {
+  display: block;
+  margin-top: 4px;
 }
 
 .job-preview-content h3 {
@@ -1260,14 +1315,16 @@ button:disabled:hover {
 .job-form,
 .department-form,
 .profile-form,
-.pipeline-settings-form {
+.pipeline-settings-form,
+.workflow-settings-form {
   display: grid;
   gap: 12px;
 }
 
 .department-form,
 .profile-form,
-.pipeline-settings-form {
+.pipeline-settings-form,
+.workflow-settings-form {
   margin-bottom: 16px;
   border-bottom: 1px solid var(--line);
   padding-bottom: 16px;
@@ -1985,6 +2042,10 @@ td strong {
     flex-wrap: nowrap;
   }
 
+  .job-create-subnav {
+    overflow-x: auto;
+  }
+
   .job-search-field {
     width: min(210px, 42vw);
   }
@@ -2087,4 +2148,9 @@ td strong {
     height: 44px;
     padding: 11px;
   }
+}
+
+body,
+body * {
+  font-weight: 400 !important;
 }

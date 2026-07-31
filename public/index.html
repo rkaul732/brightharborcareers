@@ -206,6 +206,7 @@
                   <div>
                     <p class="eyebrow">Application</p>
                     <h2>Apply now</h2>
+                    <p class="summary" id="applicationRequirementsNote"></p>
                   </div>
                 </div>
                 <div class="form-grid">
@@ -217,17 +218,21 @@
                     <span>Email</span>
                     <input name="email" type="email" required autocomplete="email">
                   </label>
-                  <label class="field">
+                  <label class="field" id="phoneApplicationField">
                     <span>Phone</span>
                     <input name="phone" type="tel" autocomplete="tel">
                   </label>
-                  <label class="field">
+                  <label class="field" id="resumeApplicationField">
                     <span>Resume URL</span>
                     <input name="resume_url" type="url" placeholder="https://">
                   </label>
-                  <label class="field wide">
-                    <span>Short note</span>
+                  <label class="field wide" id="coverLetterApplicationField">
+                    <span>Cover letter / short note</span>
                     <textarea name="cover_note" rows="4" placeholder="Share the strongest fit in a few lines."></textarea>
+                  </label>
+                  <label class="field wide" id="customQuestionApplicationField" hidden>
+                    <span id="customQuestionLabel">Additional question</span>
+                    <textarea name="custom_question_response" rows="4"></textarea>
                   </label>
                 </div>
                 <button class="primary-action" type="submit">
@@ -357,8 +362,8 @@
             <section class="hr-main">
               <section class="hr-section" id="hrJobsSection">
                 <section class="panel jobs-list-panel">
-                  <div class="section-header jobs-toolbar">
-                    <div>
+                  <div class="section-header jobs-toolbar" id="jobsToolbar">
+                    <div id="jobsListHeader">
                       <p class="eyebrow">Jobs</p>
                       <h2>All jobs</h2>
                     </div>
@@ -389,8 +394,23 @@
                         </button>
                       </div>
                     </div>
+                    <nav class="job-create-subnav" aria-label="Job creation sections">
+                      <button class="job-create-tab is-active" type="button" data-job-create-tab="description">
+                        Description
+                      </button>
+                      <button class="job-create-tab" type="button" data-job-create-tab="application">
+                        Application
+                      </button>
+                      <button class="job-create-tab" type="button" data-job-create-tab="team">
+                        Team Members
+                      </button>
+                      <button class="job-create-tab" type="button" data-job-create-tab="workflow">
+                        Workflow
+                      </button>
+                    </nav>
                     <div class="job-create-layout">
                       <form class="job-form" id="jobForm">
+                        <div class="job-create-tab-panel" data-job-create-panel="description">
                         <section class="form-section">
                           <div class="section-header compact">
                             <div>
@@ -491,6 +511,92 @@
                             </label>
                           </div>
                         </section>
+                        </div>
+
+                        <div class="job-create-tab-panel" data-job-create-panel="application" hidden>
+                          <section class="form-section">
+                            <div class="section-header compact">
+                              <div>
+                                <p class="eyebrow">Application</p>
+                                <h2>Required applicant details</h2>
+                              </div>
+                            </div>
+                            <div class="form-grid">
+                              <label class="field wide">
+                                <span>Application summary</span>
+                                <textarea name="application_summary" rows="4" placeholder="Tell applicants what they should prepare before applying."></textarea>
+                              </label>
+                              <label class="field">
+                                <span>Resume</span>
+                                <select name="require_resume">
+                                  <option value="required">Required</option>
+                                  <option value="optional">Optional</option>
+                                </select>
+                              </label>
+                              <label class="field">
+                                <span>Cover letter</span>
+                                <select name="require_cover_letter">
+                                  <option value="optional">Optional</option>
+                                  <option value="required">Required</option>
+                                </select>
+                              </label>
+                              <label class="field">
+                                <span>Phone number</span>
+                                <select name="require_phone">
+                                  <option value="required">Required</option>
+                                  <option value="optional">Optional</option>
+                                </select>
+                              </label>
+                              <label class="field wide">
+                                <span>Additional application question</span>
+                                <textarea name="application_question" rows="4" placeholder="Add one role-specific question for applicants."></textarea>
+                              </label>
+                            </div>
+                          </section>
+                        </div>
+
+                        <div class="job-create-tab-panel" data-job-create-panel="team" hidden>
+                          <section class="form-section">
+                            <div class="section-header compact">
+                              <div>
+                                <p class="eyebrow">Team Members</p>
+                                <h2>Applicant oversight</h2>
+                              </div>
+                            </div>
+                            <div class="form-grid">
+                              <label class="field">
+                                <span>Primary recruiter</span>
+                                <input name="recruiter_name" placeholder="Sam Lee">
+                              </label>
+                              <label class="field">
+                                <span>Review lead</span>
+                                <input name="review_lead" placeholder="Maya Rivera">
+                              </label>
+                              <label class="field wide">
+                                <span>Assigned team members</span>
+                                <textarea name="team_members" rows="4" placeholder="Add staff who should oversee applicants for this job."></textarea>
+                              </label>
+                            </div>
+                          </section>
+                        </div>
+
+                        <div class="job-create-tab-panel" data-job-create-panel="workflow" hidden>
+                          <section class="form-section">
+                            <div class="section-header compact">
+                              <div>
+                                <p class="eyebrow">Workflow</p>
+                                <h2>Pipeline selection</h2>
+                              </div>
+                            </div>
+                            <div class="form-grid">
+                              <label class="field wide">
+                                <span>Workflow</span>
+                                <select name="workflow_id" id="jobWorkflowSelect"></select>
+                              </label>
+                            </div>
+                            <div class="job-workflow-preview" id="jobWorkflowPreview"></div>
+                          </section>
+                        </div>
 
                         <button class="secondary-action" type="submit">
                           <svg><use href="#icon-plus"></use></svg>
@@ -612,6 +718,13 @@
                         <small>Manage the visible hiring stages.</small>
                       </span>
                     </button>
+                    <button class="settings-tile" type="button" id="workflowSettingsButton" data-settings-section="workflows">
+                      <svg><use href="#icon-database"></use></svg>
+                      <span>
+                        <strong>Workflows</strong>
+                        <small>Create reusable hiring workflows for jobs.</small>
+                      </span>
+                    </button>
                     <button class="settings-tile" type="button" id="communicationsSettingsButton" data-settings-section="communications">
                       <svg><use href="#icon-mail"></use></svg>
                       <span>
@@ -682,6 +795,77 @@
                     </form>
                     <div class="pipeline-settings-preview" id="pipelineSettingsPreview"></div>
                     <div class="pipeline-automation-preview" id="pipelineAutomationPreview"></div>
+                  </section>
+
+                  <section class="settings-detail" id="workflowSettingsPanel" data-settings-panel="workflows" hidden>
+                    <div class="section-header compact">
+                      <div>
+                        <p class="eyebrow">Workflows</p>
+                        <h2>Reusable job pipelines</h2>
+                      </div>
+                      <button class="secondary-action small" type="button" id="newWorkflowButton">
+                        New workflow
+                      </button>
+                    </div>
+
+                    <div class="table-wrap compact-table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th scope="col">Workflow</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody id="workflowTable"></tbody>
+                      </table>
+                    </div>
+
+                    <form class="workflow-settings-form" id="workflowSettingsForm">
+                      <input type="hidden" name="workflow_id">
+                      <div class="form-grid">
+                        <label class="field">
+                          <span>Workflow name</span>
+                          <input name="name" required placeholder="Clinical hiring">
+                        </label>
+                        <label class="field">
+                          <span>Status</span>
+                          <select name="status">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                          </select>
+                        </label>
+                        <label class="field">
+                          <span>New stage label</span>
+                          <input name="new" required>
+                        </label>
+                        <label class="field">
+                          <span>Screening stage label</span>
+                          <input name="screening" required>
+                        </label>
+                        <label class="field">
+                          <span>Interview stage label</span>
+                          <input name="interview" required>
+                        </label>
+                        <label class="field">
+                          <span>Offer stage label</span>
+                          <input name="offer" required>
+                        </label>
+                      </div>
+                      <div class="communication-action-row">
+                        <button class="primary-action small" type="submit">
+                          <svg><use href="#icon-database"></use></svg>
+                          Save workflow
+                        </button>
+                        <button class="secondary-action small" type="button" id="duplicateWorkflowButton">
+                          Duplicate
+                        </button>
+                        <button class="secondary-action small" type="button" id="deleteWorkflowButton">
+                          Delete
+                        </button>
+                      </div>
+                      <p class="form-message" id="workflowSettingsMessage" role="status"></p>
+                    </form>
                   </section>
 
                   <section class="settings-detail communications-settings" id="communicationsSettingsPanel" data-settings-panel="communications" hidden>
