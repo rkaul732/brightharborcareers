@@ -1775,6 +1775,228 @@ tr.is-selected {
   line-height: 1.4;
 }
 
+.onboarding-portal-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.76fr) minmax(0, 1.24fr);
+  gap: 18px;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.onboarding-welcome-panel,
+.employee-onboarding-panel,
+.onboarding-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.onboarding-welcome-panel {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  min-height: 320px;
+  padding: 24px;
+}
+
+.onboarding-welcome-panel h1 {
+  font-size: 34px;
+}
+
+.employee-onboarding-panel,
+.onboarding-panel {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+.onboarding-demographic-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.onboarding-demographic-grid article,
+.onboarding-check-item,
+.scan-result-card,
+.onboarding-hire-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.onboarding-demographic-grid article {
+  padding: 11px;
+}
+
+.onboarding-demographic-grid span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.onboarding-demographic-grid strong {
+  display: block;
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.onboarding-checklist,
+.scan-result-list,
+.onboarding-roster {
+  display: grid;
+  gap: 8px;
+}
+
+.onboarding-check-item {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+}
+
+.check-indicator {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #f4f6f8;
+  color: #fff;
+}
+
+.onboarding-check-item.is-complete .check-indicator {
+  border-color: #2f8f5b;
+  background: #2f8f5b;
+}
+
+.onboarding-check-item strong,
+.scan-result-card strong,
+.onboarding-hire-card span {
+  display: block;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.onboarding-check-item p,
+.scan-result-card p,
+.onboarding-hire-card small,
+.onboarding-hire-card b {
+  display: block;
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.onboarding-upload-form,
+.onboarding-hierarchy-form,
+.onboarding-document-review {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.scan-result-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+}
+
+.onboarding-admin-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.34fr) minmax(0, 0.66fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.onboarding-roster-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.onboarding-hire-card {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 12px;
+  text-align: left;
+}
+
+.onboarding-hire-card.is-selected,
+.onboarding-hire-card:hover {
+  border-color: var(--harbor);
+  box-shadow: 0 8px 18px rgba(28, 47, 67, 0.08);
+}
+
+.onboarding-admin-detail {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.hr-checklist {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.compact-actions {
+  flex-wrap: nowrap;
+}
+
+.onboarding-document-preview {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 12px;
+}
+
+.document-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.document-preview-header p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.onboarding-document-preview iframe,
+.onboarding-document-preview img {
+  width: 100%;
+  min-height: 360px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  object-fit: contain;
+}
+
+.onboarding-document-preview pre {
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  padding: 12px;
+  white-space: pre-wrap;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .communications-workspace {
   grid-template-columns: minmax(320px, 0.85fr) minmax(0, 1.15fr);
   align-items: start;
@@ -1980,7 +2202,7 @@ tr.is-selected {
 }
 
 .stage-automation-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 }
 
 .stage-automation-card {
@@ -2017,7 +2239,7 @@ tr.is-selected {
 
 .pipeline-automation-preview {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 8px;
   margin-top: 10px;
 }
@@ -2293,7 +2515,7 @@ td strong {
 
 .pipeline-board {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 12px;
 }
 
@@ -2397,6 +2619,8 @@ td strong {
   .home-dashboard-grid,
   .job-create-layout,
   .settings-layout,
+  .onboarding-portal-layout,
+  .onboarding-admin-layout,
   .communications-workspace,
   .communications-admin-grid {
     grid-template-columns: 1fr;
@@ -2480,9 +2704,12 @@ td strong {
   .permissions-grid,
   .pipeline-board,
   .candidate-overview-grid,
+  .onboarding-demographic-grid,
+  .hr-checklist,
   .stage-automation-grid,
   .pipeline-automation-preview,
-  .application-requirement-row {
+  .application-requirement-row,
+  .scan-result-card {
     grid-template-columns: 1fr;
   }
 
@@ -2564,7 +2791,9 @@ td strong {
   .job-board-summary,
   .job-detail-actions,
   .department-list-heading,
-  .department-row-actions {
+  .department-row-actions,
+  .document-preview-header,
+  .compact-actions {
     align-items: flex-start;
     flex-direction: column;
   }

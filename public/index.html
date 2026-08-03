@@ -89,6 +89,10 @@
             <svg><use href="#icon-search"></use></svg>
             Applicant
           </button>
+          <button class="tab" type="button" data-view="onboarding">
+            <svg><use href="#icon-users"></use></svg>
+            Onboarding
+          </button>
           <button class="tab" type="button" data-view="login">
             <svg><use href="#icon-briefcase"></use></svg>
             Hiring Team
@@ -111,6 +115,10 @@
           <button class="hr-menu-button" type="button" data-hr-section="reports">
             <svg><use href="#icon-chart"></use></svg>
             Reports
+          </button>
+          <button class="hr-menu-button" type="button" data-hr-section="onboarding">
+            <svg><use href="#icon-users"></use></svg>
+            Onboarding
           </button>
         </nav>
 
@@ -157,6 +165,13 @@
                 <span>
                   <strong>Hiring Team</strong>
                   <small>Sign in or request access to hiring operations.</small>
+                </span>
+              </button>
+              <button class="choice-card" type="button" data-go-view="onboarding">
+                <svg><use href="#icon-users"></use></svg>
+                <span>
+                  <strong>New Employee</strong>
+                  <small>Complete onboarding documents after hire.</small>
                 </span>
               </button>
             </section>
@@ -277,6 +292,45 @@
                 </button>
                 <p class="form-message" id="applicationMessage" role="status"></p>
               </form>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="onboardingView" aria-labelledby="employeeOnboardingHeading">
+          <div class="onboarding-portal-layout">
+            <section class="onboarding-welcome-panel">
+              <p class="eyebrow">New employee onboarding</p>
+              <h1 id="employeeOnboardingHeading">Welcome to Bright Harbor.</h1>
+              <p class="landing-copy" id="employeeOnboardingWelcome">
+                Select your name to view your onboarding checklist and upload required documents.
+              </p>
+              <label class="field">
+                <span>New employee</span>
+                <select id="onboardingEmployeeSelect"></select>
+              </label>
+            </section>
+
+            <section class="panel employee-onboarding-panel">
+              <div class="section-header compact">
+                <div>
+                  <p class="eyebrow">Checklist</p>
+                  <h2>Required documents</h2>
+                </div>
+              </div>
+              <div class="onboarding-demographics" id="employeeOnboardingDemographics"></div>
+              <div class="onboarding-checklist" id="employeeOnboardingChecklist"></div>
+              <form class="onboarding-upload-form" id="onboardingUploadForm">
+                <label class="field wide">
+                  <span>Upload document packet</span>
+                  <input id="onboardingDocumentUpload" name="documents" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.txt,.doc,.docx">
+                </label>
+                <button class="primary-action" type="submit">
+                  <svg><use href="#icon-send"></use></svg>
+                  Upload and scan
+                </button>
+                <p class="form-message" id="onboardingUploadMessage" role="status"></p>
+              </form>
+              <div class="scan-results-panel" id="onboardingScanResults"></div>
             </section>
           </div>
         </section>
@@ -798,6 +852,33 @@
                 </section>
               </section>
 
+              <section class="hr-section" id="hrOnboardingSection" hidden>
+                <div class="metric-grid onboarding-metrics" id="onboardingMetricGrid"></div>
+                <section class="panel onboarding-panel">
+                  <div class="section-header">
+                    <div>
+                      <p class="eyebrow">Onboarding</p>
+                      <h2>Hired employee setup</h2>
+                    </div>
+                  </div>
+                  <div class="onboarding-admin-layout">
+                    <aside class="onboarding-roster-panel">
+                      <div class="section-header compact">
+                        <div>
+                          <p class="eyebrow">Hired stage</p>
+                          <h2>New hires</h2>
+                        </div>
+                      </div>
+                      <div class="onboarding-roster" id="onboardingHireRoster"></div>
+                    </aside>
+
+                    <section class="onboarding-admin-detail" id="onboardingAdminDetail">
+                      <div class="empty-state compact">Select a hired candidate to begin onboarding.</div>
+                    </section>
+                  </div>
+                </section>
+              </section>
+
               <section class="hr-section" id="hrSettingsSection" hidden>
                 <section class="panel settings-panel">
                   <div class="section-header">
@@ -886,6 +967,10 @@
                           <span>Offer stage label</span>
                           <input name="offer" required>
                         </label>
+                        <label class="field">
+                          <span>Hired stage label</span>
+                          <input name="hired" required>
+                        </label>
                       </div>
                       <button class="secondary-action" type="submit">
                         <svg><use href="#icon-database"></use></svg>
@@ -950,6 +1035,10 @@
                         <label class="field">
                           <span>Offer stage label</span>
                           <input name="offer" required>
+                        </label>
+                        <label class="field">
+                          <span>Hired stage label</span>
+                          <input name="hired" required>
                         </label>
                       </div>
                       <div class="communication-action-row">

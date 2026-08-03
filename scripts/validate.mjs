@@ -23,7 +23,8 @@ const requiredFiles = [
   "supabase/migrations/20260731130000_workflows.sql",
   "supabase/migrations/20260731133000_application_requirement_levels.sql",
   "supabase/migrations/20260731140000_job_status_options.sql",
-  "supabase/migrations/20260731150000_communication_template_type.sql"
+  "supabase/migrations/20260731150000_communication_template_type.sql",
+  "supabase/migrations/20260803120000_onboarding.sql"
 ];
 
 const root = process.cwd();
@@ -77,6 +78,10 @@ const jobStatusesSql = await readFile(
 );
 const templateTypeSql = await readFile(
   path.join(root, "supabase/migrations/20260731150000_communication_template_type.sql"),
+  "utf8"
+);
+const onboardingSql = await readFile(
+  path.join(root, "supabase/migrations/20260803120000_onboarding.sql"),
   "utf8"
 );
 const netlifyFunctionsIncludeNameMergeFields =
@@ -159,6 +164,39 @@ const checks = [
   [html.includes('name="seo_keywords"') && app.includes("parseKeywords"), "SEO keyword entry"],
   [html.includes('data-hr-section="candidates"') && html.includes("candidatesTable") && app.includes("renderCandidatesTable"), "HR candidates view"],
   [html.includes('data-hr-section="reports"') && html.includes("pipelineBoard"), "HR reports view"],
+  [
+    html.includes('data-hr-section="onboarding"') &&
+      html.includes("hrOnboardingSection") &&
+      html.includes("onboardingView") &&
+      app.includes('status === "hired"') &&
+      app.includes("renderHrOnboarding") &&
+      app.includes("renderEmployeeOnboarding"),
+    "Dual onboarding interfaces"
+  ],
+  [
+    html.includes("onboardingDocumentUpload") &&
+      app.includes("scanOnboardingFile") &&
+      app.includes("matched_type_ids") &&
+      app.includes("saveOnboardingDocument") &&
+      app.includes("printOnboardingDocument") &&
+      app.includes("renderOnboardingDocumentPreview"),
+    "Onboarding document scanning and review"
+  ],
+  [
+    onboardingSql.includes("onboarding_records") &&
+      onboardingSql.includes("onboarding_documents") &&
+      onboardingSql.includes("onboarding-documents") &&
+      app.includes("loadOnboardingData") &&
+      app.includes("saveOnboardingUpload") &&
+      app.includes("onboarding_hierarchy_updated"),
+    "Onboarding Supabase persistence"
+  ],
+  [
+    app.includes('const pipelineStages = ["new", "screening", "interview", "offer", "hired"]') &&
+      html.includes('name="hired"') &&
+      app.includes("candidate_hired"),
+    "Hired pipeline stage"
+  ],
   [html.includes("profileMenuButton") && html.includes("profileDropdown"), "HR profile dropdown"],
   [html.includes("profileForm") && app.includes("handleProfileSubmit"), "HR profile editor"],
   [

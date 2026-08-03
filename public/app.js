@@ -25,13 +25,14 @@ const roleProfiles = {
   }
 };
 
-const pipelineStages = ["new", "screening", "interview", "offer"];
+const pipelineStages = ["new", "screening", "interview", "offer", "hired"];
 
 const defaultPipelineLabels = {
   new: "New",
   screening: "Screening",
   interview: "Interview",
-  offer: "Offer"
+  offer: "Offer",
+  hired: "Hired"
 };
 
 const defaultWorkflows = [
@@ -43,7 +44,8 @@ const defaultWorkflows = [
       new: "New",
       screening: "Screening",
       interview: "Interview",
-      offer: "Offer"
+      offer: "Offer",
+      hired: "Hired"
     }
   },
   {
@@ -54,7 +56,8 @@ const defaultWorkflows = [
       new: "Applied",
       screening: "Credential review",
       interview: "Clinical interview",
-      offer: "Offer"
+      offer: "Offer",
+      hired: "Hired"
     }
   },
   {
@@ -65,7 +68,8 @@ const defaultWorkflows = [
       new: "Applied",
       screening: "Phone screen",
       interview: "Team interview",
-      offer: "Ready to offer"
+      offer: "Ready to offer",
+      hired: "Hired"
     }
   }
 ];
@@ -75,6 +79,41 @@ const requirementOptions = [
   { value: "optional", label: "Optional" },
   { value: "not_required", label: "Not required" }
 ];
+
+const onboardingDocumentTypes = [
+  {
+    id: "i9",
+    label: "Form I-9",
+    keywords: ["i-9", "i9", "employment eligibility", "uscis"]
+  },
+  {
+    id: "w4",
+    label: "Federal W-4",
+    keywords: ["w-4", "w4", "withholding", "allowance", "tax"]
+  },
+  {
+    id: "direct_deposit",
+    label: "Direct deposit",
+    keywords: ["direct deposit", "routing", "account number", "payroll"]
+  },
+  {
+    id: "identification",
+    label: "Government ID",
+    keywords: ["driver license", "passport", "identification", "government id", "photo id"]
+  },
+  {
+    id: "credentials",
+    label: "License or certification",
+    keywords: ["license", "licensure", "certification", "credential", "certificate"]
+  },
+  {
+    id: "background",
+    label: "Background authorization",
+    keywords: ["background", "authorization", "consent", "screening"]
+  }
+];
+
+const onboardingStorageBucket = "onboarding-documents";
 
 const jobStatusOptions = ["published", "draft", "internal", "confidential"];
 
@@ -415,6 +454,10 @@ const demoApplications = [
     job_id: "job-101",
     full_name: "Jordan Ellis",
     email: "jordan.ellis@example.com",
+    phone: "(732) 555-0148",
+    resume_url: "https://example.com/jordan-ellis-resume.pdf",
+    cover_note: "Interested in building thoughtful recruiting programs for clinical teams.",
+    candidate_summary_response: "Experienced recruiter focused on candidate experience and structured hiring.",
     status: "screening",
     score: 86,
     source: "Referral",
@@ -426,6 +469,10 @@ const demoApplications = [
     job_id: "job-102",
     full_name: "Amara Okafor",
     email: "amara.okafor@example.com",
+    phone: "(732) 555-0162",
+    resume_url: "https://example.com/amara-okafor-resume.pdf",
+    cover_note: "Looking forward to supporting client-facing operations.",
+    candidate_summary_response: "Client operations leader with scheduling and quality improvement experience.",
     status: "interview",
     score: 91,
     source: "LinkedIn",
@@ -437,6 +484,10 @@ const demoApplications = [
     job_id: "job-103",
     full_name: "Miles Bennett",
     email: "miles.bennett@example.com",
+    phone: "(732) 555-0187",
+    resume_url: "https://example.com/miles-bennett-resume.pdf",
+    cover_note: "Excited by reporting and data quality work.",
+    candidate_summary_response: "Analytics professional who enjoys translating data into decisions.",
     status: "new",
     score: 78,
     source: "Career site",
@@ -448,7 +499,11 @@ const demoApplications = [
     job_id: "job-101",
     full_name: "Sophia Nguyen",
     email: "sophia.nguyen@example.com",
-    status: "offer",
+    phone: "(732) 555-0194",
+    resume_url: "https://example.com/sophia-nguyen-resume.pdf",
+    cover_note: "Ready to help Bright Harbor scale recruiting operations.",
+    candidate_summary_response: "Talent operations specialist with onboarding and compliance coordination experience.",
+    status: "hired",
     score: 94,
     source: "Indeed",
     applied_at: "2026-07-16",
@@ -459,11 +514,45 @@ const demoApplications = [
     job_id: "job-104",
     full_name: "Ethan Murphy",
     email: "ethan.murphy@example.com",
+    phone: "(732) 555-0126",
+    resume_url: "https://example.com/ethan-murphy-resume.pdf",
+    cover_note: "Interested in coordinating clinical program staffing.",
+    candidate_summary_response: "Program coordinator with a background in clinical team support.",
     status: "screening",
     score: 82,
     source: "Career site",
     applied_at: "2026-07-25",
     recruiter: "Sam Lee"
+  },
+  {
+    id: "app-206",
+    job_id: "job-105",
+    full_name: "Leah Martinez",
+    email: "leah.martinez@example.com",
+    phone: "(732) 555-0175",
+    resume_url: "https://example.com/leah-martinez-resume.pdf",
+    cover_note: "Prepared to partner with people leaders on hiring operations.",
+    candidate_summary_response: "People operations generalist with employee records and onboarding experience.",
+    status: "offer",
+    score: 89,
+    source: "Career site",
+    applied_at: "2026-07-18",
+    recruiter: "Rina Patel"
+  }
+];
+
+const demoOnboardingDocuments = [
+  {
+    id: "on-doc-001",
+    application_id: "app-204",
+    file_name: "Sophia Nguyen onboarding packet - I-9 W-4 direct deposit.txt",
+    file_type: "text/plain",
+    file_size: 1480,
+    matched_type_ids: ["i9", "w4", "direct_deposit"],
+    uploaded_at: "2026-08-01T14:30:00.000Z",
+    scan_notes: "Detected Form I-9, Federal W-4, and direct deposit keywords.",
+    content_text:
+      "Bright Harbor onboarding packet for Sophia Nguyen\nIncluded sheets: Form I-9 employment eligibility, Federal W-4 withholding, direct deposit payroll authorization."
   }
 ];
 
@@ -554,6 +643,9 @@ const state = {
   manualTemplateId: "",
   manualSubject: "",
   manualBody: "",
+  selectedOnboardingApplicationId: demoApplications.find((application) => application.status === "hired")?.id || "",
+  onboardingDocuments: demoOnboardingDocuments.map(normalizeOnboardingDocument),
+  selectedOnboardingDocumentId: "",
   jobCreateTab: "description",
   jobDetailOpen: false,
   applicationOpen: false,
@@ -873,6 +965,40 @@ function saveLocalProfile(profile) {
 
 function newClientId(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function normalizeOnboardingRecord(record = {}) {
+  return {
+    employee_id: String(record.employee_id || "").trim(),
+    department_id: String(record.department_id || "").trim(),
+    department_name: String(record.department_name || "").trim(),
+    manager_name: String(record.manager_name || "").trim(),
+    reports_to: String(record.reports_to || "").trim(),
+    start_date: String(record.start_date || "").trim(),
+    work_location: String(record.work_location || "").trim(),
+    employment_type: String(record.employment_type || "").trim()
+  };
+}
+
+function normalizeOnboardingDocument(record = {}) {
+  const uploadedAt = record.uploaded_at || record.created_at || new Date().toISOString();
+  return {
+    id: String(record.id || newClientId("on-doc")),
+    application_id: String(record.application_id || ""),
+    file_name: String(record.file_name || "Onboarding document").trim(),
+    file_type: String(record.file_type || "application/octet-stream").trim(),
+    file_size: Number(record.file_size || 0),
+    storage_bucket: String(record.storage_bucket || onboardingStorageBucket).trim(),
+    storage_path: String(record.storage_path || "").trim(),
+    matched_type_ids: Array.isArray(record.matched_type_ids) ? record.matched_type_ids.map(String) : [],
+    scan_notes: String(record.scan_notes || record.scan_summary || "Uploaded for HR review.").trim(),
+    content_text: String(record.content_text || ""),
+    file: record.file,
+    object_url: record.object_url || "",
+    uploaded_at: uploadedAt,
+    created_at: record.created_at || uploadedAt,
+    status: String(record.status || "uploaded").trim()
+  };
 }
 
 function normalizeTemplateType(value = "") {
@@ -1449,18 +1575,20 @@ async function loadSupabaseData() {
     if (state.session?.accessToken) {
       const applications = await supabaseSelect(
         "applications",
-        "select=id,job_id,full_name,email,status,score,source,applied_at&order=applied_at.desc",
+        "select=id,job_id,full_name,email,phone,resume_url,cover_note,application_answers,status,score,source,applied_at&order=applied_at.desc",
         true
       );
       if (Array.isArray(applications)) {
         state.applications = applications.map((application) => ({
           ...application,
           applied_at: application.applied_at?.slice(0, 10),
+          candidate_summary_response: application.application_answers?.["Candidate summary"] || "",
           recruiter: "Assigned"
         }));
         setConnection(true, "Supabase HR connected");
       }
       await loadCommunicationData();
+      await loadOnboardingData();
       await loadCurrentProfile();
     }
   } catch (error) {
@@ -1611,6 +1739,41 @@ async function loadCommunicationData() {
       state.communications = normalizeCommunications(communications);
       saveLocalCommunications(state.communications);
     }
+  } catch (error) {
+    return;
+  }
+}
+
+async function loadOnboardingData() {
+  if (!hasSupabase || !state.session?.accessToken) return;
+
+  try {
+    const [records, documents] = await Promise.all([
+      supabaseSelect(
+        "onboarding_records",
+        "select=application_id,employee_id,department_id,department_name,manager_name,reports_to,start_date,work_location,employment_type,created_at,updated_at",
+        true
+      ),
+      supabaseSelect(
+        "onboarding_documents",
+        "select=id,application_id,file_name,file_type,file_size,storage_bucket,storage_path,matched_type_ids,scan_summary,status,uploaded_at,created_at,updated_at&order=uploaded_at.desc",
+        true
+      )
+    ]);
+
+    const recordsByApplication = new Map(
+      (Array.isArray(records) ? records : []).map((record) => [
+        String(record.application_id),
+        normalizeOnboardingRecord(record)
+      ])
+    );
+    state.applications = state.applications.map((application) => {
+      const onboarding = recordsByApplication.get(String(application.id));
+      return onboarding ? { ...application, onboarding } : application;
+    });
+    state.onboardingDocuments = Array.isArray(documents)
+      ? documents.map(normalizeOnboardingDocument)
+      : [];
   } catch (error) {
     return;
   }
@@ -1976,6 +2139,8 @@ function renderHrWorkspace() {
   renderCandidatesTable();
   renderCandidateProfile();
   renderPipeline();
+  renderEmployeeOnboarding();
+  renderHrOnboarding();
   renderBoardSettingsForm();
   renderDepartmentSettings();
   renderPipelineSettingsForm();
@@ -1994,6 +2159,7 @@ function renderHrSections() {
   $("#hrJobsSection").hidden = state.hrSection !== "jobs";
   $("#hrCandidatesSection").hidden = state.hrSection !== "candidates";
   $("#hrReportsSection").hidden = state.hrSection !== "reports";
+  $("#hrOnboardingSection").hidden = state.hrSection !== "onboarding";
   $("#hrSettingsSection").hidden = state.hrSection !== "settings";
   $("#hrProfileSection").hidden = state.hrSection !== "profile";
 }
@@ -2008,6 +2174,7 @@ function renderHrSubheader() {
     jobs: ["Jobs", state.jobCreateOpen ? "Create a job" : "All Jobs"],
     candidates: ["Candidates", "All applicants"],
     reports: ["Reports", "Pipeline overview"],
+    onboarding: ["Onboarding", "Hired employee setup"],
     settings: ["Settings", "System configuration"],
     profile: ["Profile", "Edit my profile"]
   };
@@ -2493,7 +2660,8 @@ function renderMetrics() {
     ["Open jobs", openJobs, `${draftJobs} drafts waiting`],
     ["Applicants", activeApplicants, "Across active pipelines"],
     ["Interviews", interviews, "Ready for manager review"],
-    [`${labels.offer} stage`, state.applications.filter((application) => application.status === "offer").length, "Final decisions"]
+    [`${labels.offer} stage`, state.applications.filter((application) => application.status === "offer").length, "Final decisions"],
+    [`${labels.hired} stage`, state.applications.filter((application) => application.status === "hired").length, "Onboarding ready"]
   ];
 
   $("#metricGrid").innerHTML = metrics
@@ -2668,6 +2836,686 @@ function renderCandidateOverview(application, job) {
       </article>
     </div>
   `;
+}
+
+function documentTypeById(typeId) {
+  return onboardingDocumentTypes.find((type) => type.id === typeId) || null;
+}
+
+function hiredApplications() {
+  return state.applications
+    .filter((application) => application.status === "hired")
+    .sort((a, b) => a.full_name.localeCompare(b.full_name));
+}
+
+function selectedOnboardingApplication() {
+  const hires = hiredApplications();
+  if (!hires.length) {
+    state.selectedOnboardingApplicationId = "";
+    return null;
+  }
+  const selected = hires.find((application) => application.id === state.selectedOnboardingApplicationId) || hires[0];
+  state.selectedOnboardingApplicationId = selected.id;
+  return selected;
+}
+
+function onboardingDocumentsForApplication(applicationId) {
+  return state.onboardingDocuments
+    .filter((document) => document.application_id === applicationId)
+    .sort((a, b) => new Date(b.uploaded_at || 0) - new Date(a.uploaded_at || 0));
+}
+
+function completedOnboardingTypeIds(applicationId) {
+  return new Set(
+    onboardingDocumentsForApplication(applicationId).flatMap((document) => document.matched_type_ids || [])
+  );
+}
+
+function onboardingCompletion(applicationId) {
+  const completed = completedOnboardingTypeIds(applicationId);
+  return {
+    completed: completed.size,
+    total: onboardingDocumentTypes.length,
+    missing: onboardingDocumentTypes.length - completed.size
+  };
+}
+
+function onboardingDocumentLabel(document) {
+  const labels = (document.matched_type_ids || [])
+    .map((typeId) => documentTypeById(typeId)?.label)
+    .filter(Boolean);
+  return labels.length ? labels.join(", ") : "Needs HR review";
+}
+
+function renderOnboardingChecklist(applicationId) {
+  const completed = completedOnboardingTypeIds(applicationId);
+  return onboardingDocumentTypes
+    .map((type) => {
+      const isComplete = completed.has(type.id);
+      return `
+        <article class="onboarding-check-item${isComplete ? " is-complete" : ""}">
+          <span class="check-indicator">${isComplete ? "✓" : ""}</span>
+          <div>
+            <strong>${escapeHtml(type.label)}</strong>
+            <p>${isComplete ? "Included in uploaded documents." : "Needed before HR can complete onboarding."}</p>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function applicationDemographics(application, job) {
+  return [
+    ["Name", application.full_name || "Not recorded"],
+    ["Phone", application.phone || "Not recorded"],
+    ["Email", application.email || "Not recorded"],
+    ["Role", job?.title || "General application"],
+    ["Department", job?.department || "Department pending"],
+    ["Resume", application.resume_url || "Not recorded"]
+  ];
+}
+
+function renderOnboardingDemographics(application) {
+  const job = jobById(application.job_id);
+  return `
+    <div class="onboarding-demographic-grid">
+      ${applicationDemographics(application, job)
+        .map(
+          ([label, value]) => `
+            <article>
+              <span>${escapeHtml(label)}</span>
+              <strong>${escapeHtml(value)}</strong>
+            </article>
+          `
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function renderEmployeeOnboarding() {
+  const select = $("#onboardingEmployeeSelect");
+  if (!select) return;
+
+  const hires = hiredApplications();
+  const welcome = $("#employeeOnboardingWelcome");
+  const demographics = $("#employeeOnboardingDemographics");
+  const checklist = $("#employeeOnboardingChecklist");
+  const scanResults = $("#onboardingScanResults");
+
+  if (!hires.length) {
+    select.innerHTML = `<option value="">No hired employees yet</option>`;
+    select.disabled = true;
+    welcome.textContent = "Onboarding opens after a candidate is moved to the Hired stage.";
+    demographics.innerHTML = `<div class="empty-state compact">No hired employee is ready for onboarding yet.</div>`;
+    checklist.innerHTML = "";
+    scanResults.innerHTML = "";
+    return;
+  }
+
+  const selected = selectedOnboardingApplication();
+  select.disabled = false;
+  select.innerHTML = hires
+    .map((application) => `<option value="${escapeAttribute(application.id)}">${escapeHtml(application.full_name)}</option>`)
+    .join("");
+  select.value = selected.id;
+  const firstName = candidateNameParts(selected.full_name).first;
+  welcome.textContent = `Welcome, ${firstName}. We are excited to help you get ready for your first day.`;
+  demographics.innerHTML = renderOnboardingDemographics(selected);
+  checklist.innerHTML = renderOnboardingChecklist(selected.id);
+  scanResults.innerHTML = renderOnboardingScanResults(selected.id);
+}
+
+function renderOnboardingScanResults(applicationId) {
+  const documents = onboardingDocumentsForApplication(applicationId);
+  if (!documents.length) {
+    return `<div class="empty-state compact">No onboarding documents have been uploaded yet.</div>`;
+  }
+
+  return `
+    <div class="scan-result-list">
+      ${documents
+        .map(
+          (document) => `
+            <article class="scan-result-card">
+              <div>
+                <strong>${escapeHtml(document.file_name)}</strong>
+                <p>${escapeHtml(document.scan_notes || "Uploaded for HR review.")}</p>
+              </div>
+              <span class="status-pill">${escapeHtml(onboardingDocumentLabel(document))}</span>
+            </article>
+          `
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function onboardingDepartmentOptions(selectedDepartmentId = "") {
+  const departments = parentDepartments();
+  return [
+    `<option value="">Select department</option>`,
+    ...departments.map(
+      (department) =>
+        `<option value="${escapeAttribute(department.id)}"${department.id === selectedDepartmentId ? " selected" : ""}>${escapeHtml(department.name)}</option>`
+    )
+  ].join("");
+}
+
+function onboardingHierarchy(application = {}) {
+  return {
+    employee_id: application.onboarding?.employee_id || "",
+    department_id: application.onboarding?.department_id || jobById(application.job_id)?.department_id || "",
+    manager_name: application.onboarding?.manager_name || "",
+    reports_to: application.onboarding?.reports_to || "",
+    start_date: application.onboarding?.start_date || "",
+    work_location: application.onboarding?.work_location || jobById(application.job_id)?.location || "",
+    employment_type: application.onboarding?.employment_type || jobById(application.job_id)?.work_type || "Full Time"
+  };
+}
+
+function renderHrOnboarding() {
+  const metricGrid = $("#onboardingMetricGrid");
+  if (!metricGrid) return;
+
+  const hires = hiredApplications();
+  const selected = selectedOnboardingApplication();
+  const completedCount = hires.filter((application) => onboardingCompletion(application.id).missing === 0).length;
+  const uploadedCount = state.onboardingDocuments.length;
+
+  metricGrid.innerHTML = [
+    ["Hired employees", hires.length, "Ready for onboarding"],
+    ["Complete packets", completedCount, "All required documents detected"],
+    ["Needs documents", Math.max(hires.length - completedCount, 0), "Awaiting uploads"],
+    ["Uploaded files", uploadedCount, "Available for HR review"]
+  ]
+    .map(
+      ([label, value, note]) => `
+        <article class="metric-card">
+          <strong>${escapeHtml(String(value))}</strong>
+          <span>${escapeHtml(label)}</span>
+          <b>${escapeHtml(note)}</b>
+        </article>
+      `
+    )
+    .join("");
+
+  $("#onboardingHireRoster").innerHTML = hires.length
+    ? hires
+        .map((application) => {
+          const job = jobById(application.job_id);
+          const completion = onboardingCompletion(application.id);
+          return `
+            <button class="onboarding-hire-card${selected?.id === application.id ? " is-selected" : ""}" type="button" data-onboarding-candidate="${escapeAttribute(application.id)}">
+              <span>${escapeHtml(application.full_name)}</span>
+              <small>${escapeHtml(job?.title || "General application")}</small>
+              <b>${completion.completed}/${completion.total} documents</b>
+            </button>
+          `;
+        })
+        .join("")
+    : `<div class="empty-state compact">Move a candidate to Hired to start onboarding.</div>`;
+
+  $("#onboardingAdminDetail").innerHTML = selected
+    ? renderOnboardingAdminDetail(selected)
+    : `<div class="empty-state compact">No hired candidate is ready for onboarding yet.</div>`;
+}
+
+function renderOnboardingAdminDetail(application) {
+  const job = jobById(application.job_id);
+  const hierarchy = onboardingHierarchy(application);
+  const documents = onboardingDocumentsForApplication(application.id);
+  return `
+    <div class="section-header compact">
+      <div>
+        <p class="eyebrow">New hire</p>
+        <h2>${escapeHtml(application.full_name)}</h2>
+        <p class="summary">${escapeHtml(job?.title || "General application")} · ${escapeHtml(application.email || "No email recorded")}</p>
+      </div>
+    </div>
+    ${renderOnboardingDemographics(application)}
+    <form class="onboarding-hierarchy-form" id="onboardingHierarchyForm">
+      <input type="hidden" name="application_id" value="${escapeAttribute(application.id)}">
+      <div class="section-header compact">
+        <div>
+          <p class="eyebrow">Organizational hierarchy</p>
+          <h2>Employee setup</h2>
+        </div>
+      </div>
+      <div class="form-grid">
+        <label class="field">
+          <span>Employee ID</span>
+          <input name="employee_id" value="${escapeAttribute(hierarchy.employee_id)}" placeholder="BH-1024">
+        </label>
+        <label class="field">
+          <span>Department</span>
+          <select name="department_id">${onboardingDepartmentOptions(hierarchy.department_id)}</select>
+        </label>
+        <label class="field">
+          <span>Manager</span>
+          <input name="manager_name" value="${escapeAttribute(hierarchy.manager_name)}" placeholder="Manager name">
+        </label>
+        <label class="field">
+          <span>Reports to</span>
+          <input name="reports_to" value="${escapeAttribute(hierarchy.reports_to)}" placeholder="Director or team lead">
+        </label>
+        <label class="field">
+          <span>Start date</span>
+          <input name="start_date" type="date" value="${escapeAttribute(hierarchy.start_date)}">
+        </label>
+        <label class="field">
+          <span>Work location</span>
+          <input name="work_location" value="${escapeAttribute(hierarchy.work_location)}">
+        </label>
+        <label class="field">
+          <span>Employment status</span>
+          <select name="employment_type">
+            ${["Full Time", "Part Time", "Per Diem"].map(
+              (type) => `<option${hierarchy.employment_type === type ? " selected" : ""}>${escapeHtml(type)}</option>`
+            ).join("")}
+          </select>
+        </label>
+      </div>
+      <button class="secondary-action" type="submit">
+        <svg><use href="#icon-database"></use></svg>
+        Save hierarchy
+      </button>
+      <p class="form-message" id="onboardingAdminMessage" role="status"></p>
+    </form>
+    <section class="onboarding-document-review">
+      <div class="section-header compact">
+        <div>
+          <p class="eyebrow">Documents</p>
+          <h2>Checklist and uploaded files</h2>
+        </div>
+      </div>
+      <div class="onboarding-checklist hr-checklist">${renderOnboardingChecklist(application.id)}</div>
+      <div class="table-wrap compact-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Document</th>
+              <th scope="col">Scan result</th>
+              <th scope="col">Uploaded</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              documents.length
+                ? documents
+                    .map(
+                      (document) => `
+                        <tr>
+                          <td>${escapeHtml(document.file_name)}</td>
+                          <td>${escapeHtml(onboardingDocumentLabel(document))}</td>
+                          <td>${escapeHtml(formatDateTime(document.uploaded_at))}</td>
+                          <td>
+                            <div class="communication-action-row compact-actions">
+                              <button class="table-action" type="button" data-view-onboarding-doc="${escapeAttribute(document.id)}">View</button>
+                              <button class="table-action" type="button" data-save-onboarding-doc="${escapeAttribute(document.id)}">Save</button>
+                              <button class="table-action" type="button" data-print-onboarding-doc="${escapeAttribute(document.id)}">Print</button>
+                            </div>
+                          </td>
+                        </tr>
+                      `
+                    )
+                    .join("")
+                : `<tr><td colspan="4"><div class="empty-state compact">No documents uploaded yet.</div></td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="onboarding-document-preview" id="onboardingDocumentPreview">
+        <div class="empty-state compact">Select View to preview a document.</div>
+      </div>
+    </section>
+  `;
+}
+
+function onboardingDocumentById(documentId) {
+  return state.onboardingDocuments.find((document) => document.id === documentId) || null;
+}
+
+function canPersistOnboarding(applicationId) {
+  return Boolean(hasSupabase && state.session?.accessToken && applicationId && !String(applicationId).startsWith("app-"));
+}
+
+function safeStorageFileName(fileName = "") {
+  return String(fileName || "document")
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120) || "document";
+}
+
+function storageObjectUrl(bucket, path) {
+  return `${env.supabaseUrl}/storage/v1/object/${encodeURIComponent(bucket)}/${String(path)
+    .split("/")
+    .map((part) => encodeURIComponent(part))
+    .join("/")}`;
+}
+
+async function uploadOnboardingDocumentFile(file, documentId, applicationId) {
+  const storagePath = `${applicationId}/${documentId}-${safeStorageFileName(file.name)}`;
+  const response = await fetch(storageObjectUrl(onboardingStorageBucket, storagePath), {
+    method: "POST",
+    headers: {
+      apikey: env.supabaseAnonKey,
+      Authorization: `Bearer ${state.session.accessToken}`,
+      "Content-Type": file.type || "application/octet-stream",
+      "x-upsert": "true"
+    },
+    body: file
+  });
+  if (!response.ok) throw new Error(await response.text());
+  return storagePath;
+}
+
+async function saveOnboardingUpload(document, file) {
+  if (!canPersistOnboarding(document.application_id)) return document;
+
+  const storagePath = await uploadOnboardingDocumentFile(file, document.id, document.application_id);
+  const [created] = await supabaseInsert(
+    "onboarding_documents",
+    {
+      id: document.id,
+      application_id: document.application_id,
+      uploaded_by: state.session.userId || null,
+      file_name: document.file_name,
+      file_type: document.file_type,
+      file_size: document.file_size,
+      storage_bucket: onboardingStorageBucket,
+      storage_path: storagePath,
+      matched_type_ids: document.matched_type_ids || [],
+      scan_summary: document.scan_notes,
+      status: "uploaded"
+    },
+    true
+  );
+
+  return normalizeOnboardingDocument({
+    ...document,
+    ...(created || {}),
+    storage_path: storagePath
+  });
+}
+
+async function recordActivityEvent(eventType, application, eventBody) {
+  if (!application || !canPersistOnboarding(application.id)) return;
+
+  await supabaseInsert(
+    "activity_events",
+    {
+      actor_id: state.session.userId || null,
+      job_id: application.job_id || null,
+      application_id: application.id,
+      event_type: eventType,
+      event_body: eventBody
+    },
+    true
+  ).catch(() => null);
+}
+
+async function fetchOnboardingDocumentBlob(document) {
+  if (!document?.storage_path || !state.session?.accessToken) return null;
+
+  const response = await fetch(storageObjectUrl(document.storage_bucket || onboardingStorageBucket, document.storage_path), {
+    headers: {
+      apikey: env.supabaseAnonKey,
+      Authorization: `Bearer ${state.session.accessToken}`
+    }
+  });
+  if (!response.ok) throw new Error("Document file could not be opened.");
+  return response.blob();
+}
+
+async function onboardingDocumentUrl(document) {
+  if (!document) return "";
+  if (document.object_url) return document.object_url;
+  const storedBlob = await fetchOnboardingDocumentBlob(document);
+  if (storedBlob) {
+    document.object_url = URL.createObjectURL(storedBlob);
+    if (!document.content_text && document.file_type?.startsWith("text/")) {
+      document.content_text = await storedBlob.text();
+    }
+    return document.object_url;
+  }
+  const blob = document.file || new Blob([document.content_text || document.scan_notes || document.file_name], {
+    type: document.file_type || "text/plain"
+  });
+  document.object_url = URL.createObjectURL(blob);
+  return document.object_url;
+}
+
+async function scanOnboardingFile(file, applicationId) {
+  let fileText = "";
+  try {
+    fileText = await file.text();
+  } catch (error) {
+    fileText = "";
+  }
+
+  const scanSource = `${file.name} ${file.type || ""} ${fileText}`.toLowerCase();
+  const matchedTypeIds = onboardingDocumentTypes
+    .filter((type) => type.keywords.some((keyword) => scanSource.includes(keyword.toLowerCase())))
+    .map((type) => type.id);
+  const matchedLabels = matchedTypeIds.map((typeId) => documentTypeById(typeId)?.label).filter(Boolean);
+
+  return {
+    id: newClientId("on-doc"),
+    application_id: applicationId,
+    file_name: file.name,
+    file_type: file.type || "application/octet-stream",
+    file_size: file.size || 0,
+    matched_type_ids: matchedTypeIds,
+    uploaded_at: new Date().toISOString(),
+    scan_notes: matchedLabels.length
+      ? `Detected ${matchedLabels.join(", ")}.`
+      : "No required document sheet was detected. HR review is needed.",
+    content_text: fileText,
+    file,
+    object_url: URL.createObjectURL(file)
+  };
+}
+
+async function handleOnboardingUploadSubmit(event) {
+  event.preventDefault();
+  const application = selectedOnboardingApplication();
+  const input = $("#onboardingDocumentUpload");
+  const files = Array.from(input?.files || []);
+  if (!application) {
+    showMessage("#onboardingUploadMessage", "Select a hired employee first.");
+    return;
+  }
+  if (!files.length) {
+    showMessage("#onboardingUploadMessage", "Choose at least one document to upload.");
+    return;
+  }
+
+  const scannedDocuments = [];
+  let liveSaveFailed = false;
+  for (const file of files) {
+    const scannedDocument = await scanOnboardingFile(file, application.id);
+    try {
+      scannedDocuments.push(await saveOnboardingUpload(scannedDocument, file));
+    } catch (error) {
+      liveSaveFailed = true;
+      scannedDocuments.push(scannedDocument);
+    }
+  }
+  state.onboardingDocuments = [
+    ...scannedDocuments.map(normalizeOnboardingDocument),
+    ...state.onboardingDocuments
+  ];
+  input.value = "";
+  const detectedCount = scannedDocuments.reduce((count, document) => count + (document.matched_type_ids?.length || 0), 0);
+  await recordActivityEvent(
+    "onboarding_documents_uploaded",
+    application,
+    `${scannedDocuments.length} onboarding ${scannedDocuments.length === 1 ? "document was" : "documents were"} uploaded.`
+  );
+  showMessage(
+    "#onboardingUploadMessage",
+    liveSaveFailed
+      ? "Upload scanned locally, but Supabase document storage needs the onboarding migration and storage policies."
+      : detectedCount
+      ? `Upload complete. ${detectedCount} checklist item${detectedCount === 1 ? "" : "s"} detected.`
+      : "Upload complete. HR review is needed for these files."
+  );
+  renderEmployeeOnboarding();
+  renderHrOnboarding();
+}
+
+async function handleOnboardingHierarchySubmit(event) {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(event.currentTarget));
+  const applicationId = data.application_id;
+  const department = getDepartmentById(data.department_id);
+  const onboarding = normalizeOnboardingRecord({
+    employee_id: data.employee_id,
+    department_id: data.department_id,
+    department_name: department?.name || "",
+    manager_name: data.manager_name,
+    reports_to: data.reports_to,
+    start_date: data.start_date,
+    work_location: data.work_location,
+    employment_type: data.employment_type
+  });
+  let selectedApplication = applicationById(applicationId);
+
+  state.applications = state.applications.map((application) => {
+    if (application.id !== applicationId) return application;
+    selectedApplication = application;
+    return {
+      ...application,
+      onboarding
+    };
+  });
+  renderHrOnboarding();
+  showMessage("#onboardingAdminMessage", "Saving onboarding hierarchy...");
+
+  if (canPersistOnboarding(applicationId)) {
+    try {
+      const [saved] = await supabaseUpsert(
+        "onboarding_records",
+        {
+          application_id: applicationId,
+          employee_id: onboarding.employee_id || null,
+          department_id: onboarding.department_id || null,
+          department_name: onboarding.department_name || null,
+          manager_name: onboarding.manager_name || null,
+          reports_to: onboarding.reports_to || null,
+          start_date: onboarding.start_date || null,
+          work_location: onboarding.work_location || null,
+          employment_type: onboarding.employment_type || null,
+          created_by: state.session.userId || null,
+          updated_by: state.session.userId || null
+        },
+        true,
+        "application_id"
+      );
+      if (saved) {
+        state.applications = state.applications.map((application) =>
+          application.id === applicationId
+            ? { ...application, onboarding: normalizeOnboardingRecord(saved) }
+            : application
+        );
+      }
+      await recordActivityEvent(
+        "onboarding_hierarchy_updated",
+        selectedApplication,
+        "Onboarding hierarchy and employee setup details were updated."
+      );
+      renderHrOnboarding();
+      showMessage("#onboardingAdminMessage", "Onboarding hierarchy saved.");
+      return;
+    } catch (error) {
+      renderHrOnboarding();
+      showMessage("#onboardingAdminMessage", "Saved locally. Run the onboarding Supabase migration to save this permanently.");
+      return;
+    }
+  }
+
+  showMessage("#onboardingAdminMessage", "Onboarding hierarchy saved for this preview.");
+}
+
+async function renderOnboardingDocumentPreview(document) {
+  const target = $("#onboardingDocumentPreview");
+  if (!target || !document) return;
+  target.innerHTML = `<div class="empty-state compact">Opening document...</div>`;
+  let url = "";
+  try {
+    url = await onboardingDocumentUrl(document);
+  } catch (error) {
+    target.innerHTML = `<div class="empty-state compact">Document could not be opened. Check Supabase storage access.</div>`;
+    return;
+  }
+  const isImage = document.file_type?.startsWith("image/");
+  const isPdf = document.file_type === "application/pdf" || document.file_name.toLowerCase().endsWith(".pdf");
+  target.innerHTML = `
+    <div class="document-preview-header">
+      <div>
+        <strong>${escapeHtml(document.file_name)}</strong>
+        <p>${escapeHtml(document.scan_notes || "Uploaded for HR review.")}</p>
+      </div>
+      <span class="status-pill">${escapeHtml(onboardingDocumentLabel(document))}</span>
+    </div>
+    ${
+      isImage
+        ? `<img src="${escapeAttribute(url)}" alt="${escapeAttribute(document.file_name)}">`
+        : isPdf
+          ? `<iframe src="${escapeAttribute(url)}" title="${escapeAttribute(document.file_name)}"></iframe>`
+          : `<pre>${escapeHtml(document.content_text || "Preview is not available for this file type. Use Save to download the uploaded document.")}</pre>`
+    }
+  `;
+}
+
+async function saveOnboardingDocument(document) {
+  if (!document) return;
+  const link = window.document.createElement("a");
+  link.href = await onboardingDocumentUrl(document);
+  link.download = document.file_name || "onboarding-document";
+  window.document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+async function printOnboardingDocument(document) {
+  if (!document) return;
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) return;
+  const url = await onboardingDocumentUrl(document);
+  const isEmbeddable =
+    document.file_type?.startsWith("image/") ||
+    document.file_type === "application/pdf" ||
+    document.file_name.toLowerCase().endsWith(".pdf");
+  printWindow.document.write(`
+    <!doctype html>
+    <html>
+      <head>
+        <title>${escapeHtml(document.file_name)}</title>
+        <style>
+          body { margin: 24px; font-family: Arial, sans-serif; color: #1c2f43; }
+          iframe, img { width: 100%; min-height: 85vh; border: 0; object-fit: contain; }
+          pre { white-space: pre-wrap; font-size: 13px; line-height: 1.5; }
+        </style>
+      </head>
+      <body>
+        <h1>${escapeHtml(document.file_name)}</h1>
+        ${
+          isEmbeddable
+            ? document.file_type?.startsWith("image/")
+              ? `<img src="${escapeAttribute(url)}" alt="${escapeAttribute(document.file_name)}">`
+              : `<iframe src="${escapeAttribute(url)}" title="${escapeAttribute(document.file_name)}"></iframe>`
+            : `<pre>${escapeHtml(document.content_text || document.scan_notes || "Document preview unavailable.")}</pre>`
+        }
+        <script>window.addEventListener("load", () => window.print());</script>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
 }
 
 function ensureManualMessage(application) {
@@ -4170,6 +5018,12 @@ function bindEvents() {
     renderApplicantPortal();
     $("#applicationPanel").scrollIntoView({ behavior: "smooth", block: "start" });
   });
+  $("#onboardingEmployeeSelect").addEventListener("change", (event) => {
+    state.selectedOnboardingApplicationId = event.target.value;
+    renderEmployeeOnboarding();
+    renderHrOnboarding();
+  });
+  $("#onboardingUploadForm").addEventListener("submit", handleOnboardingUploadSubmit);
   $("#authForm").addEventListener("submit", handleAuthSubmit);
   $("#requestAccountForm").addEventListener("submit", handleAccountRequestSubmit);
   $("#showRequestAccount").addEventListener("click", () => {
@@ -4213,7 +5067,46 @@ function bindEvents() {
         previous_stage: previousStatus,
         pipeline_stage: nextStatus
       });
+      if (nextStatus === "hired") {
+        await dispatchAutomationEvent("candidate_hired", movedApplication, {
+          previous_stage: previousStatus,
+          pipeline_stage: nextStatus
+        });
+      }
       renderHrWorkspace();
+    }
+  });
+
+  $("#hrOnboardingSection").addEventListener("click", async (event) => {
+    const candidateButton = event.target.closest("[data-onboarding-candidate]");
+    if (candidateButton) {
+      state.selectedOnboardingApplicationId = candidateButton.dataset.onboardingCandidate;
+      renderHrOnboarding();
+      renderEmployeeOnboarding();
+      return;
+    }
+
+    const viewButton = event.target.closest("[data-view-onboarding-doc]");
+    if (viewButton) {
+      await renderOnboardingDocumentPreview(onboardingDocumentById(viewButton.dataset.viewOnboardingDoc));
+      return;
+    }
+
+    const saveButton = event.target.closest("[data-save-onboarding-doc]");
+    if (saveButton) {
+      await saveOnboardingDocument(onboardingDocumentById(saveButton.dataset.saveOnboardingDoc));
+      return;
+    }
+
+    const printButton = event.target.closest("[data-print-onboarding-doc]");
+    if (printButton) {
+      await printOnboardingDocument(onboardingDocumentById(printButton.dataset.printOnboardingDoc));
+    }
+  });
+
+  $("#hrOnboardingSection").addEventListener("submit", async (event) => {
+    if (event.target.closest("#onboardingHierarchyForm")) {
+      await handleOnboardingHierarchySubmit(event);
     }
   });
 
@@ -4993,7 +5886,7 @@ async function handleJobSubmit(event) {
 
 function activateHashView() {
   const hash = location.hash.replace("#", "");
-  if (["landing", "applicant", "login", "hr"].includes(hash)) {
+  if (["landing", "applicant", "onboarding", "login", "hr"].includes(hash)) {
     showView(hash, false);
     return;
   }
