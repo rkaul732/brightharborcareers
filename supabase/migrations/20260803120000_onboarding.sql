@@ -1,10 +1,17 @@
-update public.pipeline_settings
-set stages = stages || '{"hired":"Hired"}'::jsonb
-where not (stages ? 'hired');
+do $$
+begin
+  if to_regclass('public.pipeline_settings') is not null then
+    execute 'update public.pipeline_settings
+      set stages = stages || ''{"hired":"Hired"}''::jsonb
+      where not (stages ? ''hired'')';
+  end if;
 
-update public.workflows
-set stages = stages || '{"hired":"Hired"}'::jsonb
-where not (stages ? 'hired');
+  if to_regclass('public.workflows') is not null then
+    execute 'update public.workflows
+      set stages = stages || ''{"hired":"Hired"}''::jsonb
+      where not (stages ? ''hired'')';
+  end if;
+end $$;
 
 create table if not exists public.onboarding_records (
   application_id uuid primary key references public.applications(id) on delete cascade,
