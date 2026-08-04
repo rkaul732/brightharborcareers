@@ -122,10 +122,13 @@ const checks = [
       html.includes('data-view="hr"') &&
       html.includes('data-view="onboarding"') &&
       !html.includes('data-view="landing"') &&
+      css.includes(".app-shell.is-hr-session .public-tabs") &&
       app.includes("renderWorkspaceTabs") &&
       app.includes('state.hrSection = "onboarding"') &&
+      html.includes('data-hr-section="onboarding"') &&
       html.includes("hr-header-menu") &&
       html.includes("hrSubheaderTitle") &&
+      (html.match(/Today in hiring/g) || []).length === 1 &&
       app.includes("renderHrSubheader") &&
       !html.includes("HR backend") &&
       !html.includes("hrHeading"),
@@ -176,7 +179,7 @@ const checks = [
   [html.includes('data-hr-section="candidates"') && html.includes("candidatesTable") && app.includes("renderCandidatesTable"), "HR candidates view"],
   [html.includes('data-hr-section="reports"') && html.includes("pipelineBoard"), "HR reports view"],
   [
-    html.includes('data-view="onboarding"') &&
+    html.includes('data-hr-section="onboarding"') &&
       html.includes("hrOnboardingSection") &&
       html.includes("onboardingView") &&
       app.includes('state.hrSection = "onboarding"') &&

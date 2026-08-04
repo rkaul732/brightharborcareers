@@ -78,6 +78,10 @@ svg {
   grid-template-columns: auto minmax(0, 1fr) auto;
 }
 
+.app-shell.is-hr-session .public-tabs {
+  display: none;
+}
+
 .topbar-actions {
   display: flex;
   align-items: center;
@@ -129,7 +133,7 @@ svg {
 }
 
 .hr-header-menu {
-  justify-self: start;
+  justify-self: center;
 }
 
 .tab {
@@ -380,9 +384,9 @@ main {
   position: sticky;
   top: 92px;
   z-index: 10;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) auto minmax(170px, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -392,7 +396,12 @@ main {
 }
 
 .hr-subheader {
+  grid-column: 1;
   min-width: 0;
+}
+
+.hr-top-header .hr-header-menu {
+  grid-column: 2;
 }
 
 .hr-subheader h2 {
@@ -1434,28 +1443,25 @@ button:disabled:hover {
 
 .home-panel {
   display: grid;
-  gap: 16px;
+  gap: 0;
 }
 
 .home-dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(260px, 0.85fr) minmax(320px, 1.2fr);
-  gap: 14px;
-  align-items: start;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
 }
 
 .home-profile-card,
 .home-dashboard-card {
   display: grid;
+  grid-template-rows: auto 1fr;
   gap: 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: #fff;
   padding: 16px;
-}
-
-.home-profile-card {
-  grid-row: span 2;
 }
 
 .home-profile-top {
@@ -2637,10 +2643,25 @@ td strong {
   .hr-top-header {
     position: static;
     gap: 10px;
+    grid-template-columns: 1fr;
+    justify-items: center;
   }
 
   .hr-header-menu {
     overflow-x: visible;
+  }
+
+  .hr-subheader {
+    justify-self: stretch;
+    text-align: center;
+  }
+
+  .hr-top-header .hr-header-menu {
+    grid-column: 1;
+  }
+
+  .home-dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .settings-nav {
@@ -2732,11 +2753,14 @@ td strong {
   .hr-top-header,
   .jobs-toolbar {
     align-items: center;
-    flex-direction: row;
   }
 
   .hr-top-header {
     padding: 10px;
+  }
+
+  .home-dashboard-grid {
+    grid-template-columns: 1fr;
   }
 
   .hr-menu-button {
