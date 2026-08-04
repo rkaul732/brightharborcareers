@@ -2277,7 +2277,7 @@ tr.is-selected {
   justify-content: space-between;
   gap: 12px;
   border-bottom: 1px solid var(--line);
-  padding: 14px;
+  padding: 10px 12px;
 }
 
 .department-list-heading h3 {
@@ -2487,14 +2487,14 @@ tr.is-selected {
 
 .department-list-row {
   display: grid;
-  grid-template-columns: 28px minmax(220px, 1fr) auto auto;
-  gap: 10px;
+  grid-template-columns: 28px minmax(180px, 1fr) auto;
+  gap: 8px;
   align-items: center;
-  padding: 12px 14px;
+  padding: 8px 10px;
 }
 
 .department-list-row.is-child {
-  padding-left: 36px;
+  padding-left: 30px;
 }
 
 .department-expand-button,
@@ -2519,7 +2519,7 @@ tr.is-selected {
 }
 
 .department-name-input {
-  min-height: 36px;
+  min-height: 32px;
   width: 100%;
   border: 1px solid transparent;
   border-radius: 6px;
@@ -2536,17 +2536,10 @@ tr.is-selected {
   outline: 0;
 }
 
-.department-type-pill {
-  align-self: center;
-  justify-self: start;
-  min-width: 118px;
-  text-align: center;
-}
-
 .department-row-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 6px;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease;
@@ -2556,6 +2549,48 @@ tr.is-selected {
 .department-list-row:focus-within .department-row-actions {
   opacity: 1;
   pointer-events: auto;
+}
+
+.department-add-button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(75, 160, 216, 0.44);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--harbor-dark);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.department-add-button:hover,
+.department-add-button:focus-visible {
+  border-color: var(--harbor);
+  background: var(--subtle);
+  outline: 0;
+}
+
+.department-inline-add {
+  display: grid;
+  grid-template-columns: 28px minmax(180px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  background: var(--subtle);
+  padding: 8px 10px;
+}
+
+.department-inline-add.is-child {
+  padding-left: 30px;
+}
+
+.department-inline-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
 }
 
 .danger-action {
@@ -2837,11 +2872,13 @@ td strong {
 
   .department-card-grid,
   .settings-nav,
-  .department-list-row {
+  .department-list-row,
+  .department-inline-add {
     grid-template-columns: 1fr;
   }
 
-  .department-list-row.is-child {
+  .department-list-row.is-child,
+  .department-inline-add.is-child {
     padding-left: 14px;
   }
 
@@ -2853,6 +2890,10 @@ td strong {
   .department-row-actions {
     opacity: 1;
     pointer-events: auto;
+  }
+
+  .department-inline-actions {
+    justify-content: flex-start;
   }
 
   .section-header {

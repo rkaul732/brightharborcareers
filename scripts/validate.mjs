@@ -232,11 +232,15 @@ const checks = [
     html.includes("department-list-widget") &&
       html.includes("departmentListCount") &&
       app.includes("handleDepartmentRowSave") &&
+      app.includes("handleInlineDepartmentSubmit") &&
       app.includes("openDepartmentMovePrompt") &&
       app.includes("handleDepartmentDelete") &&
+      app.includes("data-add-department") &&
       app.includes("data-toggle-department") &&
       app.includes("data-move-department") &&
-      app.includes("data-delete-department"),
+      app.includes("data-delete-department") &&
+      !app.includes("department-type-pill") &&
+      !app.includes("departmentOpenJobs"),
     "Expandable editable department list"
   ],
   [
