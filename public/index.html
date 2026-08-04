@@ -886,9 +886,6 @@
                       <button class="settings-link is-active" type="button" id="departmentsSettingsButton" data-settings-section="departments">
                         Departments
                       </button>
-                      <button class="settings-link" type="button" id="pipelineSettingsButton" data-settings-section="pipeline">
-                        Pipeline configuration
-                      </button>
                       <button class="settings-link" type="button" id="workflowSettingsButton" data-settings-section="workflows">
                         Workflows
                       </button>
@@ -932,46 +929,27 @@
                       </div>
                       <div class="department-edit-list" id="departmentTree"></div>
                     </section>
-                  </section>
-
-                  <section class="settings-detail" id="pipelineSettingsPanel" data-settings-panel="pipeline" hidden>
-                    <div class="section-header compact">
-                      <div>
-                        <p class="eyebrow">Pipeline configuration</p>
-                        <h2>Hiring stages</h2>
-                      </div>
+                    <div class="modal-backdrop" id="departmentMoveDialog" hidden>
+                      <section class="modal-card" aria-labelledby="departmentMoveHeading">
+                        <div class="section-header compact">
+                          <div>
+                            <p class="eyebrow">Move department</p>
+                            <h2 id="departmentMoveHeading">Select a new parent</h2>
+                          </div>
+                        </div>
+                        <form id="departmentMoveForm">
+                          <input type="hidden" name="department_id">
+                          <label class="field">
+                            <span>New parent department</span>
+                            <select name="parent_id" id="departmentMoveParentSelect"></select>
+                          </label>
+                          <div class="communication-action-row">
+                            <button class="primary-action small" type="submit">Move</button>
+                            <button class="secondary-action small" type="button" id="cancelDepartmentMove">Cancel</button>
+                          </div>
+                        </form>
+                      </section>
                     </div>
-                    <form class="pipeline-settings-form" id="pipelineSettingsForm">
-                      <div class="form-grid">
-                        <label class="field">
-                          <span>New stage label</span>
-                          <input name="new" required>
-                        </label>
-                        <label class="field">
-                          <span>Screening stage label</span>
-                          <input name="screening" required>
-                        </label>
-                        <label class="field">
-                          <span>Interview stage label</span>
-                          <input name="interview" required>
-                        </label>
-                        <label class="field">
-                          <span>Offer stage label</span>
-                          <input name="offer" required>
-                        </label>
-                        <label class="field">
-                          <span>Hired stage label</span>
-                          <input name="hired" required>
-                        </label>
-                      </div>
-                      <button class="secondary-action" type="submit">
-                        <svg><use href="#icon-database"></use></svg>
-                        Save pipeline
-                      </button>
-                      <p class="form-message" id="pipelineSettingsMessage" role="status"></p>
-                    </form>
-                    <div class="pipeline-settings-preview" id="pipelineSettingsPreview"></div>
-                    <div class="pipeline-automation-preview" id="pipelineAutomationPreview"></div>
                   </section>
 
                   <section class="settings-detail" id="workflowSettingsPanel" data-settings-panel="workflows" hidden>
@@ -1047,6 +1025,28 @@
                       </div>
                       <p class="form-message" id="workflowSettingsMessage" role="status"></p>
                     </form>
+                    <div class="modal-backdrop" id="workflowDepartmentPrompt" hidden>
+                      <section class="modal-card" aria-labelledby="workflowDepartmentPromptHeading">
+                        <div class="section-header compact">
+                          <div>
+                            <p class="eyebrow">Workflow access</p>
+                            <h2 id="workflowDepartmentPromptHeading">Choose departments</h2>
+                          </div>
+                        </div>
+                        <form id="workflowDepartmentForm">
+                          <input type="hidden" name="workflow_id">
+                          <label class="toggle-row">
+                            <input type="checkbox" name="allow_all" value="all">
+                            <span>Allow all departments to use this workflow</span>
+                          </label>
+                          <div class="checkbox-list" id="workflowDepartmentChoices"></div>
+                          <div class="communication-action-row">
+                            <button class="primary-action small" type="submit">Save access</button>
+                            <button class="secondary-action small" type="button" id="cancelWorkflowDepartmentPrompt">Cancel</button>
+                          </div>
+                        </form>
+                      </section>
+                    </div>
                   </section>
 
                   <section class="settings-detail communications-settings" id="communicationsSettingsPanel" data-settings-panel="communications" hidden>

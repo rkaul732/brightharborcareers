@@ -2303,6 +2303,50 @@ tr.is-selected {
   display: grid;
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: rgba(28, 47, 67, 0.32);
+  padding: 18px;
+}
+
+.modal-card {
+  width: min(520px, 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  box-shadow: 0 22px 60px rgba(28, 47, 67, 0.18);
+  padding: 18px;
+}
+
+.modal-card form,
+.checkbox-list {
+  display: grid;
+  gap: 10px;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 10px 12px;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.toggle-row input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--harbor);
+}
+
 .pipeline-chip-row {
   display: flex;
   flex-wrap: wrap;
@@ -2426,21 +2470,70 @@ tr.is-selected {
   font-size: 11px;
 }
 
-.department-list-row {
-  display: grid;
-  grid-template-columns: minmax(220px, 1.1fr) minmax(190px, 0.9fr) auto auto;
-  gap: 10px;
-  align-items: end;
+.department-group {
   border-bottom: 1px solid var(--line);
-  padding: 12px 14px;
 }
 
-.department-list-row:last-child {
+.department-group:last-child,
+.department-child-list .department-list-row:last-child {
   border-bottom: 0;
 }
 
-.department-name-field input {
-  padding-left: calc(12px + (var(--department-depth, 0) * 18px));
+.department-child-list {
+  display: grid;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.department-list-row {
+  display: grid;
+  grid-template-columns: 28px minmax(220px, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+}
+
+.department-list-row.is-child {
+  padding-left: 36px;
+}
+
+.department-expand-button,
+.department-expand-spacer {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+}
+
+.department-expand-button {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--harbor-dark);
+  cursor: pointer;
+}
+
+.department-expand-button:hover {
+  border-color: var(--harbor);
+  background: var(--subtle);
+}
+
+.department-name-input {
+  min-height: 36px;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  padding: 0 8px;
+  font-size: 14px;
+}
+
+.department-list-row:hover .department-name-input,
+.department-name-input:focus {
+  border-color: var(--line);
+  background: #fff;
+  outline: 0;
 }
 
 .department-type-pill {
@@ -2454,6 +2547,15 @@ tr.is-selected {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.department-list-row:hover .department-row-actions,
+.department-list-row:focus-within .department-row-actions {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .danger-action {
@@ -2737,6 +2839,20 @@ td strong {
   .settings-nav,
   .department-list-row {
     grid-template-columns: 1fr;
+  }
+
+  .department-list-row.is-child {
+    padding-left: 14px;
+  }
+
+  .department-expand-button,
+  .department-expand-spacer {
+    justify-self: start;
+  }
+
+  .department-row-actions {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .section-header {

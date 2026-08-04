@@ -646,6 +646,9 @@ const state = {
   selectedOnboardingApplicationId: demoApplications.find((application) => application.status === "hired")?.id || "",
   onboardingDocuments: demoOnboardingDocuments.map(normalizeOnboardingDocument),
   selectedOnboardingDocumentId: "",
+  expandedDepartmentIds: new Set(),
+  pendingWorkflowDepartmentId: "",
+  movingDepartmentId: "",
   jobCreateTab: "description",
   jobDetailOpen: false,
   applicationOpen: false,
@@ -818,6 +821,9 @@ function normalizeWorkflow(workflow = {}) {
     id: String(workflow.id || newClientId("workflow")),
     name: String(workflow.name || "Custom workflow").trim(),
     status: workflow.status === "inactive" ? "inactive" : "active",
+    department_ids: Array.isArray(workflow.department_ids)
+      ? workflow.department_ids.map(String).filter(Boolean)
+      : [],
     stages,
     created_at: workflow.created_at || "",
     updated_at: workflow.updated_at || ""
@@ -852,10 +858,23 @@ function activeWorkflows() {
   return state.workflows.filter((workflow) => workflow.status === "active");
 }
 
-function defaultWorkflow() {
+function workflowAllowedForDepartment(workflow = {}, departmentId = "") {
+  const allowedIds = Array.isArray(workflow.department_ids) ? workflow.department_ids : [];
+  if (!allowedIds.length || !departmentId) return true;
+  const department = getDepartmentById(departmentId);
+  return allowedIds.includes(departmentId) || (department?.parent_id && allowedIds.includes(department.parent_id));
+}
+
+function workflowsForDepartment(departmentId = "") {
+  const allowed = activeWorkflows().filter((workflow) => workflowAllowedForDepartment(workflow, departmentId));
+  return allowed.length ? allowed : activeWorkflows();
+}
+
+function defaultWorkflow(departmentId = "") {
+  const workflows = workflowsForDepartment(departmentId);
   return (
-    activeWorkflows().find((workflow) => workflow.id === "workflow-standard") ||
-    activeWorkflows()[0] ||
+    workflows.find((workflow) => workflow.id === "workflow-standard") ||
+    workflows[0] ||
     normalizeWorkflow(defaultWorkflows[0])
   );
 }
@@ -865,7 +884,8 @@ function workflowById(id) {
 }
 
 function workflowForJob(job = {}) {
-  return workflowById(job.workflow_id) || defaultWorkflow();
+  const workflow = workflowById(job.workflow_id);
+  return workflow && workflowAllowedForDepartment(workflow, job.department_id) ? workflow : defaultWorkflow(job.department_id);
 }
 
 function workflowEntries(workflow = defaultWorkflow()) {
@@ -1539,7 +1559,7 @@ async function loadSupabaseData() {
     if (Array.isArray(jobs) && jobs.length) {
       state.jobs = jobs.map((job) => ({
         ...job,
-        workflow_id: job.workflow_id || defaultWorkflow().id,
+        workflow_id: job.workflow_id || defaultWorkflow(job.department_id).id,
         recruiter_name: job.recruiter_name || "",
         review_lead: job.review_lead || "",
         team_members: job.team_members || "",
@@ -1673,11 +1693,20 @@ async function loadPipelineSettings() {
 
 async function loadWorkflows() {
   try {
-    const workflows = await supabaseSelect(
-      "workflows",
-      "select=id,name,status,stages,created_at,updated_at&order=name.asc",
-      true
-    );
+    let workflows = [];
+    try {
+      workflows = await supabaseSelect(
+        "workflows",
+        "select=id,name,status,stages,department_ids,created_at,updated_at&order=name.asc",
+        true
+      );
+    } catch (error) {
+      workflows = await supabaseSelect(
+        "workflows",
+        "select=id,name,status,stages,created_at,updated_at&order=name.asc",
+        true
+      );
+    }
     if (Array.isArray(workflows) && workflows.length) {
       state.workflows = normalizeWorkflows(workflows);
       saveLocalWorkflows(state.workflows);
@@ -2378,7 +2407,7 @@ function syncRoleControls() {
   $$("#boardSettingsForm input, #boardSettingsForm textarea, #boardSettingsForm button").forEach((control) => {
     control.disabled = !canManageBoard;
   });
-  $$("#departmentForm input, #departmentForm select, #departmentForm button").forEach((control) => {
+  $$("#departmentForm input, #departmentForm select, #departmentForm button, #departmentMoveForm input, #departmentMoveForm select, #departmentMoveForm button").forEach((control) => {
     control.disabled = !canManageDepartments;
   });
   $$("#departmentTree input, #departmentTree select, #departmentTree button").forEach((control) => {
@@ -2387,7 +2416,7 @@ function syncRoleControls() {
   $$("#pipelineSettingsForm input, #pipelineSettingsForm button").forEach((control) => {
     control.disabled = !canManageBoard;
   });
-  $$("#workflowSettingsForm input, #workflowSettingsForm select, #workflowSettingsForm button").forEach((control) => {
+  $$("#workflowSettingsForm input, #workflowSettingsForm select, #workflowSettingsForm button, #workflowDepartmentForm input, #workflowDepartmentForm select, #workflowDepartmentForm button").forEach((control) => {
     control.disabled = !canManageBoard;
   });
   $$("#communicationTemplateForm input, #communicationTemplateForm select, #communicationTemplateForm textarea, #communicationTemplateForm button, #automationRuleForm input, #automationRuleForm select, #automationRuleForm button").forEach((control) => {
@@ -2471,6 +2500,8 @@ function renderJobCreateTabs() {
 }
 
 function renderSettingsSections() {
+  const availableSections = $$("[data-settings-panel]").map((panel) => panel.dataset.settingsPanel);
+  if (!availableSections.includes(state.settingsSection)) state.settingsSection = "workflows";
   $$("[data-settings-section]").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.settingsSection === state.settingsSection);
   });
@@ -2519,7 +2550,7 @@ function currentJobDraft() {
   const data = Object.fromEntries(new FormData(form));
   const department = getDepartmentById(data.department_id);
   const subdepartment = getDepartmentById(data.subdepartment_id);
-  const workflow = workflowById(data.workflow_id) || defaultWorkflow();
+  const workflow = workflowById(data.workflow_id) || defaultWorkflow(data.department_id);
   const [salaryMin, salaryMax] = normalizeSalaryValues(numberOrNull(data.salary_min), numberOrNull(data.salary_max));
   const jobDescription = String(data.job_description || "").trim();
 
@@ -4042,11 +4073,13 @@ function renderJobWorkflowPreview() {
   if (!preview || !select) return;
 
   const workflow = workflowById(select.value) || defaultWorkflow();
+  const accessLabel = workflowDepartmentLabel(workflow);
   preview.innerHTML = `
     <article class="workflow-preview-card">
       <div>
         <span>Selected workflow</span>
         <strong>${escapeHtml(workflow.name)}</strong>
+        <p>${escapeHtml(accessLabel)}</p>
       </div>
       <div class="pipeline-chip-row">
         ${workflowEntries(workflow)
@@ -4055,6 +4088,16 @@ function renderJobWorkflowPreview() {
       </div>
     </article>
   `;
+}
+
+function workflowDepartmentLabel(workflow = {}) {
+  const ids = Array.isArray(workflow.department_ids) ? workflow.department_ids : [];
+  if (!ids.length) return "Available to all departments";
+  const names = ids
+    .map((id) => getDepartmentById(id)?.name)
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b));
+  return names.length ? `Available to ${names.join(", ")}` : "Department access needs review";
 }
 
 function renderWorkflowSettings() {
@@ -4081,6 +4124,7 @@ function renderWorkflowSettings() {
                   ${workflowEntries(workflow)
                     .map(([, label]) => `<span>${escapeHtml(label)}</span>`)
                     .join("")}
+                  <span>${escapeHtml(workflowDepartmentLabel(workflow))}</span>
                 </div>
               </td>
               <td><span class="status-pill ${escapeHtml(workflow.status)}">${escapeHtml(formatStatus(workflow.status))}</span></td>
@@ -4107,6 +4151,65 @@ function renderWorkflowSettings() {
   pipelineStages.forEach((stage) => {
     form.elements[stage].value = selected.stages?.[stage] || defaultPipelineLabels[stage];
   });
+  renderWorkflowDepartmentPrompt();
+}
+
+function renderWorkflowDepartmentPrompt() {
+  const dialog = $("#workflowDepartmentPrompt");
+  const form = $("#workflowDepartmentForm");
+  const choices = $("#workflowDepartmentChoices");
+  if (!dialog || !form || !choices) return;
+
+  const workflow = workflowById(state.pendingWorkflowDepartmentId || state.selectedWorkflowId);
+  if (!workflow || !state.pendingWorkflowDepartmentId) {
+    dialog.hidden = true;
+    return;
+  }
+
+  const allowedIds = new Set(workflow.department_ids || []);
+  const departments = parentDepartments();
+  form.elements.workflow_id.value = workflow.id;
+  form.elements.allow_all.checked = allowedIds.size === 0;
+  choices.innerHTML = departments.length
+    ? departments
+        .map(
+          (department) => `
+            <label class="toggle-row">
+              <input type="checkbox" name="department_ids" value="${escapeAttribute(department.id)}"${allowedIds.has(department.id) ? " checked" : ""}>
+              <span>${escapeHtml(department.name)}</span>
+            </label>
+          `
+        )
+        .join("")
+    : `<div class="empty-state compact">Create departments first, or allow all departments.</div>`;
+  dialog.hidden = false;
+}
+
+function openWorkflowDepartmentPrompt(workflowId) {
+  state.pendingWorkflowDepartmentId = workflowId;
+  renderWorkflowDepartmentPrompt();
+}
+
+function closeWorkflowDepartmentPrompt() {
+  state.pendingWorkflowDepartmentId = "";
+  $("#workflowDepartmentPrompt").hidden = true;
+}
+
+async function saveWorkflowDepartmentAccess(workflow) {
+  if (!workflow) return;
+  if (hasSupabase && state.session?.accessToken) {
+    return persistWorkflow(workflow);
+  }
+  return { rows: [], supportsDepartmentAccess: true };
+}
+
+async function persistWorkflow(workflow) {
+  try {
+    return { rows: await supabaseUpsert("workflows", workflow, true), supportsDepartmentAccess: true };
+  } catch (error) {
+    const { department_ids, ...legacyWorkflow } = workflow;
+    return { rows: await supabaseUpsert("workflows", legacyWorkflow, true), supportsDepartmentAccess: false };
+  }
 }
 
 function renderProfileForm() {
@@ -4165,8 +4268,9 @@ function populateWorkflowControls() {
   const select = $("#jobWorkflowSelect");
   if (!select) return;
 
-  const workflows = activeWorkflows();
-  const selected = workflows.some((workflow) => workflow.id === select.value) ? select.value : defaultWorkflow().id;
+  const departmentId = $("#jobDepartmentSelect")?.value || "";
+  const workflows = workflowsForDepartment(departmentId);
+  const selected = workflows.some((workflow) => workflow.id === select.value) ? select.value : defaultWorkflow(departmentId).id;
   select.innerHTML = workflows.length
     ? workflows.map((workflow) => `<option value="${escapeHtml(workflow.id)}">${escapeHtml(workflow.name)}</option>`).join("")
     : `<option value="">Create a workflow in Settings first</option>`;
@@ -4177,49 +4281,67 @@ function populateWorkflowControls() {
 
 function renderDepartmentSettings() {
   populateParentDepartmentSelect();
-  const rows = departmentDisplayRows();
-  const countLabel = `${rows.length} ${rows.length === 1 ? "department" : "departments"}`;
+  const parents = parentDepartments();
+  const countLabel = `${parents.length} parent ${parents.length === 1 ? "department" : "departments"}`;
   const count = $("#departmentListCount");
   if (count) count.textContent = countLabel;
 
-  $("#departmentTree").innerHTML = rows.length
-    ? rows
-        .map(({ department, depth }) => {
-          const openJobs = state.jobs.filter(
-            (job) =>
-              job.status === "published" &&
-              (job.department_id === department.id ||
-                job.subdepartment_id === department.id ||
-                (!job.department_id && job.department === department.name))
-          ).length;
-          return `
-            <article class="department-list-row" data-department-row="${escapeAttribute(department.id)}" style="--department-depth: ${depth}">
-              <label class="field compact-field department-name-field">
-                <span>Name</span>
-                <input data-department-name value="${escapeAttribute(department.name)}">
-              </label>
-              <label class="field compact-field">
-                <span>Parent</span>
-                <select data-department-parent>
-                  ${renderDepartmentParentOptions(department.id, department.parent_id || "")}
-                </select>
-              </label>
-              <span class="status-pill department-type-pill">
-                ${department.parent_id ? "Subdepartment" : "Parent department"} · ${openJobs} open
-              </span>
-              <div class="department-row-actions">
-                <button class="secondary-action small" type="button" data-save-department="${escapeAttribute(department.id)}">
-                  Save
-                </button>
-                <button class="danger-action" type="button" data-delete-department="${escapeAttribute(department.id)}">
-                  Delete
-                </button>
-              </div>
-            </article>
-          `;
-        })
-        .join("")
+  $("#departmentTree").innerHTML = parents.length
+    ? parents.map(renderDepartmentGroup).join("")
     : `<div class="empty-state compact">No departments have been created yet.</div>`;
+}
+
+function departmentOpenJobs(department) {
+  return state.jobs.filter(
+    (job) =>
+      job.status === "published" &&
+      (job.department_id === department.id ||
+        job.subdepartment_id === department.id ||
+        (!job.department_id && job.department === department.name))
+  ).length;
+}
+
+function renderDepartmentGroup(parent) {
+  const children = childDepartments(parent.id);
+  const expanded = state.expandedDepartmentIds.has(parent.id);
+  return `
+    <section class="department-group${expanded ? " is-expanded" : ""}">
+      ${renderDepartmentListRow(parent, { hasChildren: Boolean(children.length), expanded })}
+      ${
+        expanded
+          ? `<div class="department-child-list">${children.map((child) => renderDepartmentListRow(child, { isChild: true })).join("")}</div>`
+          : ""
+      }
+    </section>
+  `;
+}
+
+function renderDepartmentListRow(department, options = {}) {
+  const { hasChildren = false, expanded = false, isChild = false } = options;
+  const typeLabel = department.parent_id ? "Subdepartment" : "Parent department";
+  return `
+    <article class="department-list-row${isChild ? " is-child" : ""}" data-department-row="${escapeAttribute(department.id)}">
+      ${
+        hasChildren
+          ? `<button class="department-expand-button" type="button" data-toggle-department="${escapeAttribute(department.id)}" aria-expanded="${expanded}">
+              <span aria-hidden="true">${expanded ? "&#9662;" : "&#9656;"}</span>
+            </button>`
+          : `<span class="department-expand-spacer"></span>`
+      }
+      <input class="department-name-input" data-department-name value="${escapeAttribute(department.name)}" aria-label="${escapeAttribute(typeLabel)} name">
+      <span class="status-pill department-type-pill">
+        ${escapeHtml(typeLabel)} · ${departmentOpenJobs(department)} open
+      </span>
+      <div class="department-row-actions">
+        <button class="secondary-action small" type="button" data-move-department="${escapeAttribute(department.id)}">
+          Move
+        </button>
+        <button class="danger-action" type="button" data-delete-department="${escapeAttribute(department.id)}">
+          Delete
+        </button>
+      </div>
+    </article>
+  `;
 }
 
 function getNextStage(status) {
@@ -5007,6 +5129,7 @@ function bindEvents() {
   $("#jobForm").addEventListener("submit", handleJobSubmit);
   $("#jobDepartmentSelect").addEventListener("change", (event) => {
     populateSubdepartmentControls(event.target.value);
+    populateWorkflowControls();
     renderJobDraftPreview();
   });
   $("#jobWorkflowSelect").addEventListener("change", () => {
@@ -5015,9 +5138,18 @@ function bindEvents() {
   });
   $("#departmentForm").addEventListener("submit", handleDepartmentSubmit);
   $("#departmentTree").addEventListener("click", (event) => {
-    const saveButton = event.target.closest("[data-save-department]");
-    if (saveButton) {
-      handleDepartmentRowSave(saveButton.closest("[data-department-row]"));
+    const toggleButton = event.target.closest("[data-toggle-department]");
+    if (toggleButton) {
+      const departmentId = toggleButton.dataset.toggleDepartment;
+      if (state.expandedDepartmentIds.has(departmentId)) state.expandedDepartmentIds.delete(departmentId);
+      else state.expandedDepartmentIds.add(departmentId);
+      renderDepartmentSettings();
+      return;
+    }
+
+    const moveButton = event.target.closest("[data-move-department]");
+    if (moveButton) {
+      openDepartmentMovePrompt(moveButton.dataset.moveDepartment);
       return;
     }
 
@@ -5026,9 +5158,32 @@ function bindEvents() {
       handleDepartmentDelete(deleteButton.dataset.deleteDepartment);
     }
   });
+  $("#departmentTree").addEventListener("focusout", (event) => {
+    if (!event.target.matches("[data-department-name]")) return;
+    handleDepartmentRowSave(event.target.closest("[data-department-row]"));
+  });
+  $("#departmentTree").addEventListener("keydown", (event) => {
+    if (!event.target.matches("[data-department-name]") || event.key !== "Enter") return;
+    event.preventDefault();
+    event.target.blur();
+  });
+  $("#departmentMoveForm").addEventListener("submit", handleDepartmentMoveSubmit);
+  $("#cancelDepartmentMove").addEventListener("click", closeDepartmentMovePrompt);
   $("#boardSettingsForm").addEventListener("submit", handleBoardSettingsSubmit);
-  $("#pipelineSettingsForm").addEventListener("submit", handlePipelineSettingsSubmit);
+  $("#pipelineSettingsForm")?.addEventListener("submit", handlePipelineSettingsSubmit);
   $("#workflowSettingsForm").addEventListener("submit", handleWorkflowSubmit);
+  $("#workflowDepartmentForm").addEventListener("submit", handleWorkflowDepartmentSubmit);
+  $("#workflowDepartmentForm").addEventListener("change", (event) => {
+    if (event.target.name === "allow_all" && event.target.checked) {
+      $$("input[name='department_ids']", $("#workflowDepartmentForm")).forEach((input) => {
+        input.checked = false;
+      });
+    }
+    if (event.target.name === "department_ids" && event.target.checked) {
+      $("#workflowDepartmentForm input[name='allow_all']").checked = false;
+    }
+  });
+  $("#cancelWorkflowDepartmentPrompt").addEventListener("click", closeWorkflowDepartmentPrompt);
   $("#workflowTable").addEventListener("click", (event) => {
     const button = event.target.closest("[data-select-workflow]");
     if (!button) return;
@@ -5321,7 +5476,9 @@ async function handleDepartmentRowSave(row) {
   if (!department || department.status !== "active") return;
 
   const name = String(row.querySelector("[data-department-name]")?.value || "").trim();
-  const parentId = row.querySelector("[data-department-parent]")?.value || null;
+  const parentControl = row.querySelector("[data-department-parent]");
+  const parentId = parentControl ? parentControl.value || null : department.parent_id || null;
+  if (name === department.name && (parentId || "") === (department.parent_id || "")) return;
   if (!name) {
     showMessage("#departmentMessage", "Department name is required.");
     return;
@@ -5368,11 +5525,85 @@ async function handleDepartmentRowSave(row) {
   }
 }
 
+function openDepartmentMovePrompt(departmentId) {
+  const department = departmentById(departmentId);
+  const dialog = $("#departmentMoveDialog");
+  const form = $("#departmentMoveForm");
+  const select = $("#departmentMoveParentSelect");
+  if (!department || !dialog || !form || !select) return;
+
+  state.movingDepartmentId = departmentId;
+  form.elements.department_id.value = departmentId;
+  select.innerHTML = [
+    `<option value="">Make parent department</option>`,
+    ...departmentParentOptions(departmentId, department.parent_id || "").map(
+      (parent) =>
+        `<option value="${escapeAttribute(parent.id)}"${parent.id === department.parent_id ? " selected" : ""}>${escapeHtml(parent.name)}</option>`
+    )
+  ].join("");
+  dialog.hidden = false;
+}
+
+function closeDepartmentMovePrompt() {
+  state.movingDepartmentId = "";
+  $("#departmentMoveDialog").hidden = true;
+}
+
+async function handleDepartmentMoveSubmit(event) {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(event.currentTarget));
+  const departmentId = data.department_id || state.movingDepartmentId;
+  const department = departmentById(departmentId);
+  const parentId = data.parent_id || null;
+  if (!department) return;
+  if ((department.parent_id || "") === (parentId || "")) {
+    closeDepartmentMovePrompt();
+    return;
+  }
+  if (parentId === departmentId || descendantDepartmentIds(departmentId).has(parentId)) {
+    showMessage("#departmentMessage", "A department cannot move under itself or one of its subdepartments.");
+    return;
+  }
+  if (departmentDuplicateExists(department.name, parentId, departmentId)) {
+    showMessage("#departmentMessage", "That department already exists under the selected parent.");
+    return;
+  }
+
+  const updatedDepartment = normalizeDepartment({ ...department, parent_id: parentId });
+  state.departments = state.departments.map((item) => (item.id === departmentId ? updatedDepartment : item));
+  if (!parentId) state.expandedDepartmentIds.delete(departmentId);
+  if (parentId) state.expandedDepartmentIds.add(parentId);
+  closeDepartmentMovePrompt();
+  refreshDepartmentDependentViews();
+
+  try {
+    if (hasSupabase && state.session?.accessToken) {
+      await supabasePatch(
+        "departments",
+        `id=eq.${encodeURIComponent(departmentId)}`,
+        {
+          parent_id: updatedDepartment.parent_id || null
+        },
+        true
+      );
+      showMessage("#departmentMessage", "Department moved.");
+    } else if (hasSupabase) {
+      throw new Error("Missing admin session");
+    } else {
+      showMessage("#departmentMessage", "Department moved for this preview.");
+    }
+  } catch (error) {
+    showMessage("#departmentMessage", "Department moved locally. Supabase save requires an admin account.");
+  }
+}
+
 async function handleDepartmentDelete(departmentId) {
   const department = departmentById(departmentId);
   if (!department || department.status !== "active") return;
 
   const descendantIds = descendantDepartmentIds(departmentId);
+  state.expandedDepartmentIds.delete(departmentId);
+  descendantIds.forEach((id) => state.expandedDepartmentIds.delete(id));
   state.departments = state.departments.filter(
     (item) => item.id !== departmentId && !descendantIds.has(item.id)
   );
@@ -5492,10 +5723,12 @@ async function handlePipelineSettingsSubmit(event) {
 async function handleWorkflowSubmit(event) {
   event.preventDefault();
   const data = Object.fromEntries(new FormData(event.currentTarget));
+  const existingWorkflow = workflowById(data.workflow_id);
   const workflow = normalizeWorkflow({
     id: data.workflow_id || newClientId("workflow"),
     name: data.name,
     status: data.status,
+    department_ids: existingWorkflow?.department_ids || [],
     stages: pipelineStages.reduce(
       (labels, stage) => ({
         ...labels,
@@ -5517,23 +5750,72 @@ async function handleWorkflowSubmit(event) {
 
   try {
     if (hasSupabase && state.session?.accessToken) {
-      const [saved] = await supabaseUpsert("workflows", workflow, true);
+      const result = await persistWorkflow(workflow);
+      const [saved] = result.rows;
       if (saved) {
+        const savedWorkflow = {
+          ...workflow,
+          ...saved,
+          department_ids: Array.isArray(saved.department_ids) ? saved.department_ids : workflow.department_ids
+        };
         state.workflows = normalizeWorkflows(
-          state.workflows.map((item) => (item.id === workflow.id ? saved : item))
+          state.workflows.map((item) => (item.id === workflow.id ? savedWorkflow : item))
         );
         saveLocalWorkflows(state.workflows);
         populateWorkflowControls();
         renderWorkflowSettings();
         renderJobsTable();
       }
-      showMessage("#workflowSettingsMessage", "Workflow saved.");
+      showMessage(
+        "#workflowSettingsMessage",
+        result.supportsDepartmentAccess
+          ? "Workflow saved."
+          : "Workflow saved. Run the workflow access migration to save department access."
+      );
+      openWorkflowDepartmentPrompt(workflow.id);
       return;
     }
 
     showMessage("#workflowSettingsMessage", "Workflow saved for this preview.");
+    openWorkflowDepartmentPrompt(workflow.id);
   } catch (error) {
     showMessage("#workflowSettingsMessage", "Workflow saved locally. Supabase save needs admin access.");
+    openWorkflowDepartmentPrompt(workflow.id);
+  }
+}
+
+async function handleWorkflowDepartmentSubmit(event) {
+  event.preventDefault();
+  const data = new FormData(event.currentTarget);
+  const workflowId = String(data.get("workflow_id") || state.pendingWorkflowDepartmentId);
+  const workflow = workflowById(workflowId);
+  if (!workflow) return;
+
+  const allowAll = data.get("allow_all") === "all";
+  const selectedDepartmentIds = allowAll ? [] : data.getAll("department_ids").map(String);
+  const updatedWorkflow = normalizeWorkflow({
+    ...workflow,
+    department_ids: selectedDepartmentIds
+  });
+  state.workflows = normalizeWorkflows(
+    state.workflows.map((item) => (item.id === workflowId ? updatedWorkflow : item))
+  );
+  saveLocalWorkflows(state.workflows);
+  closeWorkflowDepartmentPrompt();
+  populateWorkflowControls();
+  renderWorkflowSettings();
+  renderJobsTable();
+
+  try {
+    const result = await saveWorkflowDepartmentAccess(updatedWorkflow);
+    showMessage(
+      "#workflowSettingsMessage",
+      result?.supportsDepartmentAccess === false
+        ? "Access saved locally. Run the workflow access migration to save it in Supabase."
+        : "Workflow department access saved."
+    );
+  } catch (error) {
+    showMessage("#workflowSettingsMessage", "Access saved locally. Run the workflow access migration to save it in Supabase.");
   }
 }
 
@@ -5816,7 +6098,7 @@ async function handleJobSubmit(event) {
   const data = Object.fromEntries(new FormData(event.currentTarget));
   const department = getDepartmentById(data.department_id);
   const subdepartment = getDepartmentById(data.subdepartment_id);
-  const workflow = workflowById(data.workflow_id) || defaultWorkflow();
+  const workflow = workflowById(data.workflow_id) || defaultWorkflow(data.department_id);
   const [salaryMin, salaryMax] = normalizeSalaryValues(numberOrNull(data.salary_min), numberOrNull(data.salary_max));
   const jobDescription = String(data.job_description || "").trim();
   const seoKeywords = parseKeywords(data.seo_keywords);

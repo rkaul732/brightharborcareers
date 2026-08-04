@@ -117,6 +117,7 @@ supabase/migrations/20260731133000_application_requirement_levels.sql
 supabase/migrations/20260731140000_job_status_options.sql
 supabase/migrations/20260731150000_communication_template_type.sql
 supabase/migrations/20260803120000_onboarding.sql
+supabase/migrations/20260804120000_workflow_department_access.sql
 ```
 
 4. Paste and run each file in Supabase before moving to the next one.
@@ -139,6 +140,7 @@ This creates:
 - application requirement levels and team assignments for jobs
 - communication templates, sender accounts, automation rules, queued emails, and sent/failed communication logs
 - onboarding records, uploaded onboarding document records, and a private onboarding document storage bucket
+- department access controls for reusable workflows
 - HR role types for `recruiter`, `hiring_manager`, and `admin`
 - row-level security policies
 
@@ -237,7 +239,7 @@ After running the workflows migration, sign in as an `admin` and open:
 Hiring Team -> profile icon -> Settings -> Workflows
 ```
 
-Admins can create reusable workflows with custom labels for the five hiring stages, including `Hired`. Job creators select one of those workflows from the Workflow section while creating a job.
+Admins can create reusable workflows with custom labels for the five hiring stages, including `Hired`. Workflows are the main place to configure pipelines. After saving a workflow, choose which parent departments can use it, or allow all departments. Job creators select from the workflows available to the job's department from the Workflow section while creating a job.
 
 The Create Job screen is divided into:
 

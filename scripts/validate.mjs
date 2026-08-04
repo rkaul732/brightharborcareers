@@ -24,7 +24,8 @@ const requiredFiles = [
   "supabase/migrations/20260731133000_application_requirement_levels.sql",
   "supabase/migrations/20260731140000_job_status_options.sql",
   "supabase/migrations/20260731150000_communication_template_type.sql",
-  "supabase/migrations/20260803120000_onboarding.sql"
+  "supabase/migrations/20260803120000_onboarding.sql",
+  "supabase/migrations/20260804120000_workflow_department_access.sql"
 ];
 
 const root = process.cwd();
@@ -82,6 +83,10 @@ const templateTypeSql = await readFile(
 );
 const onboardingSql = await readFile(
   path.join(root, "supabase/migrations/20260803120000_onboarding.sql"),
+  "utf8"
+);
+const workflowAccessSql = await readFile(
+  path.join(root, "supabase/migrations/20260804120000_workflow_department_access.sql"),
   "utf8"
 );
 const netlifyFunctionsIncludeNameMergeFields =
@@ -227,15 +232,28 @@ const checks = [
     html.includes("department-list-widget") &&
       html.includes("departmentListCount") &&
       app.includes("handleDepartmentRowSave") &&
+      app.includes("openDepartmentMovePrompt") &&
       app.includes("handleDepartmentDelete") &&
-      app.includes("renderDepartmentParentOptions") &&
-      app.includes("data-save-department") &&
+      app.includes("data-toggle-department") &&
+      app.includes("data-move-department") &&
       app.includes("data-delete-department"),
-    "Editable department list"
+    "Expandable editable department list"
   ],
-  [html.includes("pipelineSettingsForm") && app.includes("handlePipelineSettingsSubmit"), "Pipeline settings form"],
-  [html.includes("workflowSettingsButton") && app.includes("handleWorkflowSubmit"), "Admin workflow settings"],
-  [workflowsSql.includes("create table if not exists public.workflows") && workflowsSql.includes("workflow_id"), "Workflow persistence"],
+  [
+    !html.includes("pipelineSettingsButton") &&
+      !html.includes("pipelineSettingsPanel") &&
+      html.includes("workflowSettingsButton") &&
+      app.includes("handleWorkflowSubmit") &&
+      app.includes("workflowAllowedForDepartment") &&
+      app.includes("workflowDepartmentPrompt"),
+    "Workflow-based pipeline settings"
+  ],
+  [
+    workflowsSql.includes("create table if not exists public.workflows") &&
+      workflowsSql.includes("workflow_id") &&
+      workflowAccessSql.includes("department_ids"),
+    "Workflow persistence"
+  ],
   [requirementLevelsSql.includes("resume_requirement") && app.includes("normalizeRequirement"), "Application requirement level persistence"],
   [html.includes("communicationsSettingsButton") && html.includes("communicationTemplateForm"), "Communications settings module"],
   [html.includes("templatesTable") && app.includes("handleCommunicationTemplateSubmit"), "Communication template library"],

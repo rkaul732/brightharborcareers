@@ -57,8 +57,8 @@ Core tables:
 - `activity_events`: audit-ready activity log.
 - `job_board_settings`: public applicant-board header image and overlay content.
 - `departments`: agency department and subdepartment hierarchy.
-- `pipeline_settings`: admin-managed labels for hiring pipeline stages.
-- `workflows`: reusable hiring workflows that jobs can select.
+- `pipeline_settings`: legacy default labels for hiring pipeline stages.
+- `workflows`: reusable hiring workflows, pipeline labels, and department access rules that jobs can select.
 - `communication_templates`, `automation_rules`, `communication_events`, and `sender_accounts`: reusable candidate communications and audit-ready email history.
 - `onboarding_records`: employee setup details for hired candidates.
 - `onboarding_documents`: uploaded onboarding packet metadata and scan results.
