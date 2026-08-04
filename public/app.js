@@ -171,6 +171,14 @@ const communicationDelayOptions = [
 
 const communicationTemplateTypes = ["Automated email", "Manual email", "Interview email", "Offer email", "Status update"];
 
+const reportTypes = [
+  { id: "time_to_hire", label: "Time to hire" },
+  { id: "time_to_fill", label: "Time to fill" },
+  { id: "stage_progression", label: "Stage progression" },
+  { id: "job_sourcing", label: "Job sourcing" },
+  { id: "activity", label: "Activity report" }
+];
+
 const defaultSenderAccounts = [
   {
     id: "sender-bright-harbor-hr",
@@ -490,7 +498,7 @@ const demoApplications = [
     candidate_summary_response: "Analytics professional who enjoys translating data into decisions.",
     status: "new",
     score: 78,
-    source: "Career site",
+    source: "Google Jobs",
     applied_at: "2026-07-27",
     recruiter: "Rina Patel"
   },
@@ -520,7 +528,7 @@ const demoApplications = [
     candidate_summary_response: "Program coordinator with a background in clinical team support.",
     status: "screening",
     score: 82,
-    source: "Career site",
+    source: "ZipRecruiter",
     applied_at: "2026-07-25",
     recruiter: "Sam Lee"
   },
@@ -535,7 +543,7 @@ const demoApplications = [
     candidate_summary_response: "People operations generalist with employee records and onboarding experience.",
     status: "offer",
     score: 89,
-    source: "Career site",
+    source: "Indeed",
     applied_at: "2026-07-18",
     recruiter: "Rina Patel"
   }
@@ -607,6 +615,73 @@ const demoCommunications = [
   }
 ];
 
+function defaultActivityEvents() {
+  const today = todayIsoDate();
+  return [
+    {
+      id: "activity-401",
+      actor_name: "Sam Lee",
+      actor_role: "Recruiter",
+      job_id: "job-102",
+      application_id: "app-202",
+      event_type: "candidate_stage_changed",
+      details: {
+        candidate_name: "Amara Okafor",
+        job_title: "Client Success Manager",
+        previous_stage: "screening",
+        new_stage: "interview"
+      },
+      event_body: "Moved Amara Okafor from Screening to Interview.",
+      created_at: `${today}T09:20:00.000Z`
+    },
+    {
+      id: "activity-402",
+      actor_name: "Rina Patel",
+      actor_role: "Recruiter",
+      job_id: "job-101",
+      application_id: "app-204",
+      event_type: "candidate_stage_changed",
+      details: {
+        candidate_name: "Sophia Nguyen",
+        job_title: "Senior Talent Partner",
+        previous_stage: "offer",
+        new_stage: "hired"
+      },
+      event_body: "Moved Sophia Nguyen from Offer to Hired.",
+      created_at: "2026-07-28T13:10:00.000Z"
+    },
+    {
+      id: "activity-403",
+      actor_name: "Sam Lee",
+      actor_role: "Recruiter",
+      job_id: "job-101",
+      application_id: "app-201",
+      event_type: "manual_communication_sent",
+      details: {
+        candidate_name: "Jordan Ellis",
+        job_title: "Senior Talent Partner",
+        subject: "We received your application for Senior Talent Partner"
+      },
+      event_body: "Sent Jordan Ellis an email about Senior Talent Partner.",
+      created_at: "2026-07-22T14:31:00.000Z"
+    },
+    {
+      id: "activity-404",
+      actor_name: "Hiring Team",
+      actor_role: "Admin",
+      job_id: "job-101",
+      application_id: "app-204",
+      event_type: "onboarding_documents_uploaded",
+      details: {
+        candidate_name: "Sophia Nguyen",
+        job_title: "Senior Talent Partner"
+      },
+      event_body: "Uploaded onboarding documents for Sophia Nguyen.",
+      created_at: "2026-08-01T14:30:00.000Z"
+    }
+  ];
+}
+
 const initialProfile = readLocalProfile();
 
 const state = {
@@ -634,6 +709,7 @@ const state = {
   automationRules: readLocalAutomationRules(),
   senderAccounts: readLocalSenderAccounts(),
   communications: readLocalCommunications(),
+  activityEvents: readLocalActivityEvents(),
   selectedTemplateId: "",
   selectedAutomationRuleId: "",
   selectedWorkflowId: "",
@@ -643,6 +719,10 @@ const state = {
   manualTemplateId: "",
   manualSubject: "",
   manualBody: "",
+  activityUserFilter: "All",
+  reportType: "time_to_hire",
+  reportDateMode: "today",
+  reportDate: todayIsoDate(),
   selectedOnboardingApplicationId: demoApplications.find((application) => application.status === "hired")?.id || "",
   onboardingDocuments: demoOnboardingDocuments.map(normalizeOnboardingDocument),
   selectedOnboardingDocumentId: "",
@@ -1209,6 +1289,60 @@ function saveLocalCommunications(records) {
   }
 }
 
+function parseActivityDetails(record = {}) {
+  if (record.details && typeof record.details === "object") return record.details;
+  if (record.event_body && typeof record.event_body === "object") return record.event_body;
+  const body = String(record.event_body || "").trim();
+  if (!body) return {};
+  try {
+    const parsed = JSON.parse(body);
+    return parsed && typeof parsed === "object" ? parsed : { message: body };
+  } catch (error) {
+    return { message: body };
+  }
+}
+
+function normalizeActivityEvent(record = {}) {
+  const createdAt = record.created_at || new Date().toISOString();
+  const details = parseActivityDetails(record);
+  return {
+    id: String(record.id || newClientId("activity")),
+    actor_id: String(record.actor_id || "").trim(),
+    actor_name: String(record.actor_name || details.actor_name || "Hiring Team").trim(),
+    actor_role: String(record.actor_role || details.actor_role || "User").trim(),
+    job_id: String(record.job_id || details.job_id || "").trim(),
+    application_id: String(record.application_id || details.application_id || "").trim(),
+    event_type: String(record.event_type || "activity").trim(),
+    event_body: String(record.event_body || details.message || "").trim(),
+    details,
+    created_at: createdAt
+  };
+}
+
+function normalizeActivityEvents(records = []) {
+  return records
+    .map(normalizeActivityEvent)
+    .filter((record) => record.id && record.event_type)
+    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+}
+
+function readLocalActivityEvents() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("bhc-activity-events") || "null");
+    return normalizeActivityEvents(Array.isArray(saved) && saved.length ? saved : defaultActivityEvents());
+  } catch (error) {
+    return normalizeActivityEvents(defaultActivityEvents());
+  }
+}
+
+function saveLocalActivityEvents(records) {
+  try {
+    localStorage.setItem("bhc-activity-events", JSON.stringify(records));
+  } catch (error) {
+    return;
+  }
+}
+
 function numberOrNull(value) {
   const number = Number(String(value || "").replace(/[^0-9.]/g, ""));
   return Number.isFinite(number) && number > 0 ? number : null;
@@ -1276,6 +1410,55 @@ function formatDateTime(value) {
   }).format(date);
 }
 
+function todayIsoDate() {
+  const date = new Date();
+  const timezoneOffset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 10);
+}
+
+function dateOnly(value) {
+  if (!value) return "";
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10);
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
+}
+
+function addDays(value, days) {
+  const date = new Date(`${dateOnly(value)}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return "";
+  date.setDate(date.getDate() + Number(days || 0));
+  return date.toISOString().slice(0, 10);
+}
+
+function isOnOrBefore(value, isoDate) {
+  const target = dateOnly(isoDate);
+  const source = dateOnly(value);
+  return Boolean(source && target && source <= target);
+}
+
+function isSameReportDate(value, isoDate) {
+  return dateOnly(value) === dateOnly(isoDate);
+}
+
+function daysBetween(start, end) {
+  const startDate = new Date(`${dateOnly(start)}T12:00:00`);
+  const endDate = new Date(`${dateOnly(end)}T12:00:00`);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return null;
+  return Math.max(0, Math.round((endDate - startDate) / 86400000));
+}
+
+function average(values = []) {
+  const clean = values.filter((value) => Number.isFinite(value));
+  if (!clean.length) return null;
+  return clean.reduce((total, value) => total + value, 0) / clean.length;
+}
+
+function formatDays(value) {
+  if (!Number.isFinite(value)) return "Not enough data";
+  const rounded = Math.round(value * 10) / 10;
+  return `${rounded} ${rounded === 1 ? "day" : "days"}`;
+}
+
 function communicationTriggerLabel(trigger) {
   return communicationTriggerEvents.find((event) => event.id === trigger)?.label || formatStatus(trigger);
 }
@@ -1315,6 +1498,114 @@ function applicationById(id) {
 
 function jobById(id) {
   return state.jobs.find((job) => job.id === id) || null;
+}
+
+function actorLabel() {
+  return profileDisplayName();
+}
+
+function activityActorOptions() {
+  return ["All", ...new Set(state.activityEvents.map((event) => event.actor_name).filter(Boolean).sort((a, b) => a.localeCompare(b)))];
+}
+
+function stageHistoryFromEvents(application) {
+  return state.activityEvents
+    .filter(
+      (event) =>
+        event.application_id === application.id &&
+        event.event_type === "candidate_stage_changed" &&
+        event.details?.new_stage
+    )
+    .map((event) => ({
+      stage: event.details.new_stage,
+      entered_at: event.created_at,
+      actor_name: event.actor_name
+    }));
+}
+
+function inferredStageHistory(application = {}) {
+  const currentIndex = pipelineStages.indexOf(application.status);
+  const lastIndex = currentIndex >= 0 ? currentIndex : 0;
+  const offsets = {
+    new: 0,
+    screening: 2,
+    interview: 5,
+    offer: 9,
+    hired: 12
+  };
+  return pipelineStages.slice(0, lastIndex + 1).map((stage) => ({
+    stage,
+    entered_at: addDays(application.applied_at, offsets[stage] || 0),
+    actor_name: application.recruiter || "Hiring Team"
+  }));
+}
+
+function applicationStageHistory(application = {}) {
+  const explicitHistory = Array.isArray(application.stage_history)
+    ? application.stage_history.map((entry) => ({
+        stage: entry.stage,
+        entered_at: entry.entered_at || entry.created_at || entry.date,
+        actor_name: entry.actor_name || entry.actor || application.recruiter || "Hiring Team"
+      }))
+    : [];
+  const activityHistory = stageHistoryFromEvents(application);
+  const byStage = new Map();
+  inferredStageHistory(application)
+    .filter((entry) => pipelineStages.includes(entry.stage) && dateOnly(entry.entered_at))
+    .forEach((entry) => byStage.set(entry.stage, entry));
+  [...explicitHistory, ...activityHistory]
+    .filter((entry) => pipelineStages.includes(entry.stage) && dateOnly(entry.entered_at))
+    .forEach((entry) => byStage.set(entry.stage, entry));
+  return [...byStage.values()].sort((a, b) => new Date(a.entered_at) - new Date(b.entered_at));
+}
+
+function stageEnteredAt(application, stage, reportDate = "") {
+  const entry = applicationStageHistory(application)
+    .filter((item) => item.stage === stage && (!reportDate || isOnOrBefore(item.entered_at, reportDate)))
+    .sort((a, b) => new Date(a.entered_at) - new Date(b.entered_at))[0];
+  return entry?.entered_at || "";
+}
+
+function activityDetailsForEvent(eventType, application = {}, details = {}) {
+  const job = jobById(application.job_id) || {};
+  const previousStage = details.previous_stage || details.previousStage || "";
+  const newStage = details.pipeline_stage || details.new_stage || details.newStage || application.status || "";
+  return {
+    ...details,
+    actor_name: details.actor_name || actorLabel(),
+    actor_role: details.actor_role || formatStatus(state.role),
+    candidate_name: details.candidate_name || application.full_name || "Candidate",
+    candidate_email: details.candidate_email || application.email || "",
+    job_title: details.job_title || job.title || "General application",
+    job_id: application.job_id || details.job_id || "",
+    application_id: application.id || details.application_id || "",
+    previous_stage: previousStage,
+    new_stage: newStage
+  };
+}
+
+function activityEventMessage(event = {}) {
+  const details = event.details || {};
+  if (details.message) return details.message;
+  if (event.event_type === "candidate_stage_changed") {
+    return `Moved ${details.candidate_name || "candidate"} from ${pipelineLabel(details.previous_stage)} to ${pipelineLabel(details.new_stage)}.`;
+  }
+  if (event.event_type === "candidate_applied") {
+    return `${details.candidate_name || "Candidate"} applied for ${details.job_title || "a job"}.`;
+  }
+  if (event.event_type === "manual_communication_sent") {
+    return `Sent ${details.candidate_name || "candidate"} an email.`;
+  }
+  if (event.event_type === "manual_communication_resent") {
+    return `Resent an email to ${details.candidate_name || "candidate"}.`;
+  }
+  if (event.event_type === "onboarding_documents_uploaded") {
+    return `Uploaded onboarding documents for ${details.candidate_name || "candidate"}.`;
+  }
+  if (event.event_type === "onboarding_hierarchy_updated") {
+    return `Updated onboarding setup for ${details.candidate_name || "candidate"}.`;
+  }
+  return event.event_body || formatStatus(event.event_type);
 }
 
 function communicationContext(application = {}, details = {}) {
@@ -1611,6 +1902,7 @@ async function loadSupabaseData() {
       }
       await loadCommunicationData();
       await loadOnboardingData();
+      await loadActivityData();
       await loadCurrentProfile();
     }
   } catch (error) {
@@ -1769,6 +2061,24 @@ async function loadCommunicationData() {
     if (Array.isArray(communications)) {
       state.communications = normalizeCommunications(communications);
       saveLocalCommunications(state.communications);
+    }
+  } catch (error) {
+    return;
+  }
+}
+
+async function loadActivityData() {
+  if (!hasSupabase || !state.session?.accessToken) return;
+
+  try {
+    const events = await supabaseSelect(
+      "activity_events",
+      "select=id,actor_id,job_id,application_id,event_type,event_body,created_at&order=created_at.desc&limit=500",
+      true
+    );
+    if (Array.isArray(events)) {
+      state.activityEvents = normalizeActivityEvents([...events, ...state.activityEvents]);
+      saveLocalActivityEvents(state.activityEvents);
     }
   } catch (error) {
     return;
@@ -2178,6 +2488,8 @@ function renderHrWorkspace() {
   renderJobDraftPreview();
   renderHomeDashboard();
   renderMetrics();
+  renderReports();
+  renderActivityPage();
   renderJobsTable();
   renderCandidatesTable();
   renderCandidateProfile();
@@ -2203,6 +2515,7 @@ function renderHrSections() {
   $("#hrJobsSection").hidden = state.hrSection !== "jobs";
   $("#hrCandidatesSection").hidden = state.hrSection !== "candidates";
   $("#hrReportsSection").hidden = state.hrSection !== "reports";
+  $("#hrActivitySection").hidden = state.hrSection !== "activity";
   $("#hrOnboardingSection").hidden = state.hrSection !== "onboarding";
   $("#hrSettingsSection").hidden = state.hrSection !== "settings";
   $("#hrProfileSection").hidden = state.hrSection !== "profile";
@@ -2217,7 +2530,8 @@ function renderHrSubheader() {
     home: ["Home", "Today in hiring"],
     jobs: ["Jobs", state.jobCreateOpen ? "Create a job" : "All Jobs"],
     candidates: ["Candidates", "All applicants"],
-    reports: ["Reports", "Pipeline overview"],
+    reports: ["Reports", "Generate insights"],
+    activity: ["Activity", "User activity"],
     onboarding: ["Onboarding", "Hired employee setup"],
     settings: ["Settings", "System configuration"],
     profile: ["Profile", "Edit my profile"]
@@ -2378,22 +2692,69 @@ function renderHomeDashboard() {
     )
     .join("");
 
-  const recentCommunications = state.communications
+  const recentActivity = state.activityEvents
     .slice()
     .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
     .slice(0, 4);
-  activityList.innerHTML = recentCommunications.length
-    ? recentCommunications
+  activityList.innerHTML = recentActivity.length
+    ? recentActivity
         .map(
           (record) => `
             <article class="home-activity-item">
-              <span>${escapeHtml(record.subject || "Email communication")}</span>
-              <small>${escapeHtml(record.candidate_name || record.candidate_email)} · ${escapeHtml(formatStatus(record.delivery_status || record.status))}</small>
+              <span>${escapeHtml(activityEventMessage(record))}</span>
+              <small>${escapeHtml(record.actor_name)} · ${escapeHtml(formatDateTime(record.created_at))}</small>
             </article>
           `
         )
         .join("")
-    : `<div class="empty-state compact">No communication activity yet.</div>`;
+    : `<div class="empty-state compact">No activity yet.</div>`;
+}
+
+function renderActivityPage() {
+  const filter = $("#activityUserFilter");
+  const timeline = $("#activityTimeline");
+  if (!filter || !timeline) return;
+
+  const options = activityActorOptions();
+  state.activityUserFilter = options.includes(state.activityUserFilter) ? state.activityUserFilter : "All";
+  filter.innerHTML = options
+    .map((actor) => `<option value="${escapeAttribute(actor)}">${escapeHtml(actor)}</option>`)
+    .join("");
+  filter.value = state.activityUserFilter;
+
+  const events = state.activityEvents
+    .filter((event) => state.activityUserFilter === "All" || event.actor_name === state.activityUserFilter)
+    .slice()
+    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+  timeline.innerHTML = events.length
+    ? events.map(renderActivityTimelineItem).join("")
+    : `<div class="empty-state compact">No activity has been recorded for this user.</div>`;
+}
+
+function renderActivityTimelineItem(event) {
+  const details = event.details || {};
+  const previousStage = details.previous_stage ? pipelineLabel(details.previous_stage) : "";
+  const newStage = details.new_stage ? pipelineLabel(details.new_stage) : "";
+  return `
+    <article class="activity-timeline-item">
+      <div class="activity-timeline-dot" aria-hidden="true"></div>
+      <div class="activity-timeline-content">
+        <div class="activity-timeline-header">
+          <div>
+            <span>${escapeHtml(activityEventMessage(event))}</span>
+            <small>${escapeHtml(event.actor_name)} · ${escapeHtml(event.actor_role)} · ${escapeHtml(formatDateTime(event.created_at))}</small>
+          </div>
+          ${newStage ? `<span class="status-pill">${escapeHtml(newStage)}</span>` : ""}
+        </div>
+        <div class="activity-detail-row">
+          ${details.candidate_name ? `<span>${escapeHtml(details.candidate_name)}</span>` : ""}
+          ${details.job_title ? `<span>${escapeHtml(details.job_title)}</span>` : ""}
+          ${previousStage && newStage ? `<span>${escapeHtml(previousStage)} to ${escapeHtml(newStage)}</span>` : ""}
+        </div>
+      </div>
+    </article>
+  `;
 }
 
 function syncRoleControls() {
@@ -2722,6 +3083,230 @@ function renderMetrics() {
       `
     )
     .join("");
+}
+
+function selectedReportDate() {
+  return state.reportDateMode === "specific" ? state.reportDate || todayIsoDate() : todayIsoDate();
+}
+
+function renderReports() {
+  const typeSelect = $("#reportType");
+  const dateModeSelect = $("#reportDateMode");
+  const dateInput = $("#reportDate");
+  const output = $("#reportOutput");
+  if (!typeSelect || !dateModeSelect || !dateInput || !output) return;
+
+  typeSelect.innerHTML = reportTypes
+    .map((report) => `<option value="${escapeAttribute(report.id)}">${escapeHtml(report.label)}</option>`)
+    .join("");
+  typeSelect.value = reportTypes.some((report) => report.id === state.reportType) ? state.reportType : reportTypes[0].id;
+  dateModeSelect.value = state.reportDateMode;
+  dateInput.value = state.reportDate || todayIsoDate();
+  dateInput.disabled = state.reportDateMode !== "specific";
+  output.innerHTML = renderReportOutput(state.reportType, selectedReportDate());
+}
+
+function reportTable(headers, rows, emptyMessage = "No results match this date.") {
+  if (!rows.length) return `<div class="empty-state compact">${escapeHtml(emptyMessage)}</div>`;
+  return `
+    <div class="table-wrap report-table-wrap">
+      <table>
+        <thead>
+          <tr>${headers.map((header) => `<th scope="col">${escapeHtml(header)}</th>`).join("")}</tr>
+        </thead>
+        <tbody>
+          ${rows
+            .map(
+              (row) => `
+                <tr>
+                  ${row.map((cell) => `<td>${cell}</td>`).join("")}
+                </tr>
+              `
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function reportShell(title, date, summary, table) {
+  return `
+    <article class="report-results-card">
+      <div class="report-results-header">
+        <div>
+          <span class="eyebrow">${escapeHtml(date)}</span>
+          <h3>${escapeHtml(title)}</h3>
+        </div>
+        <span>${escapeHtml(summary)}</span>
+      </div>
+      ${table}
+    </article>
+  `;
+}
+
+function renderReportOutput(type, reportDate) {
+  if (type === "time_to_fill") return renderTimeToFillReport(reportDate);
+  if (type === "stage_progression") return renderStageProgressionReport(reportDate);
+  if (type === "job_sourcing") return renderJobSourcingReport(reportDate);
+  if (type === "activity") return renderActivityReport(reportDate);
+  return renderTimeToHireReport(reportDate);
+}
+
+function renderTimeToHireReport(reportDate) {
+  const rows = state.applications
+    .map((application) => {
+      const hiredAt = stageEnteredAt(application, "hired", reportDate);
+      if (!hiredAt || !isOnOrBefore(application.applied_at, reportDate)) return null;
+      const job = jobById(application.job_id) || {};
+      const days = daysBetween(application.applied_at, hiredAt);
+      return { application, job, hiredAt, days };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.days - b.days);
+  const avg = average(rows.map((row) => row.days));
+  return reportShell(
+    "Time to hire",
+    reportDate,
+    `Average ${formatDays(avg)}`,
+    reportTable(
+      ["Candidate", "Job", "Recruiter", "Hired date", "Time to hire"],
+      rows.map((row) => [
+        escapeHtml(row.application.full_name),
+        escapeHtml(row.job.title || "General application"),
+        escapeHtml(row.application.recruiter || row.job.recruiter_name || "Unassigned"),
+        escapeHtml(dateOnly(row.hiredAt)),
+        escapeHtml(formatDays(row.days))
+      ]),
+      "No hired candidates are available for this date."
+    )
+  );
+}
+
+function renderTimeToFillReport(reportDate) {
+  const rows = state.jobs
+    .filter((job) => isOnOrBefore(job.posted_at, reportDate))
+    .map((job) => {
+      const hires = state.applications
+        .filter((application) => application.job_id === job.id)
+        .map((application) => ({ application, hiredAt: stageEnteredAt(application, "hired", reportDate) }))
+        .filter((item) => item.hiredAt)
+        .sort((a, b) => new Date(a.hiredAt) - new Date(b.hiredAt));
+      const firstHire = hires[0];
+      const fillDate = firstHire?.hiredAt || "";
+      const days = daysBetween(job.posted_at, fillDate || reportDate);
+      return { job, fillDate, days, hireCount: hires.length };
+    })
+    .sort((a, b) => a.job.title.localeCompare(b.job.title));
+  const filledRows = rows.filter((row) => row.fillDate);
+  const avg = average(filledRows.map((row) => row.days));
+  return reportShell(
+    "Time to fill",
+    reportDate,
+    filledRows.length ? `Filled average ${formatDays(avg)}` : "No filled jobs yet",
+    reportTable(
+      ["Job", "Department", "Posted", "Fill date", "Time to fill"],
+      rows.map((row) => [
+        escapeHtml(row.job.title),
+        escapeHtml(row.job.department || "General"),
+        escapeHtml(dateOnly(row.job.posted_at)),
+        escapeHtml(row.fillDate ? dateOnly(row.fillDate) : "Not filled"),
+        escapeHtml(formatDays(row.days))
+      ]),
+      "No jobs were open by this date."
+    )
+  );
+}
+
+function renderStageProgressionReport(reportDate) {
+  const rows = pipelineStages
+    .slice(1)
+    .map((stage) => {
+      const durations = state.applications
+        .map((application) => {
+          const history = applicationStageHistory(application).filter((entry) => isOnOrBefore(entry.entered_at, reportDate));
+          const stageIndex = history.findIndex((entry) => entry.stage === stage);
+          if (stageIndex <= 0) return null;
+          return daysBetween(history[stageIndex - 1].entered_at, history[stageIndex].entered_at);
+        })
+        .filter((value) => Number.isFinite(value));
+      return {
+        stage,
+        count: durations.length,
+        avg: average(durations),
+        min: durations.length ? Math.min(...durations) : null,
+        max: durations.length ? Math.max(...durations) : null
+      };
+    })
+    .filter((row) => row.count);
+  const avg = average(rows.map((row) => row.avg).filter((value) => Number.isFinite(value)));
+  return reportShell(
+    "Stage progression",
+    reportDate,
+    `Overall average ${formatDays(avg)}`,
+    reportTable(
+      ["Stage", "Candidates", "Average time", "Fastest", "Slowest"],
+      rows.map((row) => [
+        escapeHtml(pipelineLabel(row.stage)),
+        escapeHtml(String(row.count)),
+        escapeHtml(formatDays(row.avg)),
+        escapeHtml(formatDays(row.min)),
+        escapeHtml(formatDays(row.max))
+      ]),
+      "No stage movement is available for this date."
+    )
+  );
+}
+
+function renderJobSourcingReport(reportDate) {
+  const applications = state.applications.filter((application) => isOnOrBefore(application.applied_at, reportDate));
+  const grouped = applications.reduce((map, application) => {
+    const source = application.source || "Career site";
+    const current = map.get(source) || { source, count: 0, jobs: new Set() };
+    current.count += 1;
+    if (application.job_id) current.jobs.add(application.job_id);
+    map.set(source, current);
+    return map;
+  }, new Map());
+  const rows = [...grouped.values()].sort((a, b) => b.count - a.count);
+  const total = applications.length || 1;
+  return reportShell(
+    "Job sourcing",
+    reportDate,
+    `${applications.length} total applicants`,
+    reportTable(
+      ["Source", "Applicants", "Share", "Jobs"],
+      rows.map((row) => [
+        escapeHtml(row.source),
+        escapeHtml(String(row.count)),
+        escapeHtml(`${Math.round((row.count / total) * 100)}%`),
+        escapeHtml(String(row.jobs.size))
+      ]),
+      "No applicants are available for this date."
+    )
+  );
+}
+
+function renderActivityReport(reportDate) {
+  const events = state.activityEvents
+    .filter((event) => isSameReportDate(event.created_at, reportDate))
+    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+  return reportShell(
+    "Activity report",
+    reportDate,
+    `${events.length} activity ${events.length === 1 ? "event" : "events"}`,
+    reportTable(
+      ["Time", "User", "Activity", "Candidate", "Job"],
+      events.map((event) => [
+        escapeHtml(formatDateTime(event.created_at)),
+        escapeHtml(event.actor_name),
+        escapeHtml(activityEventMessage(event)),
+        escapeHtml(event.details?.candidate_name || ""),
+        escapeHtml(event.details?.job_title || jobById(event.job_id)?.title || "")
+      ]),
+      "No activity was recorded on this date."
+    )
+  );
 }
 
 function renderJobsTable() {
@@ -3289,20 +3874,45 @@ async function saveOnboardingUpload(document, file) {
   });
 }
 
-async function recordActivityEvent(eventType, application, eventBody) {
-  if (!application || !canPersistOnboarding(application.id)) return;
+async function recordActivityEvent(eventType, application, details = {}) {
+  if (!application) return null;
 
-  await supabaseInsert(
-    "activity_events",
-    {
-      actor_id: state.session.userId || null,
-      job_id: application.job_id || null,
-      application_id: application.id,
-      event_type: eventType,
-      event_body: eventBody
-    },
-    true
-  ).catch(() => null);
+  const normalizedDetails = activityDetailsForEvent(
+    eventType,
+    application,
+    typeof details === "string" ? { message: details } : details
+  );
+  const event = normalizeActivityEvent({
+    id: newClientId("activity"),
+    actor_id: state.session?.userId || "",
+    actor_name: normalizedDetails.actor_name,
+    actor_role: normalizedDetails.actor_role,
+    job_id: application.job_id || "",
+    application_id: application.id,
+    event_type: eventType,
+    details: normalizedDetails,
+    event_body: normalizedDetails.message || "",
+    created_at: normalizedDetails.created_at || new Date().toISOString()
+  });
+
+  state.activityEvents = normalizeActivityEvents([event, ...state.activityEvents]);
+  saveLocalActivityEvents(state.activityEvents);
+
+  if (hasSupabase && state.session?.accessToken && application.id && !String(application.id).startsWith("app-")) {
+    await supabaseInsert(
+      "activity_events",
+      {
+        actor_id: state.session.userId || null,
+        job_id: application.job_id || null,
+        application_id: application.id,
+        event_type: eventType,
+        event_body: JSON.stringify(normalizedDetails)
+      },
+      true
+    ).catch(() => null);
+  }
+
+  return event;
 }
 
 async function fetchOnboardingDocumentBlob(document) {
@@ -3480,11 +4090,21 @@ async function handleOnboardingHierarchySubmit(event) {
       return;
     } catch (error) {
       renderHrOnboarding();
+      await recordActivityEvent(
+        "onboarding_hierarchy_updated",
+        selectedApplication,
+        "Onboarding hierarchy and employee setup details were updated."
+      );
       showMessage("#onboardingAdminMessage", "Saved locally. Run the onboarding Supabase migration to save this permanently.");
       return;
     }
   }
 
+  await recordActivityEvent(
+    "onboarding_hierarchy_updated",
+    selectedApplication,
+    "Onboarding hierarchy and employee setup details were updated."
+  );
   showMessage("#onboardingAdminMessage", "Onboarding hierarchy saved for this preview.");
 }
 
@@ -4864,6 +5484,11 @@ async function handleManualCommunicationSubmit(event) {
   record.delay_minutes = 0;
 
   const sent = await sendCommunicationRecord(record);
+  await recordActivityEvent("manual_communication_sent", application, {
+    subject: sent.subject,
+    candidate_name: application.full_name,
+    job_title: jobById(application.job_id)?.title || "General application"
+  });
   renderCandidateProfile();
   showMessage(
     "#manualCommunicationMessage",
@@ -4893,6 +5518,11 @@ async function resendCommunication(id) {
   });
   record.delay_minutes = 0;
   await sendCommunicationRecord(record);
+  await recordActivityEvent("manual_communication_resent", application, {
+    subject: record.subject,
+    candidate_name: application.full_name,
+    job_title: jobById(application.job_id)?.title || "General application"
+  });
   renderCandidateProfile();
 }
 
@@ -4931,6 +5561,29 @@ function bindEvents() {
       $("#profileMenuButton").setAttribute("aria-expanded", "false");
       renderHrWorkspace();
     });
+  });
+
+  $("#activityUserFilter").addEventListener("change", (event) => {
+    state.activityUserFilter = event.target.value;
+    renderActivityPage();
+  });
+
+  $("#reportForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const data = Object.fromEntries(new FormData(event.currentTarget));
+    state.reportType = data.report_type || "time_to_hire";
+    state.reportDateMode = data.date_mode || "today";
+    state.reportDate = data.report_date || todayIsoDate();
+    renderReports();
+  });
+
+  $("#reportDateMode").addEventListener("change", (event) => {
+    state.reportDateMode = event.target.value;
+    renderReports();
+  });
+
+  $("#reportDate").addEventListener("change", (event) => {
+    state.reportDate = event.target.value || todayIsoDate();
   });
 
   $("#hrHomeSection").addEventListener("click", (event) => {
@@ -5267,7 +5920,20 @@ function bindEvents() {
           : getNextStage(application.status);
       nextStatus = next;
       previousStatus = application.status;
-      movedApplication = next ? { ...application, status: next } : application;
+      movedApplication = next
+        ? {
+            ...application,
+            status: next,
+            stage_history: [
+              ...(Array.isArray(application.stage_history) ? application.stage_history : []),
+              {
+                stage: next,
+                entered_at: new Date().toISOString(),
+                actor_name: actorLabel()
+              }
+            ]
+          }
+        : application;
       return movedApplication;
     });
     renderHrWorkspace();
@@ -5277,6 +5943,10 @@ function bindEvents() {
       );
     }
     if (nextStatus && movedApplication) {
+      await recordActivityEvent("candidate_stage_changed", movedApplication, {
+        previous_stage: previousStatus,
+        new_stage: nextStatus
+      });
       await dispatchAutomationEvent("candidate_stage_changed", movedApplication, {
         previous_stage: previousStatus,
         pipeline_stage: nextStatus
@@ -6160,11 +6830,23 @@ async function handleApplicationSubmit(event) {
     state.applications.unshift(application);
     event.currentTarget.reset();
     showMessage("#applicationMessage", "Application submitted.");
+    await recordActivityEvent("candidate_applied", application, {
+      actor_name: application.full_name,
+      actor_role: "Applicant",
+      candidate_name: application.full_name,
+      job_title: selectedJob.title
+    });
     await dispatchAutomationEvent("candidate_applies", application);
     renderHrWorkspace();
   } catch (error) {
     showMessage("#applicationMessage", "Saved locally. Supabase write needs project permissions.");
     state.applications.unshift(application);
+    await recordActivityEvent("candidate_applied", application, {
+      actor_name: application.full_name,
+      actor_role: "Applicant",
+      candidate_name: application.full_name,
+      job_title: selectedJob.title
+    });
     await dispatchAutomationEvent("candidate_applies", application);
     renderHrWorkspace();
   }

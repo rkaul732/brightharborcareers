@@ -68,6 +68,13 @@
         <path d="M12 16V5"/>
         <path d="M17 16v-4"/>
       </symbol>
+      <symbol id="icon-scatter" viewBox="0 0 24 24">
+        <path d="M4 19V5M4 19h16"/>
+        <circle cx="8" cy="15" r="1.4"/>
+        <circle cx="11" cy="10" r="1.4"/>
+        <circle cx="15" cy="13" r="1.4"/>
+        <circle cx="18" cy="7" r="1.4"/>
+      </symbol>
     </svg>
 
     <div class="app-shell">
@@ -421,6 +428,10 @@
                   <svg><use href="#icon-chart"></use></svg>
                   Reports
                 </button>
+                <button class="hr-menu-button" type="button" data-hr-section="activity">
+                  <svg><use href="#icon-scatter"></use></svg>
+                  Activity
+                </button>
                 <button class="hr-menu-button" type="button" data-hr-section="onboarding">
                   <svg><use href="#icon-users"></use></svg>
                   Onboarding
@@ -455,7 +466,7 @@
                       <div class="section-header compact">
                         <div>
                           <p class="eyebrow">Activity</p>
-                          <h2>Recent communication</h2>
+                          <h2>Recent activity</h2>
                         </div>
                       </div>
                       <div class="home-activity-list" id="homeActivityList"></div>
@@ -832,15 +843,58 @@
               </section>
 
               <section class="hr-section" id="hrReportsSection" hidden>
+                <section class="panel report-builder-panel">
+                  <div class="section-header">
+                    <div>
+                      <p class="eyebrow">Reports</p>
+                      <h2>Generate report</h2>
+                    </div>
+                  </div>
+                  <form class="report-builder-form" id="reportForm">
+                    <label class="field">
+                      <span>Report</span>
+                      <select id="reportType" name="report_type"></select>
+                    </label>
+                    <label class="field">
+                      <span>Date basis</span>
+                      <select id="reportDateMode" name="date_mode">
+                        <option value="today">Today</option>
+                        <option value="specific">Specific date</option>
+                      </select>
+                    </label>
+                    <label class="field">
+                      <span>Report date</span>
+                      <input id="reportDate" name="report_date" type="date">
+                    </label>
+                    <button class="primary-action small" type="submit">Generate results</button>
+                  </form>
+                  <div class="report-output" id="reportOutput"></div>
+                </section>
                 <div class="metric-grid" id="metricGrid"></div>
                 <section class="panel pipeline-panel">
                   <div class="section-header">
                     <div>
-                      <p class="eyebrow">Reports</p>
+                      <p class="eyebrow">Pipeline</p>
                       <h2>Pipeline overview</h2>
                     </div>
                   </div>
                   <div class="pipeline-board" id="pipelineBoard"></div>
+                </section>
+              </section>
+
+              <section class="hr-section" id="hrActivitySection" hidden>
+                <section class="panel activity-panel">
+                  <div class="section-header">
+                    <div>
+                      <p class="eyebrow">Activity</p>
+                      <h2>User activity</h2>
+                    </div>
+                    <label class="field compact-field">
+                      <span>User</span>
+                      <select id="activityUserFilter"></select>
+                    </label>
+                  </div>
+                  <div class="activity-timeline" id="activityTimeline"></div>
                 </section>
               </section>
 

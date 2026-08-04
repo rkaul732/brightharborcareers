@@ -184,6 +184,25 @@ const checks = [
   [html.includes('data-hr-section="candidates"') && html.includes("candidatesTable") && app.includes("renderCandidatesTable"), "HR candidates view"],
   [html.includes('data-hr-section="reports"') && html.includes("pipelineBoard"), "HR reports view"],
   [
+    html.includes("reportForm") &&
+      html.includes("reportType") &&
+      app.includes("renderTimeToHireReport") &&
+      app.includes("renderTimeToFillReport") &&
+      app.includes("renderStageProgressionReport") &&
+      app.includes("renderJobSourcingReport") &&
+      app.includes("renderActivityReport"),
+    "HR report generator"
+  ],
+  [
+    html.includes("icon-scatter") &&
+      html.includes('data-hr-section="activity"') &&
+      html.includes("hrActivitySection") &&
+      app.includes("renderActivityPage") &&
+      app.includes("recordActivityEvent") &&
+      app.includes("bhc-activity-events"),
+    "HR activity tracking page"
+  ],
+  [
     html.includes('data-hr-section="onboarding"') &&
       html.includes("hrOnboardingSection") &&
       html.includes("onboardingView") &&
