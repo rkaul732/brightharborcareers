@@ -1847,17 +1847,29 @@ function showView(view, updateHash = true) {
   $$(".view").forEach((section) => section.classList.remove("is-active"));
   $(`#${targetView}View`)?.classList.add("is-active");
 
-  $$(".tab").forEach((tab) => {
-    const tabView = tab.dataset.view;
-    const isActive =
-      tabView === targetView ||
-      (targetView === "hr" && tabView === "login");
-    tab.classList.toggle("is-active", isActive);
-  });
+  renderWorkspaceTabs(targetView);
 
   if (updateHash) {
     history.replaceState(null, "", `#${targetView}`);
   }
+}
+
+function renderWorkspaceTabs(activeView = state.currentView) {
+  $$(".tab").forEach((tab) => {
+    const tabView = tab.dataset.view;
+    let isActive = tabView === activeView;
+    if (tabView === "hr") {
+      isActive =
+        activeView === "login" ||
+        (activeView === "hr" && state.hrSection !== "onboarding");
+    }
+    if (tabView === "onboarding") {
+      isActive =
+        activeView === "onboarding" ||
+        (activeView === "hr" && state.hrSection === "onboarding");
+    }
+    tab.classList.toggle("is-active", isActive);
+  });
 }
 
 function uniqueOptions(field, sourceJobs = state.jobs) {
@@ -2155,6 +2167,7 @@ function renderHrSections() {
   $$(".hr-menu-button").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.hrSection === state.hrSection);
   });
+  renderWorkspaceTabs();
   $("#hrHomeSection").hidden = state.hrSection !== "home";
   $("#hrJobsSection").hidden = state.hrSection !== "jobs";
   $("#hrCandidatesSection").hidden = state.hrSection !== "candidates";
@@ -2207,6 +2220,7 @@ function renderAuthPanel() {
   $("#authPasswordField").hidden = signedIn;
   $("#authForm button[type='submit']").hidden = signedIn;
   $("#showRequestAccount").hidden = signedIn;
+  $("#resetPasswordButton").hidden = signedIn;
   if (signedIn) {
     $("#requestAccountPanel").hidden = true;
     $("#showRequestAccount").textContent = "Request a Hiring Team Account";
@@ -4255,6 +4269,7 @@ function setAuthLoading(isLoading, message = "Signing in securely...") {
   const panel = $("#authLoadingPanel");
   const text = $("#authLoadingText");
   const submitButton = $("#authSubmitButton");
+  const resetButton = $("#resetPasswordButton");
   const usernameInput = $("#authUsernameField input");
   const passwordInput = $("#authPasswordField input");
   form?.classList.toggle("is-loading", isLoading);
@@ -4262,6 +4277,7 @@ function setAuthLoading(isLoading, message = "Signing in securely...") {
   if (panel) panel.hidden = !isLoading;
   if (text) text.textContent = message;
   if (submitButton) submitButton.disabled = isLoading;
+  if (resetButton) resetButton.disabled = isLoading;
   if (usernameInput) usernameInput.disabled = isLoading;
   if (passwordInput) passwordInput.disabled = isLoading;
 }
@@ -4746,6 +4762,20 @@ async function resendCommunication(id) {
 function bindEvents() {
   $$(".tab").forEach((button) => {
     button.addEventListener("click", () => {
+      if (button.dataset.view === "hr" && state.session?.accessToken) {
+        if (state.hrSection === "onboarding") state.hrSection = "home";
+        state.jobCreateOpen = false;
+        showView("hr");
+        renderHrWorkspace();
+        return;
+      }
+      if (button.dataset.view === "onboarding" && state.session?.accessToken) {
+        state.hrSection = "onboarding";
+        state.jobCreateOpen = false;
+        showView("hr");
+        renderHrWorkspace();
+        return;
+      }
       showView(button.dataset.view);
     });
   });
@@ -5025,6 +5055,7 @@ function bindEvents() {
   });
   $("#onboardingUploadForm").addEventListener("submit", handleOnboardingUploadSubmit);
   $("#authForm").addEventListener("submit", handleAuthSubmit);
+  $("#resetPasswordButton").addEventListener("click", handlePasswordResetClick);
   $("#requestAccountForm").addEventListener("submit", handleAccountRequestSubmit);
   $("#showRequestAccount").addEventListener("click", () => {
     const requestPanel = $("#requestAccountPanel");
@@ -5562,6 +5593,47 @@ async function refreshHrDataAfterSignIn() {
   } catch (error) {
     setConnection(true, "HR session limited");
     renderHrWorkspace();
+  }
+}
+
+async function handlePasswordResetClick() {
+  const usernameInput = $("#authUsernameField input");
+  const email = String(usernameInput?.value || "").trim().toLowerCase();
+  if (!email) {
+    showMessage("#authMessage", "Enter your username email first, then select Reset my password.");
+    usernameInput?.focus();
+    return;
+  }
+  if (!hasSupabase) {
+    showMessage("#authMessage", "Add Supabase environment values first.");
+    return;
+  }
+
+  setAuthLoading(true, "Sending password reset email...");
+  showMessage("#authMessage", "Sending password reset email...");
+
+  try {
+    const redirectTo = `${location.origin}${location.pathname}#login`;
+    const response = await fetchWithTimeout(
+      `${env.supabaseUrl}/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`,
+      {
+        method: "POST",
+        headers: {
+          apikey: env.supabaseAnonKey,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email })
+      }
+    );
+    const responseBody = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(responseBody.error_description || responseBody.msg || responseBody.message || "Reset email could not be sent.");
+    }
+    showMessage("#authMessage", "Password reset email sent. Check your inbox.");
+  } catch (error) {
+    showMessage("#authMessage", error.message || "Password reset email could not be sent.");
+  } finally {
+    setAuthLoading(false);
   }
 }
 

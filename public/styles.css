@@ -78,14 +78,6 @@ svg {
   grid-template-columns: auto minmax(0, 1fr) auto;
 }
 
-.app-shell.is-hr-session .public-tabs {
-  display: none;
-}
-
-.app-shell.is-hr-session .hr-header-menu {
-  display: flex;
-}
-
 .topbar-actions {
   display: flex;
   align-items: center;
@@ -137,7 +129,6 @@ svg {
 }
 
 .hr-header-menu {
-  display: none;
   justify-self: start;
 }
 
@@ -389,7 +380,10 @@ main {
   position: sticky;
   top: 92px;
   z-index: 10;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.96);
@@ -2814,10 +2808,6 @@ td strong {
     align-items: flex-start;
   }
 
-  .tab {
-    width: 100%;
-  }
-
   .hr-header-menu {
     flex: 1 0 auto;
   }
@@ -2845,8 +2835,8 @@ td strong {
   }
 
   .main-tabs {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    grid-template-columns: none;
   }
 
   .portal-metrics strong,

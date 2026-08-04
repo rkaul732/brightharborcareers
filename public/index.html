@@ -81,42 +81,15 @@
         </a>
 
         <nav class="main-tabs public-tabs" aria-label="Main workspace">
-          <button class="tab is-active" type="button" data-view="landing">
-            <svg><use href="#icon-anchor"></use></svg>
-            Start
-          </button>
-          <button class="tab" type="button" data-view="applicant">
+          <button class="tab is-active" type="button" data-view="applicant">
             <svg><use href="#icon-search"></use></svg>
             Applicant
           </button>
-          <button class="tab" type="button" data-view="onboarding">
-            <svg><use href="#icon-users"></use></svg>
-            Onboarding
-          </button>
-          <button class="tab" type="button" data-view="login">
+          <button class="tab" type="button" data-view="hr">
             <svg><use href="#icon-briefcase"></use></svg>
             Hiring Team
           </button>
-        </nav>
-
-        <nav class="main-tabs hr-header-menu" aria-label="HR main menu">
-          <button class="hr-menu-button is-active" type="button" data-hr-section="home">
-            <svg><use href="#icon-anchor"></use></svg>
-            Home
-          </button>
-          <button class="hr-menu-button" type="button" data-hr-section="jobs">
-            <svg><use href="#icon-briefcase"></use></svg>
-            Jobs
-          </button>
-          <button class="hr-menu-button" type="button" data-hr-section="candidates">
-            <svg><use href="#icon-users"></use></svg>
-            Candidates
-          </button>
-          <button class="hr-menu-button" type="button" data-hr-section="reports">
-            <svg><use href="#icon-chart"></use></svg>
-            Reports
-          </button>
-          <button class="hr-menu-button" type="button" data-hr-section="onboarding">
+          <button class="tab" type="button" data-view="onboarding">
             <svg><use href="#icon-users"></use></svg>
             Onboarding
           </button>
@@ -160,7 +133,7 @@
                   <small>View current openings and submit an application.</small>
                 </span>
               </button>
-              <button class="choice-card" type="button" data-go-view="login">
+              <button class="choice-card" type="button" data-go-view="hr">
                 <svg><use href="#icon-briefcase"></use></svg>
                 <span>
                   <strong>Hiring Team</strong>
@@ -369,6 +342,9 @@
                 <button class="text-link" type="button" id="showRequestAccount">
                   Request a Hiring Team Account
                 </button>
+                <button class="text-link" type="button" id="resetPasswordButton">
+                  Reset my password
+                </button>
                 <p class="form-message" id="authMessage" role="status"></p>
                 <div class="login-progress" id="authLoadingPanel" role="status" aria-live="polite" hidden>
                   <div class="login-progress-track" aria-hidden="true">
@@ -428,6 +404,24 @@
                 <p class="eyebrow" id="hrSubheaderEyebrow">Home</p>
                 <h2 id="hrSubheaderTitle">Today in hiring</h2>
               </div>
+              <nav class="main-tabs hr-header-menu" aria-label="HR main menu">
+                <button class="hr-menu-button is-active" type="button" data-hr-section="home">
+                  <svg><use href="#icon-anchor"></use></svg>
+                  Home
+                </button>
+                <button class="hr-menu-button" type="button" data-hr-section="jobs">
+                  <svg><use href="#icon-briefcase"></use></svg>
+                  Jobs
+                </button>
+                <button class="hr-menu-button" type="button" data-hr-section="candidates">
+                  <svg><use href="#icon-users"></use></svg>
+                  Candidates
+                </button>
+                <button class="hr-menu-button" type="button" data-hr-section="reports">
+                  <svg><use href="#icon-chart"></use></svg>
+                  Reports
+                </button>
+              </nav>
             </header>
 
             <section class="hr-main">

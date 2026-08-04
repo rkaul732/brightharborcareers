@@ -101,6 +101,12 @@ const checks = [
   [html.includes("Request a Hiring Team Account"), "Account request link"],
   [html.includes('name="username"') && html.includes('name="password"'), "Hiring-team credentials form"],
   [
+    html.includes("resetPasswordButton") &&
+      app.includes("handlePasswordResetClick") &&
+      app.includes("/auth/v1/recover?redirect_to="),
+    "Hiring-team password reset"
+  ],
+  [
     html.includes("authLoadingPanel") &&
       app.includes("setAuthLoading") &&
       app.includes("fetchWithTimeout") &&
@@ -112,7 +118,12 @@ const checks = [
   [
     html.includes("profileSignOutButton") &&
       app.includes("signOutHrUser") &&
-      css.includes(".app-shell.is-hr-session .public-tabs") &&
+      html.includes('data-view="applicant"') &&
+      html.includes('data-view="hr"') &&
+      html.includes('data-view="onboarding"') &&
+      !html.includes('data-view="landing"') &&
+      app.includes("renderWorkspaceTabs") &&
+      app.includes('state.hrSection = "onboarding"') &&
       html.includes("hr-header-menu") &&
       html.includes("hrSubheaderTitle") &&
       app.includes("renderHrSubheader") &&
@@ -165,9 +176,10 @@ const checks = [
   [html.includes('data-hr-section="candidates"') && html.includes("candidatesTable") && app.includes("renderCandidatesTable"), "HR candidates view"],
   [html.includes('data-hr-section="reports"') && html.includes("pipelineBoard"), "HR reports view"],
   [
-    html.includes('data-hr-section="onboarding"') &&
+    html.includes('data-view="onboarding"') &&
       html.includes("hrOnboardingSection") &&
       html.includes("onboardingView") &&
+      app.includes('state.hrSection = "onboarding"') &&
       app.includes('status === "hired"') &&
       app.includes("renderHrOnboarding") &&
       app.includes("renderEmployeeOnboarding"),
